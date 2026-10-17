@@ -155,3 +155,9 @@
   - The popover test now also covers choosing a font, and that Inter is stored as None.
   - Result: all tests pass, ruff is clean, and pyright reports 0 errors.
 - **Slowed us:** a Bash heredoc turned `"\n"` into a real newline inside Python source twice. Multi-line source edits should go through the Edit tool, not Python-in-heredoc.
+
+## 2026-10-17 — T025 / gate G1 APPROVED
+- **User, after round 3:** "everything looks good now."
+- This covers the G1 scope: tokens and palettes (M01), the widget kit, the floating window shell, the style popover, and the shared dropdown, number-box and checkbox look.
+- UI work that depends on G1 is now unblocked: M06 ChatLine (gate G2), M07 Settings.
+- **Also asked:** push to GitHub, then keep working autonomously while away. 29 commits were pushed to the private `origin/main` (103da12).

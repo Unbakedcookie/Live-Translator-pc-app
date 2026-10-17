@@ -291,3 +291,7 @@
   - a subprocess check that importing the three base modules loads none of faster_whisper, ctranslate2, torch, onnxruntime, sherpa_onnx, winrt, rapidocr or llama_cpp.
 - Full suite 160 passed; all hooks pass.
 - **M01 code is complete.** Only the G1 palette confirmation from the user remains.
+
+## 2026-10-17 — G1 palettes approved
+- **G1 was approved** together with the M02 window ("everything looks good now"), after three feedback rounds. The rounds are logged in `history/M02-floating-window.md`.
+- The defaults applied while the user was away now stand: a thin outline on light themes and the purpler Neon.
