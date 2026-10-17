@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build output
+build/
+dist/
+*.spec.bak
+
+# Downloaded models / runtime data (never commit)
+models/
+*.onnx
+*.bin
+*.ct2
+user_data/
+logs/
+
+# Local secrets / settings
+.env
+settings.local.json
+.claude/settings.local.json
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
