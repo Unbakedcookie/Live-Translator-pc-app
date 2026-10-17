@@ -141,14 +141,14 @@ NEON = Palette(
     id="neon",
     name="Neon",
     is_dark=True,
-    bg="#0B0614",
-    surface="#160D26",
-    surface_alt="#26173F",
+    bg="#170A2E",
+    surface="#22103F",
+    surface_alt="#321A57",
     text_primary="#F5F3FF",
-    text_secondary="#B8B0D0",
+    text_secondary="#C0B6DE",
     accent="#F472B6",
     on_accent="#1A0B14",
-    border="#3B2A5C",
+    border="#4A3373",
     outline="#000000",
     danger="#FF5C7A",
     ok="#3CFFA0",
@@ -240,7 +240,8 @@ class Motion:
 
 @dataclass(frozen=True)
 class OverlayText:
-    outline_width_default: int = 2
+    outline_width_default: int = 2  # dark palettes: dark outline around light text
+    outline_width_light: int = 1  # light palettes: a thick light halo looks soft (G1 feedback)
     outline_width_max: int = 6
     shadow_blur: int = 8
     shadow_offset: int = 1
@@ -268,3 +269,8 @@ RADIUS = Radius()
 MOTION = Motion()
 OVERLAY = OverlayText()
 WINDOW = WindowMetrics()
+
+
+def default_outline_width(palette: Palette) -> int:
+    """Default overlay text outline for a palette: thinner on light palettes."""
+    return OVERLAY.outline_width_default if palette.is_dark else OVERLAY.outline_width_light

@@ -163,3 +163,12 @@
   - Paper's white outline looks slightly soft on a light background.
   - Neon and Midnight look similar at a glance.
   - Both points were raised with the user for G1 feedback.
+
+## 2026-10-17 - T012 follow-up: G1 part 1 defaults applied (user away)
+- The user left ("running to the store") and asked me to keep building, applying defaults where no specific answer is needed. Defaults applied:
+  - Q1 Midnight stays the default.
+  - Q2 thinner outlines on light palettes: new token `OVERLAY.outline_width_light = 1` + `default_outline_width(palette)` (2 px dark, 1 px light).
+  - Q3 Neon more purple: bg #0B0614 -> #170A2E, surface #160D26 -> #22103F, surface_alt #26173F -> #321A57, border #3B2A5C -> #4A3373, text_secondary #B8B0D0 -> #C0B6DE.
+  - Q4 Inter + size OK.
+  - Q5 continue.
+- Contrast/dE rules still pass for every palette (tests). The preview was re-rendered (palette-preview-v2.png): Neon now reads as clearly purple, and Paper's text looks crisper with the 1 px halo. The user still needs to confirm G1 part 1 when back.

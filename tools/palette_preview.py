@@ -29,7 +29,15 @@ from PySide6.QtWidgets import QApplication
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.icons import IconRole, icon
 from livetranslator.theme.palette_gen import generate_palette
-from livetranslator.theme.tokens import FONTS, OVERLAY, PALETTES, RADIUS, SPACE, WINDOW, Palette
+from livetranslator.theme.tokens import (
+    FONTS,
+    PALETTES,
+    RADIUS,
+    SPACE,
+    WINDOW,
+    Palette,
+    default_outline_width,
+)
 
 PANEL_W = WINDOW.default_width
 PANEL_H = WINDOW.default_height + 40
@@ -70,13 +78,19 @@ def draw_backdrop(p: QPainter, size: QSize) -> None:
         p.drawPath(path)
 
 
+def outline_pen(palette: Palette) -> QPen:
+    # The stroke is centred on the glyph edge and the fill covers the inner half,
+    # so the pen is twice the visible outline width.
+    pen = QPen(QColor(palette.outline), default_outline_width(palette) * 2)
+    pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+    return pen
+
+
 def draw_outlined_text(
-    p: QPainter, pos: QPointF, text: str, font: QFont, fill: QColor, outline: QColor
+    p: QPainter, pos: QPointF, text: str, font: QFont, fill: QColor, pen: QPen
 ) -> float:
     path = QPainterPath()
     path.addText(pos, font, text)
-    pen = QPen(outline, OVERLAY.outline_width_default * 2)
-    pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
     p.strokePath(path, pen)
     p.fillPath(path, fill)
     return QFontMetricsF(font).horizontalAdvance(text)
@@ -133,7 +147,7 @@ def draw_panel(p: QPainter, x: float, y: float, palette: Palette, caption: str) 
     label_font = QFont(FONTS.overlay_family, PREVIEW_FONT_PT)
     label_font.setWeight(QFont.Weight.DemiBold)
     text_font = QFont(FONTS.overlay_family, PREVIEW_FONT_PT)
-    outline = QColor(palette.outline)
+    outline = outline_pen(palette)
     line_h = QFontMetricsF(text_font).height() + SPACE.sm
     baseline = top + WINDOW.chrome_height + SPACE.md + QFontMetricsF(text_font).ascent()
     for key, label, text in LINES:

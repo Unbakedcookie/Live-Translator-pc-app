@@ -11,6 +11,7 @@ from livetranslator.theme.tokens import (
     SPEAKER_RAMP_SIZE,
     WINDOW,
     color_tokens,
+    default_outline_width,
 )
 
 HEX = re.compile(r"^#[0-9A-F]{6}$")
@@ -41,6 +42,13 @@ def test_speaker_colour_wraps_after_ramp():
     assert MIDNIGHT.speaker_color(0) == MIDNIGHT.speaker_others[0]
     assert MIDNIGHT.speaker_color(7) == MIDNIGHT.speaker_others[7]
     assert MIDNIGHT.speaker_color(8) == MIDNIGHT.speaker_others[0]
+
+
+def test_outline_thinner_on_light_palettes():
+    # G1 feedback default (2026-10-17): 2 px on dark palettes, 1 px on light ones.
+    assert default_outline_width(MIDNIGHT) == 2
+    assert default_outline_width(PALETTES["paper"]) == 1
+    assert [p.id for p in PALETTES.values() if not p.is_dark] == ["paper"]
 
 
 def test_window_metrics_match_spec():
