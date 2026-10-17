@@ -52,7 +52,9 @@ Status: C = Confirmed (2 primary sources) · M = Medium (1 source, or a conflict
 | coloraide 8.13.1 | yes | MIT | C | |
 | win32mica 3.0 | yes | MIT | C | |
 | platformdirs 4.13.3 | yes | MIT | M | |
-| loguru 0.7.3 | yes | MIT | C | |
+| loguru 0.7.3 | yes | MIT | C | Pulls in colorama + win32-setctime on Windows (rows below). |
+| colorama 0.4.x (via loguru) | yes | BSD (classifier) | M | Found by the license gate (T011). Read the LICENSE file before release. |
+| win32-setctime (via loguru) | yes | MIT (classifier) | M | Found by the license gate (T011). Read the LICENSE file before release. |
 | huggingface_hub 2.2.0 | yes | Apache-2.0 | C | Include the license text. |
 | lingua-language-detector 2.2.0 | yes | Apache-2.0 | C | Model size not yet checked. |
 | pypresence 4.6.2 | yes | MIT | C | Maintained (released 2026-07-08). |

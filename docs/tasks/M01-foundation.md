@@ -20,7 +20,7 @@ Gate: palette preview screenshot is part 1 of **G1** (shown together with M02).
     - The runtime-closure walker excludes dev-only packages.
 
 ### T011 — Project scaffold · Tier A
-- Files: `pyproject.toml` (pytest config), `requirements.txt`, `livetranslator/__init__.py`, `livetranslator/__main__.py`, `livetranslator/app/paths.py` (platformdirs), `livetranslator/app/logging.py` (loguru, transcript filter), `tests/conftest.py`, `tests/test_smoke.py`, `tests/app/test_logging.py`
+- Files: `pyproject.toml` (pytest config), `requirements.txt`, `livetranslator/__init__.py`, `livetranslator/__main__.py`, `livetranslator/app/paths.py` (platformdirs), `livetranslator/app/log.py` (loguru, transcript filter; renamed from `logging.py` to avoid shadowing the stdlib name), `tests/conftest.py`, `tests/test_smoke.py`, `tests/app/test_logging.py`
 - Depends on: T010
 - Acceptance:
   - `pip install -r requirements-dev.txt` succeeds in `.venv`. `requirements.txt` uses `PySide6-Essentials` (never the full `PySide6`).

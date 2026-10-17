@@ -58,3 +58,43 @@
 - **Real-data probe:** the gate ran against a scratch requirements file (pip-audit, pre-commit, bandit[toml], pytest). It produced a 43-package closure, including the Windows-only colorama, and classified all of them correctly with 0 violations.
 - **gitleaks probe:** I staged a file with a randomly generated fake `ghp_` token. The gitleaks hook failed with "leaks found: 1, RuleID github-pat". The file was unstaged and deleted, and never committed.
 - Skipped: the `test-runner` delegation. The suite runs in 0.14 s and I ran it directly, so delegating would have been a tiny task (CLAUDE.md: don't delegate tiny tasks). I also updated TASKS.md directly instead of via `archivist`, for the same reason.
+
+## 2026-10-17 - T011 Project scaffold
+
+### What was built
+- `requirements.txt` with the first runtime dependencies: PySide6-Essentials 6.12.0 (never the full PySide6, D-021), loguru 0.7.3, platformdirs 4.13.3. `requirements-dev.txt` now starts with `-r requirements.txt`, so one install covers everything.
+- `livetranslator/__init__.py`: APP_NAME, display name and `__version__` 0.1.0 (single source).
+- `livetranslator/app/paths.py`: AppPaths.
+  - config = %APPDATA%\LiveTranslator (holds settings.json).
+  - data = %LOCALAPPDATA%\LiveTranslator, with models in `data\models` by default.
+  - logs = %LOCALAPPDATA%\LiveTranslator\Logs.
+  - `LIVETRANSLATOR_HOME` override puts config/, data/ and logs/ under one folder.
+- `livetranslator/app/log.py`:
+  - loguru, rotating at 5 MB, kept for 7 days, UTF-8, enqueue.
+  - Filter drops records bound with transcript=True.
+  - `diagnose=False` and `backtrace=False`.
+- `livetranslator/__main__.py`: `--version`, `--paths`. A plain start creates the folders, starts logging, records the startup, and prints help until the UI is wired in (M02/M07).
+- Tests:
+  - conftest autouse fixture: every test gets its own LIVETRANSLATOR_HOME, and logger handlers are removed afterwards so Windows can delete the tmp dirs.
+  - test_smoke: a real `python -m livetranslator --version` subprocess, `--paths` output, and a plain start.
+  - test_paths: explicit home, env home, real Windows platformdirs defaults, and `ensure()` creating only the app folders.
+  - test_logging: filter cases, transcript records never reaching the file, tracebacks not showing local values, log file location.
+
+### Design forks
+- **platformdirs arguments.** `appauthor=False` avoids the `LiveTranslator\LiveTranslator` double folder that is platformdirs' default on Windows. `roaming=True` only for config, so settings sit in %APPDATA% per spec 5.8.
+- **Why an env override instead of patching env vars in tests.** platformdirs on Windows asks the shell (SHGetKnownFolderPath via ctypes), not APPDATA/LOCALAPPDATA, so patching those variables would not isolate tests. The override also gives T073 its fresh-profile run.
+- **`diagnose=False` is a privacy decision**, not just style. loguru's diagnose mode prints local variable values in tracebacks, which would leak an utterance held in a variable. A test proves the secret string does not appear.
+- **Renamed `app/logging.py` to `app/log.py`** so it does not shadow the stdlib name. Task file updated.
+- **No `[project]` table in pyproject.** The app runs from the repo and packaging is post-MVP, so the version lives in one place.
+
+### Problems hit
+- One ruff-format failure (a call that fit on one line). Fixed with `ruff format`.
+- pre-commit printed "Failed to write cache file ... Access is denied" from ruff. Cause: pre-commit runs ruff on file batches in parallel, and the processes collide on the cache file on Windows. Harmless; the checks themselves passed.
+
+### Verification (Tier A)
+- pytest: 35 passed (24 license gate + 11 new).
+- `python -m livetranslator --version` printed "Live Translator 0.1.0".
+- `--paths` on the real profile printed the expected Roaming/Local folders.
+- After the full test run, `%APPDATA%\LiveTranslator` and `%LOCALAPPDATA%\LiveTranslator` did NOT exist, so tests never touched the real profile.
+- License gate on the real runtime closure: 6 packages, 0 violations. LGPL accepted only for pyside6-essentials/shiboken6. New transitive dependencies colorama (BSD) and win32-setctime (MIT) were added to the D-022 register.
+- pre-commit run --all-files: all 7 hooks passed.

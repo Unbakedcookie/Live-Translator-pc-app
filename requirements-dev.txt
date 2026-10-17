@@ -1,4 +1,5 @@
-# T010 — developer tooling (never shipped). Runtime deps live in requirements.txt (T011).
+# T010 — developer tooling (never shipped), plus the runtime deps so one install does it all.
+-r requirements.txt
 bandit[toml]==1.9.4
 packaging==26.3
 pip-audit==2.10.1

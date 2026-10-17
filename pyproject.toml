@@ -1,4 +1,5 @@
-# T010 — tool configuration (spec §10.1). Project metadata is added in T011.
+# T010/T011 — tool configuration (spec §10.1). The app runs from the repo with
+# `python -m livetranslator`; packaging (PyInstaller) is post-MVP, so there is no [project] table.
 
 [tool.ruff]
 target-version = "py312"
@@ -16,14 +17,14 @@ exclude_dirs = [".venv"]
 skips = ["*/test_*.py", "*/conftest.py"]
 
 [tool.pyright]
-include = ["tools", "tests"]
+include = ["livetranslator", "tools", "tests"]
 exclude = ["**/__pycache__", ".venv"]
 pythonVersion = "3.12"
 pythonPlatform = "Windows"
 venvPath = "."
 venv = ".venv"
 typeCheckingMode = "basic"
-strict = ["tools"]
+strict = ["tools", "livetranslator/core", "livetranslator/theme"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

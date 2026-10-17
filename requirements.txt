@@ -1,0 +1,6 @@
+# Runtime dependencies (shipped). Every package here and everything it pulls in must pass
+# tools/check_licenses.py and have a row in DATA_TRACKER's license register (D-022).
+# Qt: Essentials only, never the full "PySide6" / "PySide6-Addons" (GPL-only modules; D-021).
+PySide6-Essentials==6.12.0
+loguru==0.7.3
+platformdirs==4.13.3
