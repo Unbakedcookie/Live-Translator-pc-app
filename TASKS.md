@@ -2,8 +2,8 @@
 
 ## Current state
 - **Phase:** 1 **approved 2026-10-17** (spec rev 2; diarization default sherpa-onnx, diart benchmark-only). Speaker plan stands (voice labels + opt-in Discord own-app + ≤ 50 testers); the user may report a bot-based approach → possible post-MVP add-on. → **Phase 2 starts with T010.**
-- **Next:** M02 floating window shell (gate G1). M03 benchmarks are unblocked (T016 done).
-- **Tests:** 160 passing
+- **Next:** G1 review with the user (palettes, gallery, live window). Meanwhile M03 T032 ASR benchmark.
+- **Tests:** 252 passing
 - **Last commit:** `chore: Phase 0 docs skeleton, agent roster, verify helper` (see `git log -1`)
 - **Open flags:** D-013 (Discord voice API partner-only → opt-in own-app mode), D-021 (LGPL compliance steps), D-024 (gated pyannote models), D-026/D-027 (NVIDIA + FFmpeg binaries), D-029/D-030 (sherpa models, secretless token), D-004/D-005/D-015 (unmeasured).
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -13,13 +13,13 @@
 |---|---|---|---|---|---|
 | M00 Setup | T001–T004 | `docs/tasks/M00-setup.md` | `history/M00-setup.md` | — | Done 2026-10-17 |
 | M01 Foundation | T010–T016 | `docs/tasks/M01-foundation.md` | `history/M01-foundation.md` | G1 (palettes) | Code done (T010–T016 ✓); G1 palettes pending |
-| M02 Floating window | T021–T025 | `docs/tasks/M02-floating-window.md` | `history/M02-floating-window.md` | **G1** | Planned |
-| M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | Planned |
+| M02 Floating window | T021–T025 | `docs/tasks/M02-floating-window.md` | `history/M02-floating-window.md` | **G1** | Code done (T021–T024 ✓); T025 G1 review pending |
+| M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | In progress (T031 ✓) |
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | Planned |
 | M05 Translation | T051–T054 | `docs/tasks/M05-translation.md` | `history/M05-translation.md` | — | Planned |
 | M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | Planned |
 | M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | Planned |
-| M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | Planned |
+| M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | T081 ✓ (pulled forward) |
 | M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Planned |
 | M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | Planned |
 | M11 Hardening | T111–T113 | `docs/tasks/M11-hardening.md` | `history/M11-hardening.md` | MVP sign-off | Planned |
@@ -34,6 +34,10 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
   T011 done: package skeleton, `--version`/`--paths`, platformdirs paths (`LIVETRANSLATOR_HOME` override), loguru with transcript filter + `diagnose=False`; runtime deps PySide6-Essentials/loguru/platformdirs pass the gate (6 packages).
   T012 done: tokens + 5 palettes + one-colour generator, all contrast/ΔE-checked; QSS; Phosphor icons; Inter/Noto Sans bundled; Mica helper; style-literal lint test. Defaults applied while user away (thin outline on light, purpler Neon); preview v2 awaiting G1 confirmation.
   T013–T016 done (user away): frozen pydantic state + pure reducers with change lists; thread-safe Store with narrow signals; versioned/atomic/debounced settings (damaged files set aside); ASR/MT/OCR engine contracts. Code complete; only G1 palette sign-off open.
+
+- **M02 Floating window** — T021 win32 pin/click-through; T023 placement math; T022 widget kit + gallery; T024 overlay window + style popover + app wiring (`python -m livetranslator` runs it). Tier B 13/16 (rest = tooling limits). G1 review pending.
+- **M03 Benchmarks** — T031: FLEURS 8-lang × 20-sentence corpus at `D:\LiveTranslator\bench-data`, metrics + NVML harness.
+- **M08** — T081 global hotkeys done early (click-through escape). Ctrl+Alt+M is taken on the user's PC.
 
 ## Conventions
 - **Python:** `.venv/Scripts/python.exe` (3.12.10). Never use the system 3.10.
