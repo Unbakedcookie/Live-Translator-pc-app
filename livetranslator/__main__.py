@@ -20,6 +20,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the settings, data and log folders, then exit",
     )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="play a scripted conversation into the windows (look-and-feel review)",
+    )
     return parser
 
 
@@ -35,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from livetranslator.app.application import run  # Qt is only loaded when the app starts
 
-    return run()
+    return run(demo=args.demo)
 
 
 if __name__ == "__main__":

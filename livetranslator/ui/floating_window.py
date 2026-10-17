@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMenu,
+    QPushButton,
     QWidget,
 )
 
@@ -44,8 +45,9 @@ from livetranslator.app.window_controller import WindowController
 from livetranslator.core.languages import language
 from livetranslator.core.state import Source, WindowConfig
 from livetranslator.platform import win32
+from livetranslator.theme.icons import icon
 from livetranslator.theme.palette_gen import palette_for
-from livetranslator.theme.qss import badge_qss, window_qss
+from livetranslator.theme.qss import badge_qss, pill_qss, window_qss
 from livetranslator.theme.tokens import FONTS, MOTION, RADIUS, SPACE, WINDOW, Palette
 from livetranslator.ui.geometry import (
     EDGE_BOTTOM,
@@ -59,9 +61,9 @@ from livetranslator.ui.geometry import (
     resize_rect,
     snap,
 )
-from livetranslator.ui.sample_content import SampleContent
 from livetranslator.ui.screens import monitors, qrect_from_rect, rect_from_qrect
 from livetranslator.ui.style_popover import StylePopover
+from livetranslator.ui.translation_view import TranslationView
 from livetranslator.ui.widgets.icon_button import IconButton
 from livetranslator.ui.widgets.language_picker import LanguagePicker
 from livetranslator.ui.widgets.pin_button import PinButton
@@ -192,7 +194,13 @@ class FloatingWindow(QWidget):
         self.palette_value = palette_for(
             cfg.style.palette_id, cfg.style.custom_seed, cfg.style.custom_dark
         )
-        self.content = SampleContent(self)
+        self.content = TranslationView(controller.store, window_id, self)
+        # "New lines" pill (T062): shown while scrolled up and newer lines arrived.
+        self.new_lines = QPushButton("New lines", self)
+        self.new_lines.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.new_lines.hide()
+        self.new_lines.clicked.connect(self.content.scroll_to_bottom)
+        self.content.unread_changed.connect(self._on_unread)
         self.chrome = ChromeBar(controller, window_id, self.palette_value)
         self.chrome.setParent(self)
         self.chrome.style_requested.connect(self.open_style_popover)
@@ -242,7 +250,9 @@ class FloatingWindow(QWidget):
         style = cfg.style
         self.palette_value = palette_for(style.palette_id, style.custom_seed, style.custom_dark)
         self.chrome.set_state(self.palette_value, cfg)
-        self.content.set_view(self.palette_value, style, cfg.display, cfg.sources, cfg.target_lang)
+        self.content.set_view(self.palette_value, cfg)
+        self.new_lines.setStyleSheet(pill_qss(self.palette_value))
+        self.new_lines.setIcon(icon("arrow-down", self.palette_value, "on_accent"))
         self.setWindowOpacity(style.window_opacity)
         self.setToolTip(f"Live Translator: {language(cfg.target_lang).english}")
         if cfg.geometry is not None and self._drag is None:
@@ -323,10 +333,22 @@ class FloatingWindow(QWidget):
         hint = self.click_through_hint
         hint.move(max((self.width() - hint.width()) // 2, 0), SPACE.sm)
 
+    def _on_unread(self, unread: bool) -> None:
+        self.new_lines.setVisible(unread)
+        if unread:
+            self._place_pill()
+            self.new_lines.raise_()
+
+    def _place_pill(self) -> None:
+        pill = self.new_lines
+        pill.adjustSize()
+        pill.move((self.width() - pill.width()) // 2, self.height() - pill.height() - SPACE.sm)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
         self._place_hint()
         self.chrome.setGeometry(0, 0, self.width(), WINDOW.chrome_height)
         self.content.setGeometry(0, 0, self.width(), self.height())
+        self._place_pill()
         super().resizeEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -440,8 +462,13 @@ class FloatingWindow(QWidget):
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         cfg = self.config
-        if cfg is None or not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+        if cfg is None:
             super().wheelEvent(event)
+            return
+        if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            notches = event.angleDelta().y() / 120  # T062: plain wheel scrolls the chat
+            self.content.scroll_by(notches * self.content.wheel_step())
+            event.accept()
             return
         step = 1 if event.angleDelta().y() > 0 else -1
         size = min(max(cfg.style.font_size + step, FONTS.overlay_size_min), FONTS.overlay_size_max)

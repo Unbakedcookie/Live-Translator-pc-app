@@ -208,6 +208,17 @@ def test_translations_and_fixed_fields():
         reduce(state, a.UpdateUtterance("u1", {"source": Source.ME}))
 
 
+def test_translation_remembers_its_source_text():
+    # T062: the view needs to know whether a translation matches the line's current text.
+    state, _ = reduce(AppState(), a.AddUtterance(utt("u1", committed="hola")))
+    state, _ = reduce(state, a.SetTranslation("u1", "en", "hi", "hola"))
+    state, changes = reduce(state, a.SetTranslation("u1", "en", "hi", "hola amigo"))
+    assert state.session.utterances[0].translated_from == {"en": "hola amigo"}
+    assert changes == (Change(ChangeKind.UTTERANCE_UPDATED, "u1"),)  # same text, new source
+    with pytest.raises(ValueError, match="can't be updated"):
+        reduce(state, a.UpdateUtterance("u1", {"translated_from": {}}))
+
+
 def test_original_state_is_not_mutated():
     start, _ = reduce(AppState(), a.AddUtterance(utt("u1", committed="hola")))
     reduce(start, a.SetTranslation("u1", "en", "hello"))

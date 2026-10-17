@@ -48,7 +48,7 @@ Changes = tuple[Change, ...]
 Result = tuple[AppState, Changes]
 
 WINDOW_FIXED_FIELDS = frozenset({"id", "style"})  # style has its own action
-UTTERANCE_FIXED_FIELDS = frozenset({"id", "source", "translations"})
+UTTERANCE_FIXED_FIELDS = frozenset({"id", "source", "translations", "translated_from"})
 
 
 def _updated[M: BaseModel](model: M, fields: Mapping[str, object], fixed: frozenset[str]) -> M:
@@ -201,12 +201,20 @@ def _reduce_session(state: AppState, action: a.Action) -> Result | None:
             if old is None:
                 return state, ()
             return _replace_utterance(state, _updated(old, fields, UTTERANCE_FIXED_FIELDS))
-        case a.SetTranslation(utterance_id=uid, language=language, text=text):
+        case a.SetTranslation(
+            utterance_id=uid, language=language, text=text, source_text=source_text
+        ):
             old = session.utterance(uid)
-            if old is None or old.translations.get(language) == text:
+            if old is None:
                 return state, ()
             translations = {**old.translations, language: text}
-            return _replace_utterance(state, old.model_copy(update={"translations": translations}))
+            translated_from = {**old.translated_from, language: source_text}
+            return _replace_utterance(
+                state,
+                old.model_copy(
+                    update={"translations": translations, "translated_from": translated_from}
+                ),
+            )
         case a.RemoveUtterance(utterance_id=uid):
             if session.utterance(uid) is None:
                 return state, ()

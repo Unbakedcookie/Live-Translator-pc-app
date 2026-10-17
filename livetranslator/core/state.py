@@ -235,6 +235,9 @@ class Utterance(Frozen):
     language: str | None = None
     is_final: bool = False
     translations: dict[str, str] = Field(default_factory=dict[str, str])
+    # lang -> the original text each translation was made from (T062): a translation is
+    # current only while this equals `text`; otherwise it is shown as still changing.
+    translated_from: dict[str, str] = Field(default_factory=dict[str, str])
 
     @property
     def text(self) -> str:

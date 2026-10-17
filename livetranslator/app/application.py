@@ -50,6 +50,7 @@ class LiveTranslatorApp(QObject):
         if not self.store.state.config.windows:
             self.controller.add_window()
         self.windows = WindowManager(self.store, self.controller, quit_app, self)
+        self.demo: QObject | None = None  # `--demo` feed (T062)
 
     def _on_config_changed(self, section: str) -> None:
         if section in ("hotkeys", "all"):
@@ -82,7 +83,7 @@ class LiveTranslatorApp(QObject):
         logger.info("{} stopped", APP_DISPLAY_NAME)
 
 
-def run() -> int:
+def run(demo: bool = False) -> int:
     app = QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_DISPLAY_NAME)
@@ -93,4 +94,9 @@ def run() -> int:
     logger.info("{} {} starting", APP_DISPLAY_NAME, __version__)
     live = LiveTranslatorApp(paths, app.quit)
     app.aboutToQuit.connect(live.shutdown)
+    if demo:
+        from livetranslator.app.demo import DemoFeed
+
+        live.demo = DemoFeed(live.store, live)
+        live.demo.start()
     return app.exec()

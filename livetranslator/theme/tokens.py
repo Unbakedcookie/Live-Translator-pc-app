@@ -246,6 +246,8 @@ class OverlayText:
     outline_width_max: int = 6
     shadow_blur: int = 8
     shadow_offset: int = 1
+    original_scale: float = 0.8  # "original + translation": original text size factor
+    line_gap: int = 8  # space between chat lines (rows inside a line use SPACE.xs)
 
 
 @dataclass(frozen=True)

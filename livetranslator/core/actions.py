@@ -106,6 +106,7 @@ class SetTranslation:
     utterance_id: str
     language: str
     text: str
+    source_text: str = ""  # the original text that was translated (T062)
 
 
 @dataclass(frozen=True)

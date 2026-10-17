@@ -42,6 +42,14 @@ def badge_qss(p: Palette) -> str:
     )
 
 
+def pill_qss(p: Palette) -> str:
+    """A small accent button floating over content (e.g. "New lines" in the chat, T062)."""
+    return (
+        f"QPushButton {{ background: {p.accent}; color: {p.on_accent}; border: none; "
+        f"border-radius: {RADIUS.lg}px; padding: {SPACE.xs}px {SPACE.md}px; }}"
+    )
+
+
 def window_qss(p: Palette) -> str:
     """build_qss with themed Phosphor arrows and tick (needs a QApplication)."""
     from livetranslator.theme.icons import icon_file

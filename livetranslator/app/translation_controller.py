@@ -99,4 +99,4 @@ class TranslationController:
         return utterance is not None and utterance.text == job.text
 
     def on_result(self, job: TranslationJob, text: str) -> None:
-        self._store.dispatch(a.SetTranslation(job.utterance_id, job.tgt, text))
+        self._store.dispatch(a.SetTranslation(job.utterance_id, job.tgt, text, job.text))
