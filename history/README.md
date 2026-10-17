@@ -9,3 +9,4 @@ Append with a shell append (`cat >> history/Mxx-name.md <<'EOF' ... EOF`); don't
 | M00 Setup (Phase 0) | `M00-setup.md` | 2026-10-17 |
 | M01 Foundation | `M01-foundation.md` | 2026-10-17 → |
 | M02 Floating window (gate G1) | `M02-floating-window.md` | 2026-10-17 → |
+| M08 Hotkeys + OCR | `M08-hotkeys-ocr.md` | 2026-10-17 → (T081 early) |
