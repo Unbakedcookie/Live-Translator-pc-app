@@ -110,7 +110,9 @@ def test_live_default_mic_delivers_samples():
     statuses: list[StatusLevel] = []
     capture = AudioCapture(devices.default_input, ring, lambda lvl, msg: statuses.append(lvl))
     capture.start()
-    time.sleep(1.2)
-    capture.stop()
+    try:
+        # Poll instead of a fixed sleep: opening the device can be slow under heavy CPU load.
+        wait_for(lambda: ring.total_written > 8000, timeout=5.0)  # >= 0.5 s at 16 kHz
+    finally:
+        capture.stop()
     assert statuses and statuses[0] is StatusLevel.OK
-    assert ring.total_written > 8000  # at least 0.5 s arrived at 16 kHz

@@ -169,6 +169,14 @@ class EchoFilterConfig(Frozen):
     min_ratio: Annotated[float, Field(ge=0.0, le=100.0)] = 80.0
 
 
+class VadConfig(Frozen):
+    """Utterance segmentation (spec §5.4; Advanced settings)."""
+
+    threshold: Annotated[float, Field(gt=0.0, lt=1.0)] = 0.5  # speech probability to open
+    end_silence_ms: Annotated[int, Field(ge=100, le=3000)] = 500
+    max_utterance_s: Annotated[float, Field(ge=3.0, le=30.0)] = 15.0
+
+
 DEFAULT_HOTKEYS: dict[str, str] = {
     "show_hide_all": "Ctrl+Alt+H",
     "click_through_all": "Ctrl+Alt+T",
@@ -189,6 +197,7 @@ class AppConfig(Frozen):
     engines: EngineConfig = EngineConfig()
     performance: PerformanceConfig = PerformanceConfig()
     echo_filter: EchoFilterConfig = EchoFilterConfig()
+    vad: VadConfig = VadConfig()
     hotkeys: dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_HOTKEYS))
     windows: tuple[WindowConfig, ...] = ()
     lock_layout: bool = False

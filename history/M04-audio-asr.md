@@ -64,3 +64,25 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
   - 3 capture tests: 1 s of 48 k stereo → 16000 ±1 samples; open failure, then stream death, then recovery gives the exact status sequence and every stream is closed.
   - A **live smoke test** on the user's default mic (A50): about 1.2 s of capture, more than 8000 samples arrived. Counted only, nothing stored.
 - **Deferred (needs the user present):** the acceptance's "record 5 s of mic + loopback to scratchpad WAVs and listen-check". I didn't record the user's room or Discord audio while they were away.
+
+### T043 — VAD segmenter (`services/asr/vad.py`)
+- **D-016 confirmed in practice.** faster-whisper 1.2.1 ships `assets/silero_vad_v6.onnx`. Its `SileroVADModel` runs whole recordings in a batch, so I wrote a **streaming** wrapper (`SileroVad`): one 512-sample frame (32 ms) plus 64 samples of context per call, carrying the h/c state. It runs on CPU via onnxruntime (single thread).
+- **`Segmenter` (pure).**
+  - Opens at p ≥ threshold (0.5), backed up by a 3-frame pre-roll.
+  - Releases below threshold − 0.15 (hysteresis).
+  - Closes after ceil(end_silence_ms / 32) = 16 silent frames, at the frame after the last speech frame.
+  - Hard cut at ceil(max_utterance_s × 1000 / 32) = 469 frames, at the lowest-energy frame within the last 63 frames (2 s), then reopens there.
+  - `flush()` closes at the end of the stream.
+- **New `VadConfig` section** in AppConfig (threshold, end_silence_ms, max_utterance_s) for the spec's Advanced settings. "vad" was added to the UpdateConfigSection literals. Old settings files load unchanged because the field has defaults.
+- **Verification:**
+  - 9 tests:
+    - frame math (16 / 469 / 63);
+    - silence-speech-silence → open 17, close 70;
+    - a 15-frame pause doesn't split;
+    - hysteresis keeps a p = 0.4 stretch open;
+    - flush;
+    - hard cut at the planted quietest frame 450 (close and reopen at 450), then the silence close at 469;
+    - custom config;
+    - frame energy;
+    - **real Silero on a FLEURS clip** padded with 1 s of silence each side: no speech probability ≥ 0.5 in the padding, the first open is not inside the padding, and the final close is by silence within the trailing second.
+- **Flaky test found and fixed.** The T042 live mic smoke failed once in the full suite while the ASR benchmark's CPU config saturated the cores; it passes alone. Cause: a fixed 1.2 s sleep; the device open was slower under load. Fix: poll up to 5 s for ≥ 0.5 s of samples.

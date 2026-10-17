@@ -12,7 +12,7 @@ from typing import Literal
 
 from livetranslator.core.state import AppConfig, StatusLevel, Utterance, WindowConfig
 
-ConfigSection = Literal["audio", "speakers", "engines", "performance", "echo_filter"]
+ConfigSection = Literal["audio", "speakers", "engines", "performance", "echo_filter", "vad"]
 
 # ---------------------------------------------------------------- config
 
