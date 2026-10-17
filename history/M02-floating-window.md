@@ -110,3 +110,25 @@
   - **Bug found by the new test:** the toast was created without a parent and without a Python reference, so it was garbage-collected instantly and would never have appeared. The window now keeps the reference.
 - **User decision:** shortcuts stay fully remappable for every action (already true in the config). The editor UI comes with Settings (M07). The Ctrl+Alt+M conflict is left for the user to remap.
 - Verification: full suite passes, with new tests for toast + hint arming/disarming, the message following a remapped/unbound shortcut, popup width and translucency, and the updated hand-written QSS expectation.
+
+## 2026-10-17 — T025 G1 review, round 2
+- User: "the dropdown looks a lot nicer".
+- **Request: sort languages alphabetically and/or add search.** Did both.
+  - The list is A–Z by English name.
+  - The picker opens a custom popup (a child of the picker, so the window's QSS still styles the list) with a "Search languages" box. It filters by English name, native name or code prefix ("japan", "日本", "ko"), Up/Down move, Enter picks, Esc closes.
+  - It keeps the QComboBox interface (`activated`, `findData`, `count`), so nothing else changed.
+  - The popup background uses the window palette (new `LanguagePicker.apply_palette`) instead of the system palette.
+  - `QSortFilterProxyModel.invalidateFilter()` is deprecated in Qt 6.12, so I used `beginFilterChange()`/`endFilterChange()`. The test file passes with DeprecationWarning as an error.
+  - My own test guessed "an" → 6 matches. Counted by hand it's 8 (French via "Français", German, Italian, Japanese, Korean, Russian, Spanish, Ukrainian), which is what the code returned, so the test is now corrected and the count is written into it.
+- **Bug: "when I'm in the settings and click something, the chat window takes priority over the settings."**
+  - Cause: `_apply_native` ran `SetWindowPos(HWND_TOPMOST)` on every config change, which re-raises the overlay above its own (non-topmost) popover.
+  - Fix:
+    - Apply pin/click-through only when they change (reset on show).
+    - The popover is WindowStaysOnTopHint.
+    - The popover is raised again after a pin change.
+  - A regression test counts `set_topmost` calls: style changes make 0 calls; one pin change makes 1 call, with the popover still visible.
+- **Bug: "the frosted glass function doesn't turn on and off."**
+  - Investigation: `ApplyMica` returns S_OK for both a layered translucent Qt window and an opaque one, but DWM system backdrops don't render under per-pixel-alpha layered windows. The overlay must be layered to be see-through, and our own painted background covers it anyway. The off path had also never been implemented.
+  - Decision (mine, reported to the user): remove the toggle from overlays. Keep `theme/backdrop.py` + win32mica for normal windows (Settings in M07), where Mica works.
+  - **Schema v2:** `WindowStyle.mica` removed; migration `_v1_to_v2` strips `style.mica` from every window. The user's real v1 settings file migrates on next launch. A test covers it.
+- Verification: full suite passes. Search popup render-checked in Midnight + Paper (scratchpad search.png).

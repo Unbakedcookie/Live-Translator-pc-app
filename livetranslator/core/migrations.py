@@ -8,7 +8,7 @@ the version. Future format changes add a function here and bump state.SCHEMA_VER
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from livetranslator.core.state import SCHEMA_VERSION
 
@@ -27,7 +27,29 @@ def _v0_to_v1(data: RawConfig) -> RawConfig:
     return {**data, "schema_version": 1}
 
 
-MIGRATIONS: dict[int, Callable[[RawConfig], RawConfig]] = {0: _v0_to_v1}
+def _v1_to_v2(data: RawConfig) -> RawConfig:
+    """v2 drops the per-window "mica" style option: Mica can't render on the
+    overlay's layered (per-pixel alpha) window (G1 feedback, 2026-10-17)."""
+    raw_windows: Any = data.get("windows")
+    if not isinstance(raw_windows, list):
+        # Leave malformed data alone so validation still rejects it (the file is then set
+        # aside as damaged) instead of being silently "repaired" here.
+        return {**data, "schema_version": 2}
+    windows: list[Any] = []
+    for window in cast(list[Any], raw_windows):
+        if isinstance(window, dict):
+            entry = cast(dict[str, Any], window)
+            style: Any = entry.get("style")
+            if isinstance(style, dict):
+                kept = {k: v for k, v in cast(dict[str, Any], style).items() if k != "mica"}
+                entry = {**entry, "style": kept}
+            windows.append(entry)
+        else:
+            windows.append(window)
+    return {**data, "windows": windows, "schema_version": 2}
+
+
+MIGRATIONS: dict[int, Callable[[RawConfig], RawConfig]] = {0: _v0_to_v1, 1: _v1_to_v2}
 
 
 def migrate(data: RawConfig, target: int = SCHEMA_VERSION) -> RawConfig:

@@ -112,13 +112,45 @@ def test_gallery_builds_one_panel_per_palette(qtbot):
     assert len(gallery.panels) == 5
 
 
+def test_languages_are_sorted_a_to_z(qtbot):
+    picker = LanguagePicker("en")
+    qtbot.addWidget(picker)
+    names = [picker.itemText(i).split(" · ")[0] for i in range(picker.count())]
+    assert names == sorted(names, key=str.casefold)
+    assert names[:3] == ["Arabic", "Chinese", "English"]
+
+
+def test_language_search_filters_and_picks(qtbot):
+    picker = LanguagePicker("en")
+    qtbot.addWidget(picker)
+    picker.resize(120, 24)
+    picker.show()
+    chosen: list[str] = []
+    picker.language_changed.connect(chosen.append)
+    picker.showPopup()
+    popup = picker.popup
+    assert popup is not None and popup.isVisible()
+    assert popup.proxy.rowCount() == 15
+    # "an" (counted by hand): French(Français), German, Italian, Japanese, Korean,
+    # Russian, Spanish, Ukrainian = 8. "ko" only Korean (label or code prefix).
+    for needle, expected in (("japan", 1), ("日本", 1), ("ko", 1), ("an", 8)):
+        popup.search.setText(needle)
+        assert popup.proxy.rowCount() == expected, needle
+    popup.search.setText("span")
+    qtbot.keyClick(popup.search, Qt.Key.Key_Return)
+    assert chosen == ["es"]
+    assert not popup.isVisible()
+    assert picker.current_code() == "es"
+
+
 def test_language_popup_is_wide_enough_for_long_names(qtbot):
     picker = LanguagePicker("pt")
     qtbot.addWidget(picker)
     picker.resize(120, 24)  # narrow, like in the chrome strip
     picker.show()
     picker.showPopup()
-    view = picker.view()
-    assert view.width() >= view.sizeHintForColumn(0)
-    assert view.window().testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-    picker.hidePopup()
+    popup = picker.popup
+    assert popup is not None
+    assert popup.list.width() >= popup.list.sizeHintForColumn(0)
+    assert popup.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    popup.hide()

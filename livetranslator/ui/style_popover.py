@@ -45,7 +45,12 @@ class StylePopover(QFrame):
     """Child of its FloatingWindow (deleted with it) but shown as a separate popup window."""
 
     def __init__(self, controller: WindowController, window_id: str, parent: QWidget) -> None:
-        super().__init__(parent, Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        super().__init__(
+            parent,
+            Qt.WindowType.Popup
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint,  # never behind a pinned overlay
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._controller = controller
         self._window_id = window_id
@@ -135,9 +140,6 @@ class StylePopover(QFrame):
         self.click_through = QCheckBox("Click-through", self)
         self.click_through.toggled.connect(self._on_click_through)
         root.addWidget(self.click_through)
-        self.mica = QCheckBox("Frosted glass (Windows 11)", self)
-        self.mica.toggled.connect(lambda on: controller.set_style(window_id, mica=on))
-        root.addWidget(self.mica)
 
         controller.store.window_changed.connect(self._on_window_changed)
         self.refresh()
@@ -180,7 +182,6 @@ class StylePopover(QFrame):
             self.both,
             self.locked,
             self.click_through,
-            self.mica,
             *self.sources.values(),
         )
         for w in widgets:
@@ -210,7 +211,6 @@ class StylePopover(QFrame):
             f"Click-through ({combo} turns it off)" if combo else "Click-through (no shortcut set)"
         )
         self.click_through.setChecked(cfg.click_through)
-        self.mica.setChecked(style.mica)
         for w in widgets:
             w.blockSignals(False)
 

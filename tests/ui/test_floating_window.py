@@ -243,3 +243,19 @@ def test_click_through_message_follows_remapped_shortcut(setup):
     )
     store.dispatch(a.SetHotkey("click_through_all", None))
     assert "Set a shortcut" in window.click_through_message()
+
+
+def test_style_change_does_not_reraise_window(setup, monkeypatch):
+    # Regression (G1 feedback): every setting change re-ran SetWindowPos(TOPMOST), which
+    # pulled the overlay above its own open style popover.
+    _, controller, window = setup
+    calls: list[bool] = []
+    monkeypatch.setattr(win32, "set_topmost", lambda hwnd, on: calls.append(on))
+    window.open_style_popover()
+    controller.set_style("w1", bg_opacity=0.4)
+    controller.set_style("w1", shadow=True)
+    assert calls == []
+    controller.set_pinned("w1", False)
+    assert calls == [False]
+    assert window.popover is not None and window.popover.isVisible()
+    window.popover.close()

@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, FONTS, OVERLAY, WINDOW
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 
 
@@ -85,7 +85,6 @@ class WindowStyle(Frozen):
     outline: bool = True
     outline_width: Annotated[int, Field(ge=1, le=OVERLAY.outline_width_max)] | None = None
     shadow: bool = False
-    mica: bool = False
 
     @field_validator("custom_seed")
     @classmethod

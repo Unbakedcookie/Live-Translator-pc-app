@@ -44,7 +44,6 @@ from livetranslator.app.window_controller import WindowController
 from livetranslator.core.languages import language
 from livetranslator.core.state import Source, WindowConfig
 from livetranslator.platform import win32
-from livetranslator.theme.backdrop import apply_mica
 from livetranslator.theme.palette_gen import palette_for
 from livetranslator.theme.qss import badge_qss, window_qss
 from livetranslator.theme.tokens import FONTS, MOTION, RADIUS, SPACE, WINDOW, Palette
@@ -136,6 +135,7 @@ class ChromeBar(QWidget):
         self.setStyleSheet(window_qss(palette))
         for button in (self.pin, self.style_button, self.hide_button, self.close_button):
             button.apply_palette(palette)
+        self.language.apply_palette(palette)
         self.sources.setStyleSheet(f"color: {palette.text_secondary};")
         self.update()
 
@@ -179,7 +179,7 @@ class FloatingWindow(QWidget):
         self._snap_targets = snap_targets
         self._drag: _Drag | None = None
         self._hovered = False
-        self._mica_applied = False
+        self._native: tuple[bool, bool] | None = None  # (pinned, click-through) applied
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setMouseTracking(True)
@@ -260,17 +260,26 @@ class FloatingWindow(QWidget):
         self.update()
 
     def _apply_native(self, cfg: WindowConfig) -> None:
-        """Pin, click-through and Mica live on the native window, so they need a shown HWND."""
+        """Pin and click-through live on the native window, so they need a shown HWND.
+
+        Applied only when they change: SetWindowPos(TOPMOST) re-raises the window, which
+        used to cover the open style popover on every setting change (G1 feedback).
+        """
         if not self.isVisible():
+            return
+        wanted = (cfg.pinned, cfg.click_through)
+        if wanted == self._native:
             return
         hwnd = int(self.winId())
         win32.set_topmost(hwnd, cfg.pinned)
         win32.set_click_through(hwnd, cfg.click_through)
-        if cfg.style.mica and not self._mica_applied:
-            self._mica_applied = apply_mica(hwnd, dark=self.palette_value.is_dark)
+        self._native = wanted
+        if self.popover is not None and self.popover.isVisible():
+            self.popover.raise_()
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
+        self._native = None  # a fresh show needs the flags again
         cfg = self.config
         if cfg is not None:
             self._apply_native(cfg)

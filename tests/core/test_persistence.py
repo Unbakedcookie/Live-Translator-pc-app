@@ -56,7 +56,7 @@ def test_file_is_readable_json_with_version(tmp_path: Path):
     path = tmp_path / "settings.json"
     save_config(path, FULL)
     data = json.loads(path.read_text(encoding="utf-8"))
-    assert data["schema_version"] == 1
+    assert data["schema_version"] == 2
     assert data["windows"][0]["sources"] == ["others", "screen"]
     assert data["windows"][0]["geometry"]["screen"] == r"\\.\DISPLAY2"
 
@@ -99,7 +99,7 @@ def test_unversioned_v0_file_migrates_to_v1(tmp_path: Path):
     path.write_text('{"my_language": "fr", "lock_layout": true}', encoding="utf-8")
     config = load_config(path).config
     assert config == AppConfig(my_language="fr", lock_layout=True)
-    assert config.schema_version == 1
+    assert config.schema_version == 2
 
 
 def test_migration_chain(monkeypatch: pytest.MonkeyPatch):
@@ -193,3 +193,15 @@ def test_save_failure_sets_status_then_clears(qtbot, store: Store, tmp_path: Pat
     persistence._path = tmp_path / "ok" / "settings.json"
     persistence.save()
     assert "settings" not in store.state.runtime.statuses
+
+
+def test_v1_file_drops_the_overlay_mica_option(tmp_path: Path):
+    # Schema v2 (G1 feedback): Mica can't render on layered overlay windows.
+    path = tmp_path / "settings.json"
+    path.write_text(
+        '{"schema_version": 1, "windows": [{"id": "w1", "style": {"mica": true, "shadow": true}}]}',
+        encoding="utf-8",
+    )
+    config = load_config(path).config
+    assert config.schema_version == 2
+    assert config.windows[0].style.shadow is True
