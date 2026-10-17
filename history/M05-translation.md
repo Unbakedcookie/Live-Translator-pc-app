@@ -35,3 +35,19 @@
   - real worker thread → result arrives through the queued dispatch;
   - same-language passthrough with 0 engine calls;
   - no re-trigger.
+
+## 2026-10-17 — T051 Opus-MT adapter + translation live in the app (commits 45af05c, ab3ad4d; user away)
+- **`OpusMtEngine`:**
+  - Discovers `<models>/opus-mt/<src>-<tgt>/` folders that have both model.bin and opus_mt.json. An interrupted download is ignored (tested).
+  - Loads each pair lazily: CTranslate2 int8_float16 on GPU, int8 on CPU.
+  - Prefixes the language tag where a pair needs one (en-zh).
+  - Tests cover the contract errors, plus real translations when the models are on the PC: es, and the ja→ko pivot producing Hangul with no `⁇`.
+- **App wiring (`build_translation`):**
+  - Opus-MT is the *provisional* default until gate G4. It is the fastest option, the only one with a fast CPU path, and the smallest.
+  - Partial lines are translated except in game mode, which meets the spec §5.5 rule (p50 < 150 ms).
+  - The models were copied into this PC's app models folder (2.3 GB).
+  - **Open (user decision at G4):** how other users get the models. Converted models must be hosted somewhere, e.g. our own HF repo with CC-BY attribution.
+- **Statuses:** a missing pair or a failing engine now dispatches a plain-language "translation" status instead of only being logged (tested in test_fanout).
+- **Bug caught by reading the code before running it:**
+  - `_on_config_changed` read `self.translation`, but adding the first window emits config_changed before that attribute exists, so a first start would have raised AttributeError.
+  - Fixed by declaring the attributes before any signal is connected.

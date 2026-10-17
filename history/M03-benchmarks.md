@@ -39,3 +39,39 @@
 
 ### Notes
 - huggingface_hub warned "unauthenticated requests". No token is needed for this public dataset; it only affects rate limits.
+
+## 2026-10-17 — T033 MT benchmark run, Opus-MT replaces Argos (commit 45af05c; user away)
+- **First full run (all 5 engines):**
+  - MADLAD-400 3B: best chrF on most pairs, but p50 1068 ms and 3.5 GB VRAM.
+  - Qwen3-4B via llama-server: CUDA p50 485 ms, Vulkan 491 ms, about 2.8 GB; quality between MADLAD and Opus.
+  - Vulkan loads slower (13 s) but avoids the NVIDIA DLLs (D-026).
+  - Both Argos rows **failed** on a missing `es_en/sentencepiece.model`; the package layout differs. Not debugged: Argos can't ship anyway (D-031), so effort went to the real candidate.
+- **Fact-check** (delegated in the background while code work continued):
+  - Opus-MT licences: the HF API says Apache-2.0 for most, CC-BY-4.0 for en-de, ru-en, zh-en and tc-big. The OPUS-MT README says CC-BY 4.0 for all of them. **Decision: attribute everything as CC-BY.**
+  - `opus-mt-en-jap` is Bible-heavy (test BLEU 42 on bible-uedin), so use `opus-tatoeba-en-ja` instead.
+  - No direct ja↔ko model exists, so pivot via English.
+  - The turbo Whisper conversion moved to `dropbox-dash/` (same commit).
+  - The PyAV wheel ships GPL x264/x265 (see M04).
+- **Conversion** with `benchmarks/opus_convert.py`:
+  - Runs in a throwaway `D:\LiveTranslator\convert-venv` (CPU torch + transformers), never the app venv.
+  - Converts 14 pairs at pinned SHAs. Each pair gets a LICENCE.txt attribution and an `opus_mt.json`.
+- **Bug found by the smoke test:** en→ko came out as `⁇ # 4 단계 ⁇`.
+  - **Investigation:** the original zip name contains "sepvoc" (separate vocabularies). The HF port has one merged 32,001-token vocab with `share_encoder_decoder_embeddings: True`, so the HF port of tc-big sepvoc models is broken.
+  - **Fix:** download the original Marian release zip; it contains the CC-BY 4.0 LICENSE, a second source for D-031.
+    - Extract only the named members into a folder of their own.
+    - Turn the SentencePiece `.vocab` files into Marian YAML vocabs.
+    - CTranslate2's `OpusMTConverter` then keeps the source and target vocabularies separate, and Korean comes out correct.
+    - The steps are scripted, so the conversion is reproducible.
+- **en-zh** targets several variants (cmn/yue/wuu…) and needs a `>>cmn_Hans<<` prefix; found by grepping the converted vocabularies.
+- **Naming:** the field was first called `target_token`. Bandit B105 kept flagging it as a "hardcoded password", so it was renamed to `language_tag`.
+- **Opus-MT results:**
+  - Speed: GPU int8 p50 **116 ms** (p95 226); CPU int8 p50 **166 ms**.
+  - Memory and disk: VRAM 1.6 GB with all 14 pairs loaded (the app loads pairs lazily). Disk is 2.3 GB in float16; storing int8 would halve that (T054).
+  - Quality: chrF is typically 2–8 points under MADLAD; the largest gap is ko→en, 48 vs 59. en→ko is **better** than both alternatives (38.5 vs 35.4 and 27.4).
+- **Benchmark harness changes:**
+  - It now uses the app's own `OpusMtEngine` and router, so the pivot runs the real code path.
+  - It adds a disk-size column.
+  - Rows merge across runs, so slow engines needn't be re-run.
+  - Run logs are gitignored.
+- **What slowed us:** the Bash heredoc + Python escaped-newline trap broke source files twice more, plus one heredoc that bash couldn't parse at all.
+  - **Lesson (repeated from M02):** write prose and multi-line source with the Write/Edit tools, never through a heredoc.

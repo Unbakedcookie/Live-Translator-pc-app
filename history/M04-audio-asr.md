@@ -86,3 +86,60 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
     - frame energy;
     - **real Silero on a FLEURS clip** padded with 1 s of silence each side: no speech probability ≥ 0.5 in the padding, the first open is not inside the padding, and the final close is by silence within the trailing second.
 - **Flaky test found and fixed.** The T042 live mic smoke failed once in the full suite while the ASR benchmark's CPU config saturated the cores; it passes alone. Cause: a fixed 1.2 s sleep; the device open was slower under load. Fix: poll up to 5 s for ≥ 0.5 s of samples.
+
+## 2026-10-17 — T045 faster-whisper engine + ASR worker + app wiring (commit fde9494; user away)
+- **Engine (`FasterWhisperEngine`):**
+  - Pinned CT2 conversions are downloaded once into the app models folder via huggingface_hub: turbo for GPU (int8_float16), small for CPU (int8).
+  - On "auto" it proves the GPU with a 1 s warm-up decode, because cuBLAS only loads at the first decode. Any failure falls back to CPU, and the reason is kept.
+  - Partials decode greedily at temperature 0; finals use beam 5 with fallback.
+  - The ASR contract gained `final: bool`.
+- **PyAV licensing (D-027 resolved):**
+  - Local inspection: `avutil_license()` reports LGPLv3, but the wheel bundles `libx264` and `libx265` DLLs.
+  - The fact-checker found that pyav-ffmpeg patches FFmpeg's configure to move x264/x265 out of the GPL list. In substance the wheel is GPL-encumbered.
+  - faster-whisper only uses `av` to decode files, so `ensure_av_importable()` installs a stand-in module when av is absent.
+  - The licence gate gained an `[excluded]` table (`av = "D-027"`, tested). It passes 40 packages and lists av as "excl". The packaging step (T113) must strip it.
+  - Also added protobuf's "3-Clause BSD License" spelling as an alias.
+- **Worker design fork:** the spec's separate VAD thread is folded into the ASR thread.
+  - VAD costs about 0.1 ms per frame and lags by at most one decode (~0.4 s). One thread keeps the ordering deterministic.
+  - Each step runs VAD on all streams, then exactly one decode. Finals go first, oldest first. Otherwise the least recently served stream with at least one interval of new audio goes next, and Others wins ties.
+  - Under GPU overload every stream is simply decoded less often. The benchmark showed 2 streams at a 0.5 s interval don't fit, so this degradation matters.
+  - The Others language locks once detection probability reaches 0.7.
+  - Times are estimated when audio is read, because WASAPI loopback sends nothing during silence.
+- **SpeechController:**
+  - Devices are matched by saved name, falling back to the Windows default.
+  - The fallback warning has its own status key: a test showed the capture's "Listening to…" status was overwriting it.
+  - The mic is closed while muted.
+  - The echo filter (T046) runs on the main thread and works whichever line finishes first.
+- **Integration run setup:** real VAD, the real model on GPU, and the store, fed FLEURS clips in 0.25 s chunks "in real time".
+- **First pass:** en WER 7.4%, es 3.0%, ja CER **21%**. Reading the output lines turned up two bugs.
+  1. **"cornered the the inmates":**
+     - Cause: LocalAgreement's 80 ms boundary tolerance took a committed word a second time after its timestamp shifted in the final decode.
+     - Fix: drop a tail prefix that equals the last committed words *and* overlaps them in time. A genuine "very very" starts later and is kept.
+     - Covered by 2 tests with hand-computed values.
+  2. **A Japanese sentence lost its opening, "まもなく暴動鎮圧用の装備を着用した警":**
+     - Traced call by call: the utterance itself opened about 2.6 s late, yet the same clip on its own is detected from frame 43.
+     - Our SileroVad wrapper matches faster-whisper's own batched call exactly (max diff 0.0), so this is how the model behaves when its recurrent state carries over.
+     - After a long utterance plus silence, the model stayed under 0.04 for more than 4 s of speech. faster-whisper never sees this because it resets for every file.
+     - Fix: `vad.reset()` whenever an utterance closes on silence.
+     - Verified on 4-clip streams in ja/en/es/zh: onsets now land on the real speech start (ja 18.05 s vs 18.08 s true; en 0.5–1 s earlier than before).
+- **Second pass (5 clips × 5 languages):**
+
+  | Language | Error rate | Benchmark |
+  |---|---|---|
+  | en | 5.4% | 5.9% |
+  | es | 3.7% | 3.2% |
+  | de | 1.0% | 5.3% |
+  | ja | **4.6%** | 3.4% |
+  | zh | 17.7% | 14.2% |
+
+  - Partial p50 318 ms, final p50 407 ms.
+  - zh is weaker because Whisper mixes in Traditional characters (聯合). A possible later fix is a Simplified-Chinese initial prompt.
+- **Model load:** the first load took 66 s from a cold disk; warm loads take 4.9–5.1 s.
+- **Live Tier B check:**
+  - Setup: scratch profile, mic muted, loopback of the Windows default output. FLEURS es and ja clips were played with System.Media.SoundPlayer.
+  - Result: translated English lines appeared in the overlay. The Spanish line was correct.
+  - The Japanese line carried the ASR error 基金→危機 into the translation ("crisis").
+- **Not verified yet:**
+  - Two real streams at once (mic + loopback) on live audio.
+  - Long sessions (ring/VAD drift over hours).
+  - The CPU fallback on a PC without a GPU. It was only forced through the unit tests' fake engine.
