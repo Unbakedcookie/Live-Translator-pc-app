@@ -34,3 +34,6 @@ desktop.ini
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
+
+# Benchmark run logs (large, machine-specific)
+benchmarks/results/*.log

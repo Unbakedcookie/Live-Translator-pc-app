@@ -1,0 +1,422 @@
+[
+  {
+    "key": "opus-gpu",
+    "name": "Opus-MT · GPU int8",
+    "license": "CC-BY-4.0 / Apache-2.0 (D-031)",
+    "load_s": 6.880873099988094,
+    "vram_mb": 1635,
+    "disk_mb": 2339,
+    "chrf": {
+      "en→es": 53.97744271502805,
+      "es→en": 58.15508119727312,
+      "en→fr": 68.49078754045074,
+      "en→de": 62.46542951801671,
+      "en→ru": 56.83445823492392,
+      "ru→en": 60.0316793361482,
+      "en→ja": 29.56760713318769,
+      "ja→en": 48.613997115303405,
+      "en→ko": 38.48401157765728,
+      "ko→en": 48.05117311572838,
+      "en→zh": 33.92834316049614,
+      "zh→en": 50.4029667922434,
+      "ja→ko": 24.185374201283576
+    },
+    "latency": {
+      "n": 260,
+      "p50_ms": 115.5890499940142,
+      "p95_ms": 226.20159498328576,
+      "mean_ms": 123.8646846147066
+    },
+    "error": null,
+    "samples": {
+      "en→es": [
+        "La ONU también espera finalizar un fondo para ayudar a los países afectados por el calentamiento global a hacer frente a los impactos.",
+        "Pronto, agentes equipados con equipo antidisturbios entraron en el patio y acorralaron a los reclusos con gas lacrimógeno."
+      ],
+      "es→en": [
+        "The UN intends to complete an assistance fund for countries affected by the effects of global warming, so that it can face its impact.",
+        "Rapidly, riot control agents entered the courtyard and killed prisoners with tear gas."
+      ],
+      "en→fr": [
+        "L'ONU espère également finaliser un fonds destiné à aider les pays touchés par le réchauffement de la planète à faire face à ces effets.",
+        "Bientôt, des agents équipés d'engins anti-émeutes sont entrés dans la cour et ont coincé les détenus avec du gaz lacrymogène."
+      ],
+      "en→de": [
+        "Die UN hofft auch, einen Fonds abzuschließen, um Ländern zu helfen, die von der globalen Erwärmung betroffen sind, die Auswirkungen zu bewältigen.",
+        "Bald betraten Offiziere, die mit Aufruhr ausgerüstet waren, den Hof und umzingelten die Insassen mit Tränengas."
+      ],
+      "en→ru": [
+        "ООН также надеется завершить работу над фондом для оказания помощи странам, пострадавшим от глобального потепления, в преодолении последствий.",
+        "Вскоре полицейские, оснащенные снаряжением для подавления беспорядков, вошли во двор и загнали заключенных в угол со слезоточивым газом."
+      ],
+      "ru→en": [
+        "The United Nations also hopes to complete the establishment of a fund to assist countries affected by global warming to combat its effects.",
+        "Soon, guards in protective equipment went into the yard and cornered the prisoners using tear gas."
+      ],
+      "en→ja": [
+        "国連 は また , 地球 温暖 化 の 影響 を 受け た 国々 が 影響 に 対処 する の を 助ける ため の 資金 を 最終 的 に 調達 し たい と 考え て い ます。",
+        "ま も なく , 暴動 用 の 道具 を 備え た 警官 が 庭 に 入っ て 来 て , 受刑 者 たち を 催涙 ガス で 追い詰め まし た。"
+      ],
+      "ja→en": [
+        "And at the UN, we want to make a final decision about a fund to help countries affected by global warming to cope with its effects.",
+        "Police officers armed with riot - control equipment soon entered the camp and cornered the prisoners with tear gas."
+      ],
+      "en→ko": [
+        "유엔은 또한 지구 온난화의 영향을받는 국가들이 그 영향에 대처할 수 있도록 기금을 마무리하기를 희망합니다.",
+        "곧, 폭동 장비를 갖춘 장교가 마당에 들어가서 최루 가스로 수감자들을 모았습니다."
+      ],
+      "ko→en": [
+        "And the U.N. is looking forward to completing the funding to help deal with countries affected by global warming.",
+        "Soon, police, armed with riot-repressive equipment, entered the yard and used tear gas to push prisoners into the corner."
+      ],
+      "en→zh": [
+        "联合国还希望最后确定一项基金,以帮助受全球变暖影响的国家应对其影响。",
+        "很快,配备防暴装备的警察进入院子里,用催泪瓦斯包围囚犯。"
+      ],
+      "zh→en": [
+        "The United Nations also hoped that a fund would eventually be established to help countries cope with the effects of global warming.",
+        "Soon, the riot police, equipped with riot control equipment, entered the courtyard and used tear gas to drive the prisoners out of their way."
+      ],
+      "ja→ko": [
+        "그리고 UN에서는 지구 온난화에 영향을 받는 나라들이 그 영향에 대처할 수 있도록 기금에 대한 최종 결정을 내리고자 합니다.",
+        "폭동으로 무장 한 경찰관 - 통제 장비가 곧 캠프에 들어 와서 최루 가스로 포로들을 모았습니다."
+      ]
+    }
+  },
+  {
+    "key": "opus-cpu",
+    "name": "Opus-MT · CPU int8",
+    "license": "CC-BY-4.0 / Apache-2.0 (D-031)",
+    "load_s": 6.290336400008528,
+    "vram_mb": null,
+    "disk_mb": 2339,
+    "chrf": {
+      "en→es": 54.421463098664404,
+      "es→en": 58.08692927610638,
+      "en→fr": 69.25812392051897,
+      "en→de": 63.64424934871998,
+      "en→ru": 56.2161045286631,
+      "ru→en": 59.421269291771026,
+      "en→ja": 28.98144861000913,
+      "ja→en": 48.24498985288153,
+      "en→ko": 38.74014042765646,
+      "ko→en": 47.200085480815126,
+      "en→zh": 33.72815264272136,
+      "zh→en": 51.45480726370345,
+      "ja→ko": 26.46877204043996
+    },
+    "latency": {
+      "n": 260,
+      "p50_ms": 166.27980000339448,
+      "p95_ms": 336.28628000587923,
+      "mean_ms": 178.83940884527803
+    },
+    "error": null,
+    "samples": {
+      "en→es": [
+        "La ONU también espera finalizar un fondo para ayudar a los países afectados por el calentamiento global a hacer frente a los impactos.",
+        "Pronto, agentes equipados con equipo antidisturbios entraron en el patio y acorralaron a los reclusos con gas lacrimógeno."
+      ],
+      "es→en": [
+        "The UN intends to complete an assistance fund for countries affected by the effects of global warming in order to cope with its impact.",
+        "Rapidly, riot control agents entered the courtyard and killed inmates with tear gas."
+      ],
+      "en→fr": [
+        "L'ONU espère également finaliser un fonds destiné à aider les pays touchés par le réchauffement de la planète à faire face à ces effets.",
+        "Bientôt, des agents équipés d'engins anti-émeutes sont entrés dans la cour et ont coincé les détenus avec du gaz lacrymogène."
+      ],
+      "en→de": [
+        "Die UN hofft auch, einen Fonds abzuschließen, der Ländern, die von der globalen Erwärmung betroffen sind, helfen soll, mit den Auswirkungen fertig zu werden.",
+        "Bald betraten Offiziere, die mit Aufruhr ausgerüstet waren, den Hof und umzingelten die Insassen mit Tränengas."
+      ],
+      "en→ru": [
+        "ООН также надеется завершить работу над фондом для оказания помощи странам, пострадавшим от глобального потепления, в преодолении последствий этого явления.",
+        "Вскоре полицейские, оснащенные снаряжением для подавления беспорядков, вошли во двор и загнали заключенных в угол со слезоточивым газом."
+      ],
+      "ru→en": [
+        "The United Nations also hopes to complete the establishment of a fund to assist countries affected by global warming to combat its effects.",
+        "Soon the guards in protective equipment went into the yard and cornered the prisoners using tear gas."
+      ],
+      "en→ja": [
+        "国連はまた,地球温暖化の影響を受ける国を援助するための資金を最終目標としている.",
+        "ま も なく , 暴動 用 の 道具 を 備え た 警官 が 庭 に 入っ て 来 て , 受刑 者 たち を 催涙 ガス で 追い詰め まし た。"
+      ],
+      "ja→en": [
+        "And at the UN, we want to make a final decision on a fund to help countries affected by global warming to cope with its effects.",
+        "Police officers, armed with riot - control equipment, soon entered the camp and cornered the prisoners with tear gas."
+      ],
+      "en→ko": [
+        "유엔은 또한 지구 온난화의 영향을받는 국가들이 그 영향에 대처할 수 있도록 기금을 마무리하기를 희망합니다.",
+        "곧, 폭동 장비를 갖춘 장교가 마당에 들어가서 최루 가스로 수감자들을 모았습니다."
+      ],
+      "ko→en": [
+        "And the U.N. is looking forward to completing its fund of funding to help deal with countries affected by global warming.",
+        "Soon, police, armed with riot-repressive equipment, entered the yard and used tear gas to push prisoners into the corner."
+      ],
+      "en→zh": [
+        "联合国还希望最后确定一项基金,以帮助受全球变暖影响的国家应对其影响。",
+        "很快,配备防暴装备的警察进入院子里,用催泪瓦斯包围囚犯。"
+      ],
+      "zh→en": [
+        "The United Nations also hoped that a fund would eventually be established to help countries cope with the effects of global warming.",
+        "Soon, the police, equipped with riot control equipment, entered the courtyard and used tear gas to drive the prisoners out of their way."
+      ],
+      "ja→ko": [
+        "그리고 유엔은 지구 온난화로 영향을 받은 나라들이 그 영향에 대처하도록 돕기 위한 기금에 대한 최종 결정을 내리고자 합니다.",
+        "폭동 통제 장비로 무장 한 경찰관은 곧 캠프에 들어가서 최루 가스로 포로들을 모았습니다."
+      ]
+    }
+  },
+  {
+    "key": "madlad",
+    "name": "MADLAD-400 3B · GPU int8",
+    "license": "Apache-2.0",
+    "load_s": 4.375257200008491,
+    "vram_mb": 3475,
+    "chrf": {
+      "en→es": 54.26409393497739,
+      "es→en": 61.37034733484181,
+      "en→fr": 72.02242885050232,
+      "en→de": 64.85388590295179,
+      "en→ru": 61.961832982914125,
+      "ru→en": 63.45067548012386,
+      "en→ja": 32.264690014563755,
+      "ja→en": 55.99264365386092,
+      "en→ko": 35.438801350057894,
+      "ko→en": 59.0861408785307,
+      "en→zh": 35.25347478554175,
+      "zh→en": 56.58942879705471,
+      "ja→ko": 28.262668271555746
+    },
+    "latency": {
+      "n": 260,
+      "p50_ms": 1067.4943500052905,
+      "p95_ms": 2106.2964100114186,
+      "mean_ms": 1144.6434450015659
+    },
+    "error": null,
+    "samples": {
+      "en→es": [
+        "La ONU también espera finalizar un fondo para ayudar a los países afectados por el calentamiento global a hacer frente a los impactos.",
+        "Pronto, oficiales equipados con equipo antidisturbios entraron en el patio y acorralaron a los reclusos con gas lacrimógeno."
+      ],
+      "es→en": [
+        "The UN intends to complete a fund of assistance in favour of countries victims of the effects of global warming, in order to be able to face its impact.",
+        "Agents armed with riot control equipment quickly entered the courtyard and shot down the prisoners with tear gas."
+      ],
+      "en→fr": [
+        "L'ONU espère également finaliser un fonds pour aider les pays touchés par le réchauffement climatique à faire face aux impacts.",
+        "Bientôt, des agents équipés de matériel anti-émeute sont entrés dans la cour et ont coincé les détenus avec des gaz lacrymogènes."
+      ],
+      "en→de": [
+        "Die Vereinten Nationen hoffen auch, einen Fonds zu finalisieren, um Ländern zu helfen, die von der globalen Erwärmung betroffen sind, um mit den Auswirkungen fertig zu werden.",
+        "Bald betraten Beamte, die mit Aufruhr-Ausrüstung ausgestattet waren, den Hof und setzten die Insassen mit Tränengas in eine Ecke."
+      ],
+      "en→ru": [
+        "ООН также надеется завершить создание фонда для оказания помощи странам, пострадавшим от глобального потепления, в преодолении его последствий.",
+        "Вскоре во двор вошли полицейские, вооруженные средствами борьбы с беспорядками, и окружили заключенных с помощью слезоточивого газа."
+      ],
+      "ru→en": [
+        "The UN also hopes to finalize the establishment of a fund to assist countries affected by global warming to combat its effects.",
+        "Soon, guards in protective gear entered the courtyard and cornered the prisoners, using tear gas."
+      ],
+      "en→ja": [
+        "国連はまた、地球温暖化によって影響を受けた国々がその影響に対処するのを助けるための基金を完成させることを望んでいる。",
+        "すぐに暴動防止装置を装備した警官が庭に入り、催涙ガスで囚人たちを追い詰めた。"
+      ],
+      "ja→en": [
+        "In addition, the United Nations wants to finalize the decision on a fund to help countries affected by global warming cope with its effects.",
+        "Soon, police officers wearing riot control equipment entered the camp and chased the prisoners with tear gas."
+      ],
+      "en→ko": [
+        "유엔은 또한 지구 온난화의 영향에 대처하기 위해 지구 온난화에 영향을받는 국가를 돕기 위해 기금을 마무리하기를 희망합니다.",
+        "곧, 폭동 장비를 갖춘 경찰관들이 마당으로 들어가 최루가스로 수감자들을 몰아붙였다."
+      ],
+      "ko→en": [
+        "The UN also hopes to complete the creation of a fund to help countries affected by global warming cope.",
+        "Soon, policemen equipped with riot control equipment entered the courtyard and used gas to push the prisoners into a corner."
+      ],
+      "en→zh": [
+        "联合国还希望最终确定一项基金,帮助受全球变暖影响的国家应对影响。",
+        "不久，配备防暴装备的警察进入院子，用催泪瓦斯将囚犯围住。"
+      ],
+      "zh→en": [
+        "The United Nations also hopes to eventually establish a fund to help countries deal with the effects of global warming.",
+        "Soon, policemen equipped with riot-control equipment entered the courtyard and used tear gas to force the prisoners out of their way."
+      ],
+      "ja→ko": [
+        "또한, 유엔은 지구 온난화의 영향을 받고 있는 국가들이 그 영향에 대처할 수 있도록 지원하기 위한 기금에 대해 최종 결정을 내리고 싶습니다.",
+        "곧 폭동 진압용 장비를 착용한 경찰관들이 수용소에 들어가 최루가스로 수감자들을 쫓아냈다."
+      ]
+    },
+    "disk_mb": 2839
+  },
+  {
+    "key": "qwen-cuda",
+    "name": "Qwen3-4B Q4_K_M · llama.cpp cuda",
+    "license": "Apache-2.0 (model) / MIT (llama.cpp)",
+    "load_s": 4.603192600014154,
+    "vram_mb": 2855,
+    "chrf": {
+      "en→es": 53.06802015139951,
+      "es→en": 62.74711031267183,
+      "en→fr": 63.65057993979333,
+      "en→de": 55.71670087242136,
+      "en→ru": 57.70910982518417,
+      "ru→en": 62.10641251084129,
+      "en→ja": 34.57657649069616,
+      "ja→en": 52.07261582160114,
+      "en→ko": 27.409754477711274,
+      "ko→en": 54.99301519335228,
+      "en→zh": 35.49477747336864,
+      "zh→en": 57.96903349831549,
+      "ja→ko": 27.409959722166565
+    },
+    "latency": {
+      "n": 260,
+      "p50_ms": 484.46784999396186,
+      "p95_ms": 1008.7001449821396,
+      "mean_ms": 546.9700057693094
+    },
+    "error": null,
+    "samples": {
+      "en→es": [
+        "La ONU también espera finalizar un fondo para ayudar a los países afectados por el calentamiento global a enfrentar sus consecuencias.",
+        "Pronto, oficiales con equipo de protección entraron al patio y encerraron a los presos con gas lacrimógeno."
+      ],
+      "es→en": [
+        "The UN intends to complete a assistance fund for countries affected by the effects of global warming, in order to face its impact.",
+        "Quickly, agents armed with riot equipment entered the courtyard and subdued the prisoners with tear gas."
+      ],
+      "en→fr": [
+        "L'ONU espère également finaliser un fonds afin d'aider les pays touchés par le réchauffement climatique à faire face aux conséquences.",
+        "Bientôt, des officiers armés de matériel de protection pénétrèrent dans le jardin et encerclèrent les détenus avec du gaz lacrymogène."
+      ],
+      "en→de": [
+        "Die Vereinten Nationen hoffen ebenfalls, einen Fonds zu schließen, der Länder hilft, die Auswirkungen des Klimawandels zu bewältigen.",
+        "Bald kamen Beamte mit Störungsgewehren in den Hof und umzingelten die Gefangenen mit Tränengas."
+      ],
+      "en→ru": [
+        "Организация Объединённых Наций также надеется завершить фонд, который поможет странам, пострадавшим от глобального потепления, справляться с последствиями.",
+        "Скоро офицеры в бронежилетах вошли на территорию и окружили заключённых химическим газом."
+      ],
+      "ru→en": [
+        "The UN also hopes to complete the establishment of a fund to assist countries affected by global warming in combating its effects.",
+        "Soon, the guards in protective gear entered the yard and forced the prisoners into a corner, using a tear gas."
+      ],
+      "en→ja": [
+        "国連も、気候変動の影響を受けた国々が対応できるよう、資金を設立し、その最終的な決定を目指している。",
+        "すぐに、暴動用の装備を着た警官たちが庭に進入し、テアガスを使って囚人を囲み込んだ。"
+      ],
+      "ja→en": [
+        "Furthermore, the United Nations aims to finally decide on establishing a fund to support countries affected by climate change as they address these impacts.",
+        "Soon, police officers donning equipment for suppressing riots entered the prison and drove the detainees into corners using tear gas."
+      ],
+      "en→ko": [
+        "유엔은 세계 난민 문제에 영향을 받은 국가들이 그 영향을 견디기 위해 기금을 마련할 수 있도록 마무리하기를 기대하고 있다.",
+        "곧, 폭동 장비를 착용한 경찰관들이 병원에 들어가 휘발성 가스를 사용하며 수감자들을 포위했다."
+      ],
+      "ko→en": [
+        "The United Nations also expects to complete the establishment of a fund to assist countries affected by climate change.",
+        "Soon, police officers equipped with riot suppression equipment entered the yard and forced the detainees into a corner using tear gas."
+      ],
+      "en→zh": [
+        "联合国还希望设立一项基金，以帮助受全球变暖影响的国家应对相关影响。",
+        "不久，身穿防暴装备的警官进入院子，使用催泪瓦斯将囚犯围困起来。"
+      ],
+      "zh→en": [
+        "The United Nations also hopes to establish a fund to help affected countries cope with the impacts of global warming.",
+        "Soon, police officers equipped with riot gear entered the yard and drove the prisoners into a corner using tear gas."
+      ],
+      "ja→ko": [
+        "또한 유엔에서는 지구 온실가스 증가의 영향을 받는 국가들이 그 영향에 대응할 수 있도록 지원하기 위한 기금에 대해 최종 결정을 원하고 있습니다.",
+        "곧 감시관들이 폭동 억제를 위해 장비를 착용하고 감옥에 들어가, 수감자들을 촉촉 가스로 몰아냈다."
+      ]
+    },
+    "disk_mb": 3528
+  },
+  {
+    "key": "qwen-vulkan",
+    "name": "Qwen3-4B Q4_K_M · llama.cpp vulkan",
+    "license": "Apache-2.0 (model) / MIT (llama.cpp)",
+    "load_s": 13.126171099982457,
+    "vram_mb": 2769,
+    "chrf": {
+      "en→es": 53.1670947179005,
+      "es→en": 62.78556424655745,
+      "en→fr": 63.61665072713796,
+      "en→de": 55.0572270329314,
+      "en→ru": 58.15843321767187,
+      "ru→en": 62.40700088835273,
+      "en→ja": 35.12056868202224,
+      "ja→en": 52.45274429801904,
+      "en→ko": 26.279016186553783,
+      "ko→en": 54.46357524672476,
+      "en→zh": 34.6635163697751,
+      "zh→en": 57.8272533900836,
+      "ja→ko": 27.741070952212215
+    },
+    "latency": {
+      "n": 260,
+      "p50_ms": 490.6749000219861,
+      "p95_ms": 1066.5024900110438,
+      "mean_ms": 604.4387119213262
+    },
+    "error": null,
+    "samples": {
+      "en→es": [
+        "La ONU también espera finalizar un fondo para ayudar a los países afectados por el calentamiento global a enfrentar sus consecuencias.",
+        "Pronto, oficiales con equipo de protección entraron al patio y encerraron a los presos con gas lacrimógeno."
+      ],
+      "es→en": [
+        "The UN intends to complete a assistance fund for countries affected by the effects of global warming, in order to face its impact.",
+        "Quickly, agents armed with riot equipment entered the courtyard and subdued the prisoners with tear gas."
+      ],
+      "en→fr": [
+        "L'ONU espère également finaliser un fonds afin d'aider les pays touchés par le réchauffement climatique à faire face aux conséquences.",
+        "Bientôt, des officiers armés de matériel de protection pénétrèrent dans le jardin et encerclèrent les détenus avec du gaz lacrymogène."
+      ],
+      "en→de": [
+        "Die Vereinten Nationen hoffen ebenfalls, einen Fonds zu schließen, der Länder hilft, die Auswirkungen des Klimawandels zu bewältigen.",
+        "Bald kamen Beamte mit Störungsgewehren in den Hof und umzingelten die Gefangenen mit Tränengas."
+      ],
+      "en→ru": [
+        "Организация Объединённых Наций также надеется завершить фонд, который поможет странам, пострадавшим от глобального потепления, справляться с последствиями.",
+        "Скорее, офицеры в экипировке противопожарного оборудования вошли на территорию и окружили заключённых химическим газом."
+      ],
+      "ru→en": [
+        "The UN also hopes to complete the establishment of a fund to assist countries affected by global warming in combating its effects.",
+        "Soon, guards in protective gear entered the yard and forced the prisoners into a corner, using a tear gas."
+      ],
+      "en→ja": [
+        "国連も、気候変動の影響を受けた国々が対応できるよう、資金を設立し、その最終的な決定を目指している。",
+        "すぐに、暴動用の装備を着た警官たちが庭に進入し、テアガスを使って囚人を囲み込んだ。"
+      ],
+      "ja→en": [
+        "Moreover, the United Nations aims to finally decide on establishing a fund to support countries affected by climate change as they cope with its impacts.",
+        "Soon, police officers donning equipment for suppressing riots entered the prison and drove the inmates into corners using tear gas."
+      ],
+      "en→ko": [
+        "유엔은 세계 난민 문제에 영향을 받은 국가들이 그 영향을 견디기 위해 기금을 마련할 것을 기대하고 있다.",
+        "곧, 폭동 장비를 착용한 경찰관들이 병원에 들어가 테어가스를 사용하며 수감자들을 둘러싸게 되었다."
+      ],
+      "ko→en": [
+        "The United Nations also expects to complete the establishment of a fund to assist countries affected by climate change.",
+        "Soon, police officers equipped with riot suppression equipment entered the yard and forced the detainees into a corner using tear gas."
+      ],
+      "en→zh": [
+        "联合国还希望设立一项基金，以帮助受全球变暖影响的国家应对相关影响。",
+        "不久，身穿防暴装备的警官进入院子，使用催泪瓦斯将囚犯围困起来。"
+      ],
+      "zh→en": [
+        "The United Nations also hopes to establish a fund to help countries cope with the impacts of global warming.",
+        "Soon, police officers equipped with riot gear entered the yard and drove the prisoners into a corner using tear gas."
+      ],
+      "ja→ko": [
+        "또한 유엔에서는 지구 온실가스 증가의 영향을 받는 국가들이 그 영향에 대응할 수 있도록 지원하기 위한 기금에 대해 최종 결정을 원하고 있습니다.",
+        "곧 감시관들이 폭동 억제를 위해 장비를 착용하고 감옥에 들어가, 수감자들을 촉발 가스로 몰아냈다."
+      ]
+    },
+    "disk_mb": 2470
+  }
+]

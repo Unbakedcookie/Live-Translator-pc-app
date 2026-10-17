@@ -126,3 +126,43 @@ def test_read_wav_scales_int16(tmp_path: Path):
         wav.writeframes(b"\x00\x00\x00\x00")
     with pytest.raises(ValueError, match="expected 16 kHz mono"):
         read_wav(stereo)
+
+
+def _float_wav(path: Path, values: list[float], rate: int = 16000) -> None:
+    """Hand-built FLEURS-style WAV: format 3 (IEEE float), 18-byte fmt chunk (cbSize = 0)."""
+    import struct
+
+    data = np.asarray(values, dtype="<f4").tobytes()
+    fmt = struct.pack("<HHIIHHH", 3, 1, rate, rate * 4, 4, 32, 0)
+    body = (
+        b"WAVE"
+        + b"fmt "
+        + struct.pack("<I", len(fmt))
+        + fmt
+        + b"data"
+        + struct.pack("<I", len(data))
+        + data
+    )
+    path.write_bytes(b"RIFF" + struct.pack("<I", len(body)) + body)
+
+
+def test_read_wav_float32_like_fleurs(tmp_path: Path):
+    path = tmp_path / "f.wav"
+    _float_wav(path, [0.25, -0.5, 1.0])
+    audio = read_wav(path)
+    assert audio.dtype == np.float32
+    assert audio.tolist() == [0.25, -0.5, 1.0]
+    _float_wav(path, [0.0], rate=48000)
+    with pytest.raises(ValueError, match="expected 16 kHz mono"):
+        read_wav(path)
+
+
+def test_read_real_fleurs_clip_if_present():
+    from benchmarks.corpus import default_dest
+
+    clip = default_dest() / "fleurs" / "en" / "1510.wav"
+    if not clip.exists():
+        pytest.skip("benchmark corpus not downloaded")
+    audio = read_wav(clip)
+    assert 1.0 < len(audio) / 16000 < 30.0
+    assert float(np.abs(audio).max()) <= 1.0

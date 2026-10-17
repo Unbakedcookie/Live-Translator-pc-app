@@ -18,9 +18,9 @@ import csv
 import io
 import json
 import os
+import struct
 import sys
 import tarfile
-import wave
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -105,16 +105,43 @@ def extract_selected(archive: Path, wanted: Mapping[str, Path]) -> set[str]:
     return written
 
 
+WAVE_FORMAT_PCM = 1
+WAVE_FORMAT_IEEE_FLOAT = 3
+
+
 def read_wav(path: Path) -> NDArray[np.float32]:
-    """16 kHz mono 16-bit PCM WAV -> float32 in [-1, 1)."""
-    with wave.open(str(path), "rb") as wav:
-        if wav.getframerate() != SAMPLE_RATE or wav.getnchannels() != 1 or wav.getsampwidth() != 2:
-            raise ValueError(
-                f"{path.name}: expected 16 kHz mono 16-bit, got {wav.getframerate()} Hz, "
-                f"{wav.getnchannels()} ch, {8 * wav.getsampwidth()}-bit"
-            )
-        frames = wav.readframes(wav.getnframes())
-    return (np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0).astype(np.float32)
+    """16 kHz mono WAV, 16-bit PCM or 32-bit float -> float32 in [-1, 1].
+
+    FLEURS ships 32-bit float WAVs (format 3, 18-byte fmt chunk), which the stdlib `wave`
+    module can't read, so this walks the RIFF chunks itself.
+    """
+    data = path.read_bytes()
+    if data[:4] != b"RIFF" or data[8:12] != b"WAVE":
+        raise ValueError(f"{path.name}: not a RIFF/WAVE file")
+    fmt: tuple[int, int, int, int] | None = None
+    samples: bytes | None = None
+    pos = 12
+    while pos + 8 <= len(data):
+        chunk_id = data[pos : pos + 4]
+        size = struct.unpack_from("<I", data, pos + 4)[0]
+        body = data[pos + 8 : pos + 8 + size]
+        if chunk_id == b"fmt ":
+            tag, channels, rate = struct.unpack_from("<HHI", body, 0)
+            bits = struct.unpack_from("<H", body, 14)[0]
+            fmt = (tag, channels, rate, bits)
+        elif chunk_id == b"data":
+            samples = body
+        pos += 8 + size + (size & 1)  # chunks are word-aligned
+    if fmt is None or samples is None:
+        raise ValueError(f"{path.name}: missing fmt or data chunk")
+    tag, channels, rate, bits = fmt
+    if rate != SAMPLE_RATE or channels != 1:
+        raise ValueError(f"{path.name}: expected 16 kHz mono, got {rate} Hz, {channels} ch")
+    if tag == WAVE_FORMAT_PCM and bits == 16:
+        return (np.frombuffer(samples, dtype="<i2").astype(np.float32) / 32768.0).astype(np.float32)
+    if tag == WAVE_FORMAT_IEEE_FLOAT and bits == 32:
+        return np.frombuffer(samples, dtype="<f4").astype(np.float32)
+    raise ValueError(f"{path.name}: unsupported WAV format {tag} / {bits}-bit")
 
 
 @dataclass(frozen=True)
