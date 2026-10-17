@@ -68,8 +68,15 @@ class ASREngine(Protocol):
         ...
 
     def transcribe(
-        self, audio: Audio, *, language: str | None = None, prompt: str | None = None
+        self,
+        audio: Audio,
+        *,
+        language: str | None = None,
+        prompt: str | None = None,
+        final: bool = False,
     ) -> Transcription:
         """Transcribe `audio`. `language=None` asks the engine to detect it. `prompt` is
-        preceding text that conditions decoding. Raises EngineNotLoaded before `load()`."""
+        preceding text that conditions decoding. `final=False` is a streaming partial (fast:
+        greedy, no fallback); `final=True` is the utterance's last decode (accurate: beam
+        search with temperature fallback; T045). Raises EngineNotLoaded before `load()`."""
         ...

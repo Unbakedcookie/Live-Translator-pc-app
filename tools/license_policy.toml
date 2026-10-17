@@ -11,6 +11,11 @@ allowed = [
 lgpl_ids = ["LGPL-3.0", "LGPL-3.0-only", "LGPL-3.0-or-later"]
 lgpl_packages = ["pyside6-essentials", "shiboken6"]
 
+# Installed as a dependency but never shipped: the packaging step (T113) strips these, so the
+# gate skips them and lists them as "excl". Each must cite a DATA_TRACKER id.
+[excluded]
+av = "D-027"  # faster-whisper dependency; the wheel bundles GPL x264/x265 DLLs
+
 # Trove classifier / free-text names → SPDX ids.
 [aliases]
 "MIT License" = "MIT"
@@ -18,6 +23,7 @@ lgpl_packages = ["pyside6-essentials", "shiboken6"]
 "BSD License" = "BSD"
 "BSD-2-Clause License" = "BSD-2-Clause"
 "BSD-3-Clause License" = "BSD-3-Clause"
+"3-Clause BSD License" = "BSD-3-Clause"  # protobuf
 "Apache Software License" = "Apache-2.0"
 "Apache License 2.0" = "Apache-2.0"
 "Apache 2.0" = "Apache-2.0"

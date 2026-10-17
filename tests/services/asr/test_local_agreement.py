@@ -86,3 +86,27 @@ def test_n3_needs_three_agreeing_hypotheses():
     assert la.update(hyp(W_I, THINK, WE)).committed == "I think"
     with pytest.raises(ValueError):
         LocalAgreement(n=1)
+
+
+def test_retimed_committed_word_is_not_repeated_at_the_seam():
+    # T045 integration run produced "cornered the the inmates": the final decode re-timed
+    # the committed " the" (0.5-0.7) to start at 0.65, inside the 80 ms boundary tolerance
+    # (committed end 0.7 - 0.08 = 0.62 <= 0.65), so it was taken twice.
+    la = LocalAgreement()
+    first = hyp((" cornered", 0.0, 0.5), (" the", 0.5, 0.7))
+    la.update(first)
+    la.update(first)
+    assert la.committed_text == "cornered the"
+    final = la.finalize(hyp((" cornered", 0.0, 0.55), (" the", 0.65, 0.8), (" inmates", 0.8, 1.3)))
+    assert final == AgreementState("cornered the inmates", "", "inmates")
+
+
+def test_real_spoken_repetition_is_kept():
+    # The second " very" starts at 0.8, after the committed one's end + tolerance
+    # (0.7 + 0.08 = 0.78), so it is a genuine second "very", not a re-timed copy.
+    la = LocalAgreement()
+    first = hyp((" very", 0.4, 0.7))
+    la.update(first)
+    la.update(first)
+    final = la.finalize(hyp((" very", 0.4, 0.7), (" very", 0.8, 1.1), (" good", 1.1, 1.4)))
+    assert final.committed == "very very good"

@@ -25,6 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="play a scripted conversation into the windows (look-and-feel review)",
     )
+    parser.add_argument(
+        "--no-speech",
+        action="store_true",
+        help="don't open the microphone or speakers (windows and settings only)",
+    )
     return parser
 
 
@@ -40,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from livetranslator.app.application import run  # Qt is only loaded when the app starts
 
-    return run(demo=args.demo)
+    return run(demo=args.demo, speech=not args.no_speech)
 
 
 if __name__ == "__main__":

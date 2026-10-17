@@ -67,7 +67,24 @@ class LocalAgreement:
         if not self._committed:
             return [w for w in words if _norm(w.text)]
         boundary = self._committed[-1].end - OVERLAP_TOLERANCE_S
-        return [w for w in words if w.start >= boundary and _norm(w.text)]
+        tail = [w for w in words if w.start >= boundary and _norm(w.text)]
+        return tail[self._repeated_prefix(tail) :]
+
+    def _repeated_prefix(self, tail: Sequence[TimedWord]) -> int:
+        """How many leading tail words are the last committed words again, re-timed.
+
+        The tolerance above lets a committed word whose timestamp shifted by a few tens of ms
+        back into the tail ("cornered the the inmates", T045 integration run). A repeat
+        counts only when it overlaps the committed word in time; a real spoken repetition
+        ("very very") starts after it ended.
+        """
+        for k in range(min(3, len(tail), len(self._committed)), 0, -1):
+            committed = self._committed[-k:]
+            if [_norm(w.text) for w in tail[:k]] == [_norm(w.text) for w in committed] and (
+                tail[0].start < committed[0].end + OVERLAP_TOLERANCE_S
+            ):
+                return k
+        return 0
 
     def update(self, words: Sequence[TimedWord]) -> AgreementState:
         """Feed the latest hypothesis for the whole utterance buffer."""

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from loguru import logger
 from PySide6.QtCore import QObject
@@ -14,12 +15,14 @@ from PySide6.QtWidgets import QApplication
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.log import setup_logging
 from livetranslator.app.paths import AppPaths, app_paths
+from livetranslator.app.speech_controller import SpeechController
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
 from livetranslator.core.persistence import Persistence, load_config
 from livetranslator.core.state import AppState, StatusLevel
 from livetranslator.core.store import Store
+from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 
@@ -34,7 +37,7 @@ HOTKEY_LABELS = {
 
 
 class LiveTranslatorApp(QObject):
-    def __init__(self, paths: AppPaths, quit_app: Callable[[], None]) -> None:
+    def __init__(self, paths: AppPaths, quit_app: Callable[[], None], speech: bool = False) -> None:
         super().__init__()
         register_fonts(bundled_font_files())
         loaded = load_config(paths.settings_file)
@@ -51,6 +54,10 @@ class LiveTranslatorApp(QObject):
             self.controller.add_window()
         self.windows = WindowManager(self.store, self.controller, quit_app, self)
         self.demo: QObject | None = None  # `--demo` feed (T062)
+        self.speech: SpeechController | None = None
+        if speech:
+            self.speech = build_speech(self.store, paths)
+            self.speech.start()
 
     def _on_config_changed(self, section: str) -> None:
         if section in ("hotkeys", "all"):
@@ -77,13 +84,27 @@ class LiveTranslatorApp(QObject):
                 )
 
     def shutdown(self) -> None:
+        if self.speech is not None:
+            self.speech.stop()
         self.persistence.flush()
         self.hotkeys.close()
         self.windows.close_all()
         logger.info("{} stopped", APP_DISPLAY_NAME)
 
 
-def run(demo: bool = False) -> int:
+def build_speech(store: Store, paths: AppPaths) -> SpeechController:
+    """Mic + loopback capture feeding faster-whisper (T045). Heavy imports stay lazy."""
+    from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
+    from livetranslator.services.audio.devices import list_devices
+
+    configured = store.state.config.models_dir
+    models_dir = Path(configured) if configured else paths.default_models_dir
+    engine = FasterWhisperEngine(models_dir)
+    worker = ASRWorker(engine, store.dispatch)
+    return SpeechController(store, worker, list_devices)
+
+
+def run(demo: bool = False, speech: bool = True) -> int:
     app = QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_DISPLAY_NAME)
@@ -92,7 +113,7 @@ def run(demo: bool = False) -> int:
     paths.ensure()
     setup_logging(paths.log_dir)
     logger.info("{} {} starting", APP_DISPLAY_NAME, __version__)
-    live = LiveTranslatorApp(paths, app.quit)
+    live = LiveTranslatorApp(paths, app.quit, speech=speech and not demo)
     app.aboutToQuit.connect(live.shutdown)
     if demo:
         from livetranslator.app.demo import DemoFeed

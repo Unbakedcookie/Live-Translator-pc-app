@@ -3,6 +3,8 @@
 # Qt: Essentials only, never the full "PySide6" / "PySide6-Addons" (GPL-only modules; D-021).
 PySide6-Essentials==6.12.0
 coloraide==8.13.1
+faster-whisper==1.2.1  # T045; pulls in av, which is never shipped (D-027)
+huggingface_hub==2.2.0
 loguru==0.7.3
 materialyoucolor==3.0.4
 numpy==2.5.4

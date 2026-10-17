@@ -40,7 +40,12 @@ class FakeASR:
         self._loaded = False
 
     def transcribe(
-        self, audio: Audio, *, language: str | None = None, prompt: str | None = None
+        self,
+        audio: Audio,
+        *,
+        language: str | None = None,
+        prompt: str | None = None,
+        final: bool = False,
     ) -> Transcription:
         if not self._loaded:
             raise EngineNotLoaded("load() first")

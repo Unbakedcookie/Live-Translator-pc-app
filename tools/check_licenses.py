@@ -19,7 +19,7 @@ import subprocess  # nosec B404
 import sys
 import tomllib
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import metadata
 from pathlib import Path
 from typing import Any
@@ -40,6 +40,8 @@ class Policy:
     lgpl_ids: frozenset[str]
     lgpl_packages: frozenset[str]
     aliases: Mapping[str, str]
+    # Installed as a dependency but stripped from the shipped app: package -> DATA_TRACKER id.
+    excluded: Mapping[str, str] = field(default_factory=dict[str, str])
 
 
 @dataclass(frozen=True)
@@ -78,7 +80,20 @@ def load_policy(path: Path) -> Policy:
         lgpl_ids=frozenset(data["lgpl_ids"]),
         lgpl_packages=frozenset(canonicalize_name(p) for p in data["lgpl_packages"]),
         aliases=dict(data.get("aliases", {})),
+        excluded=_excluded(data.get("excluded", {})),
     )
+
+
+def _excluded(entries: Mapping[str, Any]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for package, tracker in entries.items():
+        if not isinstance(tracker, str) or not TRACKER_ID.match(tracker):
+            raise ValueError(
+                f"excluded package {package!r} must cite a DATA_TRACKER id like 'D-027', "
+                f"got {tracker!r}"
+            )
+        result[canonicalize_name(package)] = tracker
+    return result
 
 
 def load_overrides(path: Path) -> dict[str, Override]:
@@ -354,10 +369,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  - {name}")
         return 1
 
-    records = fetch_records(closure)
+    excluded = sorted(closure & set(policy.excluded))
+    shipped = closure - set(excluded)
+    records = fetch_records(shipped)
     verdicts = [
         evaluate(records.get(name, LicenseRecord(name)), policy, overrides.get(name))
-        for name in sorted(closure)
+        for name in sorted(shipped)
     ]
     failures = [v for v in verdicts if not v.ok]
 
@@ -365,6 +382,9 @@ def main(argv: list[str] | None = None) -> int:
     for v in verdicts:
         mark = "ok  " if v.ok else "FAIL"
         print(f"{mark} {v.package:<{width}}  {v.license}  [{v.reason}]")
+    for name in excluded:
+        tracker = policy.excluded[name]
+        print(f"excl {name:<{width}}  not shipped: the build must strip it ({tracker})")
     print(f"license gate: {len(verdicts)} runtime packages, {len(failures)} violation(s).")
     return 1 if failures else 0
 

@@ -201,3 +201,20 @@ def test_closure_normalises_names():
 def test_root_marker_false_is_skipped():
     closure, _ = runtime_closure([Requirement('app; sys_platform == "darwin"')], INSTALLED.get)
     assert closure == set()
+
+
+def test_excluded_packages_need_a_tracker_id(tmp_path: Path):
+    # T045: av is installed by faster-whisper but never shipped (D-027).
+    assert POLICY.excluded == {"av": "D-027"}
+    policy = tmp_path / "policy.toml"
+    policy.write_text(
+        'allowed = ["MIT"]\nlgpl_ids = []\nlgpl_packages = []\n[excluded]\nPyAV_Thing = "later"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="DATA_TRACKER id"):
+        load_policy(policy)
+    policy.write_text(
+        'allowed = ["MIT"]\nlgpl_ids = []\nlgpl_packages = []\n[excluded]\nPyAV_Thing = "D-027"\n',
+        encoding="utf-8",
+    )
+    assert load_policy(policy).excluded == {"pyav-thing": "D-027"}
