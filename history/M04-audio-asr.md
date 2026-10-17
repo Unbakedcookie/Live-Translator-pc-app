@@ -47,3 +47,20 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
   - loopback ref round trip;
   - exact preferred over a stable duplicate.
   - Plus a live listing smoke test on this PC: inputs and loopbacks present, flags consistent, both defaults found.
+
+### T042 — Capture + resample (`services/audio/{resample,ring,capture}.py`)
+- **Resampler.**
+  - `StreamResampler`: downmix to mono → Blackman windowed-sinc low-pass (101 taps, cutoff 0.45 × 16 kHz = 7.2 kHz) → linear interpolation at in_rate/16000 steps.
+  - Filter history and fractional position carry across chunks. Works for any input rate (48 kHz and 44.1 kHz on this PC).
+  - Uses numpy only, avoiding scipy (+~40 MB) and python-soxr (LGPL).
+- **Ring buffer.** `RingBuffer`: 60 s by default, absolute sample indices, `read(start, end)` skips overwritten data, thread-safe.
+- **Capture worker.** `AudioCapture`:
+  - A PyAudioWPatch float32 callback stream on its own thread; bytes → resampler → ring → optional on_audio.
+  - A missing device or a stream that stops reports a plain-language WARNING ("… isn't available. Reconnecting…" / "… stopped. Reconnecting…"), retries every 2 s, then reports OK "Listening to …".
+  - Stream opening is injectable, so recovery is tested without hardware.
+- **Noted:** WASAPI loopback sends no packets while nothing plays, so "Others" silence means no data rather than an error.
+- **Verification:**
+  - 6 resample/ring tests: 1 kHz sine at 48 k and 44.1 k stereo in odd chunk sizes → 32000 ±1 samples for 2 s, frequency within 1 %, amplitude 0.5 within 1 %; chunked == one-shot to 1e-6; a 12 kHz tone is suppressed below 0.01 (no aliasing); downmix, FIR sum 1, odd-tap guard; ring wrap / absolute reads hand-traced.
+  - 3 capture tests: 1 s of 48 k stereo → 16000 ±1 samples; open failure, then stream death, then recovery gives the exact status sequence and every stream is closed.
+  - A **live smoke test** on the user's default mic (A50): about 1.2 s of capture, more than 8000 samples arrived. Counted only, nothing stored.
+- **Deferred (needs the user present):** the acceptance's "record 5 s of mic + loopback to scratchpad WAVs and listen-check". I didn't record the user's room or Discord audio while they were away.
