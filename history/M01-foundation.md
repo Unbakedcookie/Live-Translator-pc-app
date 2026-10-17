@@ -172,3 +172,40 @@
   - Q4 Inter + size OK.
   - Q5 continue.
 - Contrast/dE rules still pass for every palette (tests). The preview was re-rendered (palette-preview-v2.png): Neon now reads as clearly purple, and Paper's text looks crisper with the 1 px halo. The user still needs to confirm G1 part 1 when back.
+
+## 2026-10-17 - T013 State models, actions, reducers (user away; autonomous)
+
+### What was built
+- `core/state.py`: frozen pydantic models (`extra="forbid"`, `validate_default=True`).
+  - Config models: AppConfig (schema_version 1, my_language, audio, speakers, engines, performance, echo_filter, hotkeys with the spec 5.7 defaults, windows, lock_layout, models_dir, wizard_completed), WindowConfig, WindowStyle, Geometry.
+  - Session and runtime models: Utterance (committed + tentative text, is_final, translations), SessionState (utterances + session-only speaker renames), RuntimeState (statuses, metrics, all_hidden).
+  - Constraints come from tokens: opacity 0-1, window opacity >= 0.30, font size 8-72, geometry >= 160x60, language-code regex, '#RRGGBB' seed (uppercased), Discord app ID 15-21 digits.
+  - Window sources are deduplicated and kept in enum order, so JSON stays stable.
+- `core/actions.py`: frozen dataclass actions for config, windows (incl. UpdateAllWindows for the pin-all/click-through-all hotkeys), session (Add/Update/Remove utterance, SetTranslation, ClearSession, RenameSpeaker), runtime (status/metric/all_hidden), plus Batch.
+- `core/reducers.py`: `reduce(state, action) -> (state, changes)`. A Change has a kind (CONFIG/WINDOW/UTTERANCE_ADDED/UPDATED/REMOVED/SESSION_CLEARED/SPEAKER/RUNTIME) and a key.
+  - Generic `fields` updates are re-validated through `model_validate`. Plain `model_copy(update=)` would skip validation, which is why I didn't use it.
+  - No-op updates return the same state object with no changes.
+  - Unknown ids: ignored (race-safe).
+  - Duplicate ids, unknown fields and bad values raise ValueError, and the state is unchanged.
+  - Window changes emit both WINDOW(id) and CONFIG("windows"), so persistence only has to watch CONFIG.
+
+### Design forks
+- **Change list from the reducer vs. diffing states in the store.** I chose the reducer's change list: it's pure and Tier A-testable, and diffing nested tuples on every partial update would cost more.
+- **Utterance ids are strings supplied by the producer** (e.g. "others-17"), not allocated by the store. A pure reducer can't hand an id back to a worker thread.
+- **Speaker renames live in the session** (memory only), per spec 5.13: renames are session-only, and voiceprints and names are never persisted.
+- **`EngineConfig` fields are None = "use the recommended default from G4"**, so G4 can pick the defaults without a config migration.
+- **Default `pinned=True`** for new windows. It's an overlay, so on-top is the expected behaviour in games. Easy to change.
+
+### Problems hit
+- pyright strict: the variable `changes` was annotated as `list[Change]` in one match branch and assigned a tuple in another. A declared type applies to the whole function, so I renamed one of them to `replaced: Changes`.
+- ruff F841: an unused variable in a test.
+
+### Verification (Tier A)
+- 23 reducer tests, each with a hand-written expected state and change list:
+  - window add/remove/update/style/validation, dedup/order of sources, no-op updates, update-all;
+  - my_language, config sections, hotkeys, ReplaceConfig change list;
+  - utterance partial to final, translations, immutability of the old state, missing ids, remove/clear, rename;
+  - runtime;
+  - Batch atomicity (failure leaves the input state untouched);
+  - duplicate window ids rejected.
+- Full suite 132 passed. pre-commit: all 7 hooks pass (pyright strict on core/). License gate: 18 runtime packages, 0 violations (pydantic + 4 transitive dependencies added to the register).
