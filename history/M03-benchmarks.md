@@ -75,3 +75,31 @@
   - Run logs are gitignored.
 - **What slowed us:** the Bash heredoc + Python escaped-newline trap broke source files twice more, plus one heredoc that bash couldn't parse at all.
   - **Lesson (repeated from M02):** write prose and multi-line source with the Write/Edit tools, never through a heredoc.
+
+## 2026-10-17 — T035 speaker-label benchmark (commit 490be01; user away)
+- **Ground truth without speaker IDs.** FLEURS has no speaker IDs, but each sentence was recorded by up to 3 different people (gender in the TSV).
+  - Different recordings of one sentence therefore guarantee different speakers.
+  - Each recording was trimmed and cut into turns at its quietest 20 ms frames, so every turn's speaker is known.
+- **Mixes:** 2 speakers M+F (en); 2 speakers F+F (en, hard); 3 speakers M+M+F (es) with one back-to-back turn (no gap); 4 speakers (3 en + 1 es) with one back-to-back turn.
+- **Metric:** our own DER (10 ms grid, 0.25 s collar, best one-to-one mapping by brute force) plus turn accuracy and label switches. 7 hand-computed toy tests, e.g. a late switch of 0.5 s in 4 s gives 12.5 % confusion; with collar it's 0.25/3.0.
+- **Approaches** (sherpa-onnx 1.13.8, CPU):
+  - A: offline whole-mix.
+  - B: the spec's sliding window, 10 s every 1 s, local clusters matched to global centroids.
+  - C: per-line — one TitaNet embedding per Silero/Segmenter utterance, running-mean centroids, cosine similarity threshold.
+- **Surprise 1:** offline (A), the expected upper bound, scored DER 0.41.
+  - Probing showed it under-clusters at the default distance. But even with the oracle speaker count it left whole turns out: 38 % miss on M+F.
+  - Cause: some FLEURS recordings are about 38 dB quieter (turn RMS 0.0007 vs 0.065), and the pyannote segmentation treats them as silence.
+  - Level-matching every turn brings A to DER 0.16 (0.11–0.13 with oracle count).
+  - **Decision:** report two materials, "as recorded" (stress test) and "level-matched".
+- **Surprise 2:** I had wired one number into both the sherpa clustering *distance* (higher = merge) and our *similarity* (higher = split). Fixed by sweeping them separately.
+- **Result:** C wins clearly and is loudness-robust.
+  - DER 0.098 as recorded / 0.097 level-matched; 93 % of turns right; correct speaker count in all 4 mixes; zero label switches.
+  - Cost: TitaNet-large 0.11 s per line, small 0.04 s. CPU only.
+  - The similarity plateau is 0.5–0.6; at 0.7 it over-splits.
+  - B: DER 0.35 / 0.21, at 0.2 s CPU every second.
+  - The only remaining C errors are the two back-to-back turns. With no pause the VAD keeps them in the previous line, so both speakers get one label.
+- **Design proposal for G4/G6** (spec §5.13 said "sliding window"):
+  - Switch to per-line labels.
+  - Add in-line change detection for long lines: run the pyannote segmentation only on lines over ~3 s and split at a detected change, which is the spec's "utterance splitting" idea.
+  - Speaker memory stays in RAM only (D-028).
+- **Not done:** diart. Its models are gated and need the user's HF token (D-024). The spec makes it optional and never default, so this is recorded as blocked rather than worked around.

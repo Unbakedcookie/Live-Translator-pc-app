@@ -1,7 +1,7 @@
 # Engine defaults — gate G4 decision sheet (T034)
 
-Measured on this PC (RTX 3060 12 GB). Details: `asr.md`, `mt.md`. Speaker-label engines
-(T035) and the Discord spike (T036) are still pending and will be added here.
+Measured on this PC (RTX 3060 12 GB). Details: `asr.md`, `mt.md`, `diarization.md`. The Discord
+name spike (T036) needs your own Discord app and is still pending.
 
 ## Speech recognition (ASR)
 
@@ -28,6 +28,18 @@ Measured on this PC (RTX 3060 12 GB). Details: `asr.md`, `mt.md`. Speaker-label 
 Licences: all three are shippable (Opus-MT CC-BY-4.0 with attribution, MADLAD Apache-2.0,
 Qwen Apache-2.0). Argos was dropped: its models have no licence (D-031).
 
+## Speaker labels ("Speaker 1", "Speaker 2" … on the Others stream)
+
+| Option | Mistakes (DER, lower is better) | Turns labelled right | Cost |
+|---|---|---|---|
+| **Per line (recommended)**: one voice fingerprint per spoken line, matched to the speakers heard so far | 0.10 | 93 % (all mistakes = two people talking with no pause) | 0.1 s CPU per line, no graphics memory |
+| Sliding window (the spec's original plan) | 0.35 (0.21 with equal volumes) | 66–86 % | 0.2 s CPU every second |
+| Whole recording at once (not possible live) | 0.41 (0.16 with equal volumes) | 60–90 % | — |
+
+Tested on mixes of 2–4 real voices (incl. two women, and very quiet speakers). Voice
+fingerprints are kept in memory only, never saved. The "two people with no pause" case gets
+an extra check on long lines (planned in T102).
+
 ## Recommendation
 
 | Mode | Speech | Translation |
@@ -42,6 +54,7 @@ Qwen Apache-2.0). Argos was dropped: its models have no licence (D-031).
 1. Default translation engine: **a) Opus-MT** · b) MADLAD · c) Qwen
 2. Offer the optional "best quality" mode (MADLAD for final lines)? **a) yes, off by default** · b) no
 3. Game mode speech model: **a) turbo with slower updates** · b) small model
-4. Sharing the app: other people need the converted Opus-MT models (2.3 GB, or ~1.1 GB at
+4. Speaker labels: **a) per line (recommended)** · b) sliding window as originally planned
+5. Sharing the app: other people need the converted Opus-MT models (2.3 GB, or ~1.1 GB at
    int8). OK to publish them in a Hugging Face repo under your account, with the required
    CC-BY credits? **a) yes** · b) find another way
