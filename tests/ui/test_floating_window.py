@@ -23,7 +23,7 @@ from livetranslator.core.state import (
 )
 from livetranslator.core.store import Store
 from livetranslator.platform import win32
-from livetranslator.theme.qss import build_qss
+from livetranslator.theme.qss import window_qss
 from livetranslator.theme.tokens import PAPER
 from livetranslator.ui.floating_window import FloatingWindow, sources_summary
 from livetranslator.ui.geometry import Rect
@@ -94,10 +94,10 @@ def test_chrome_is_styled_from_the_first_palette(setup):
     # Regression (found in the G1 render check): the chrome only applied QSS on palette
     # *changes*, so a new window's strip fell back to native Windows styling.
     _, controller, window = setup
-    assert window.chrome.styleSheet() == build_qss(window.palette_value)
+    assert window.chrome.styleSheet() == window_qss(window.palette_value)
     assert window.chrome.language.property("flat") is True
     controller.set_builtin_palette("w1", "paper")
-    assert window.chrome.styleSheet() == build_qss(PAPER)
+    assert window.chrome.styleSheet() == window_qss(PAPER)
 
 
 def test_pin_button_unpins_native_window(setup, qtbot):
@@ -205,3 +205,41 @@ def test_language_picker_and_close_button(setup, qtbot):
     window.chrome.show()
     qtbot.mouseClick(window.chrome.close_button, Qt.MouseButton.LeftButton)
     assert store.state.config.windows == ()
+
+
+def _toasts() -> list:
+    from livetranslator.ui.widgets.toast import Toast
+
+    return [w for w in QApplication.topLevelWidgets() if isinstance(w, Toast) and w.isVisible()]
+
+
+def test_click_through_shows_toast_and_arms_hover_hint(setup):
+    # User feedback (G1): after turning click-through on, the controls vanished and it
+    # wasn't clear how to get them back.
+    _, controller, window = setup
+    for toast in _toasts():
+        toast.close()
+    controller.set_click_through("w1", True)
+    toasts = _toasts()
+    assert [t.label.text() for t in toasts] == [
+        "Click-through is on. Press Ctrl+Alt+T to turn it off."
+    ]
+    assert window._hint_timer.isActive()
+    assert window.click_through_hint.text() == toasts[0].label.text()
+    controller.set_click_through("w1", False)
+    assert not window._hint_timer.isActive()
+    assert not window.click_through_hint.isVisible()
+    for toast in _toasts():
+        toast.close()
+
+
+def test_click_through_message_follows_remapped_shortcut(setup):
+    from livetranslator.core import actions as a
+
+    store, _, window = setup
+    store.dispatch(a.SetHotkey("click_through_all", "Ctrl+Shift+K"))
+    assert (
+        window.click_through_message() == "Click-through is on. Press Ctrl+Shift+K to turn it off."
+    )
+    store.dispatch(a.SetHotkey("click_through_all", None))
+    assert "Set a shortcut" in window.click_through_message()

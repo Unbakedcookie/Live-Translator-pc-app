@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
-from livetranslator.theme.qss import build_qss
+from livetranslator.theme.qss import window_qss
 from livetranslator.theme.tokens import (
     DEFAULT_CUSTOM_SEED,
     PALETTES,
@@ -42,7 +42,7 @@ class PalettePanel(QWidget):
     def __init__(self, palette: Palette, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._palette = palette
-        self.setStyleSheet(build_qss(palette))
+        self.setStyleSheet(window_qss(palette))
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACE.md, SPACE.md, SPACE.md, SPACE.md)
         layout.setSpacing(SPACE.sm)

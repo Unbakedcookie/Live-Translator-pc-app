@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import importlib
 import os
+import tempfile
+from pathlib import Path
 from typing import Any, Literal
 
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QIcon
 
 from livetranslator.theme.tokens import Palette
@@ -61,3 +64,17 @@ def has_icon(name: str) -> bool:
     except Exception:
         return False
     return True
+
+
+ICON_CACHE = Path(tempfile.gettempdir()) / "LiveTranslator" / "icons"
+
+
+def icon_file(name: str, palette: Palette, role: IconRole, size: int) -> Path:
+    """The icon rendered to a PNG (QSS can only load images from files, e.g. a combobox
+    arrow). Cached per name/colour/size; needs a QApplication."""
+    color: str = getattr(palette, role)
+    path = ICON_CACHE / f"{name}-{color.lstrip('#')}-{size}.png"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        icon(name, palette, role).pixmap(QSize(size, size)).save(str(path))
+    return path

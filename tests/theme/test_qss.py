@@ -39,13 +39,18 @@ QLineEdit, QComboBox, QSpinBox { background: #000001; border: 1px solid #000008;
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus { border-color: #000006; }
 QComboBox[flat="true"] { background: transparent; border: none; }
 QComboBox[flat="true"]:hover { background: #000003; }
-QComboBox QAbstractItemView { background: #000002; selection-background-color: #000003; border: 1px solid #000008; }
+QComboBox::drop-down { border: none; width: 20px; subcontrol-position: center right; }
+QComboBox QAbstractItemView { background: #000002; border: 1px solid #000008; border-radius: 8px; padding: 4px; outline: 0px; }
+QComboBox QAbstractItemView::item { min-height: 28px; padding: 0px 8px; border-radius: 4px; color: #000004; }
+QComboBox QAbstractItemView::item:hover { background: #000003; }
+QComboBox QAbstractItemView::item:selected { background: #000006; color: #000007; }
 QSlider::groove:horizontal { height: 4px; background: #000003; border-radius: 2px; }
 QSlider::sub-page:horizontal { background: #000006; border-radius: 2px; }
 QSlider::handle:horizontal { background: #000004; width: 12px; margin: -4px 0px; border-radius: 6px; }
 QScrollBar:vertical { background: transparent; width: 8px; }
 QScrollBar::handle:vertical { background: #000003; border-radius: 4px; min-height: 24px; }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
 """  # noqa: E501
 
 

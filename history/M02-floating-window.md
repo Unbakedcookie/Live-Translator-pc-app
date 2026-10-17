@@ -89,3 +89,24 @@
   - Startup timing (warm): about 1.3 s to a painted window, about 1.0 s of it Python imports. The slowest are coloraide and loguru (about 0.2 s each). Candidate later optimisation: lazy-import coloraide (only needed for custom palettes). The verifier saw >6 s on a relaunch, likely a cold start; to be re-timed.
   - Found on the user's PC: **Ctrl+Alt+M (mute Me) is already registered by another app** (error 1409). The app reports it as a status, as designed; the user will be asked about the default.
 - Open for G1: the user's look-and-feel review of the palettes, widgets and live window.
+
+## 2026-10-17 — T025 G1 review, round 1 (user back at the PC)
+- I launched the app for the user (`pythonw -m livetranslator`, real profile) because they didn't know how to run Python. Offered a desktop shortcut.
+- **Feedback 1: "the language dropdown looks like it's from the 1990s; I want modern sleek."**
+  - The cause: the popup list used Qt's default view and native frame, which ignore QSS row styling, and the arrow was the native glyph.
+  - What changed:
+    - The picker now uses `QListView` (so `::item` QSS applies) and a popup container that is Frameless + NoDropShadow + WA_TranslucentBackground, so rounded corners show.
+    - New QSS: rounded list with padding, 28 px rows, rounded hover rows, accent-filled selected row, borderless drop-down, transparent scrollbar pages (the old hatched track).
+    - The arrow is now the themed Phosphor `caret-down`, rendered to a cached PNG via the new `theme.icons.icon_file`, because QSS can only load images from files. It goes through the new `window_qss(p)`; the pure `build_qss(p, down_arrow=None)` stays testable.
+    - The popup width fits the widest entry (it truncated "Portuguese · Português" in the narrow chrome).
+  - Render check before/after in Midnight + Paper (scratchpad combo.png, combo2.png).
+- **Feedback 2: "I hit click-through, the settings went away and I can't get them back. Maybe a button that tells you the hotkey?"**
+  - A button can't work: a click-through window gets no mouse input at all.
+  - Implemented instead:
+    - (a) A toast when click-through turns on: "Click-through is on. Press <shortcut> to turn it off." This was spec §3.4 and had never been wired; my gap.
+    - (b) A hover hint badge inside the window while click-through is on. The window polls the cursor position at 5 Hz, since it can't receive hover events.
+    - (c) The popover checkbox shows the *current* shortcut.
+    - All three read the remappable binding live and say so when none is set.
+  - **Bug found by the new test:** the toast was created without a parent and without a Python reference, so it was garbage-collected instantly and would never have appeared. The window now keeps the reference.
+- **User decision:** shortcuts stay fully remappable for every action (already true in the config). The editor UI comes with Settings (M07). The Ctrl+Alt+M conflict is left for the user to remap.
+- Verification: full suite passes, with new tests for toast + hint arming/disarming, the message following a remapped/unbound shortcut, popup width and translucency, and the updated hand-written QSS expectation.

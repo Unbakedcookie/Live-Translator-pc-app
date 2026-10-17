@@ -110,3 +110,15 @@ def test_gallery_builds_one_panel_per_palette(qtbot):
     gallery = Gallery()
     qtbot.addWidget(gallery)
     assert len(gallery.panels) == 5
+
+
+def test_language_popup_is_wide_enough_for_long_names(qtbot):
+    picker = LanguagePicker("pt")
+    qtbot.addWidget(picker)
+    picker.resize(120, 24)  # narrow, like in the chrome strip
+    picker.show()
+    picker.showPopup()
+    view = picker.view()
+    assert view.width() >= view.sizeHintForColumn(0)
+    assert view.window().testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    picker.hidePopup()

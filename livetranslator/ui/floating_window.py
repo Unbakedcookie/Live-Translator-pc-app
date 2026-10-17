@@ -46,7 +46,7 @@ from livetranslator.core.state import Source, WindowConfig
 from livetranslator.platform import win32
 from livetranslator.theme.backdrop import apply_mica
 from livetranslator.theme.palette_gen import palette_for
-from livetranslator.theme.qss import build_qss
+from livetranslator.theme.qss import badge_qss, window_qss
 from livetranslator.theme.tokens import FONTS, MOTION, RADIUS, SPACE, WINDOW, Palette
 from livetranslator.ui.geometry import (
     EDGE_BOTTOM,
@@ -66,6 +66,9 @@ from livetranslator.ui.style_popover import StylePopover
 from livetranslator.ui.widgets.icon_button import IconButton
 from livetranslator.ui.widgets.language_picker import LanguagePicker
 from livetranslator.ui.widgets.pin_button import PinButton
+from livetranslator.ui.widgets.toast import Toast
+
+CURSOR_POLL_MS = 200
 
 MIN_HIT_ALPHA = 1 / 255  # fully transparent pixels let clicks through on Windows; keep 1/255
 
@@ -130,7 +133,7 @@ class ChromeBar(QWidget):
 
     def _apply_palette(self, palette: Palette) -> None:
         self._palette = palette
-        self.setStyleSheet(build_qss(palette))
+        self.setStyleSheet(window_qss(palette))
         for button in (self.pin, self.style_button, self.hide_button, self.close_button):
             button.apply_palette(palette)
         self.sources.setStyleSheet(f"color: {palette.text_secondary};")
@@ -209,6 +212,17 @@ class FloatingWindow(QWidget):
         self._hide_timer.timeout.connect(self._maybe_hide_chrome)
         self.popover: StylePopover | None = None
 
+        # Click-through help (user feedback G1): the window gets no mouse events while
+        # click-through is on, so the cursor is polled to show how to turn it off.
+        self.click_through_hint = QLabel(self)
+        self.click_through_hint.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.click_through_hint.hide()
+        self._hint_timer = QTimer(self)
+        self._hint_timer.setInterval(CURSOR_POLL_MS)
+        self._hint_timer.timeout.connect(self._update_click_through_hint)
+        self._was_click_through = False
+        self._toast: Toast | None = None
+
         controller.store.window_changed.connect(self._on_window_changed)
         self.apply_config(cfg)
 
@@ -241,6 +255,7 @@ class FloatingWindow(QWidget):
             self.unsetCursor()
         if cfg.click_through:
             self._set_chrome_visible(False, animate=False)
+        self._apply_click_through_help(cfg)
         self._apply_native(cfg)
         self.update()
 
@@ -262,7 +277,45 @@ class FloatingWindow(QWidget):
 
     # ------------------------------------------------------------ painting / layout
 
+    # ------------------------------------------------------------ click-through help
+
+    def click_through_message(self) -> str:
+        combo = self._controller.store.state.config.hotkeys.get("click_through_all")
+        if combo:
+            return f"Click-through is on. Press {combo} to turn it off."
+        return "Click-through is on. Set a shortcut for it in Settings to turn it off."
+
+    def _apply_click_through_help(self, cfg: WindowConfig) -> None:
+        self.click_through_hint.setStyleSheet(badge_qss(self.palette_value))
+        self.click_through_hint.setText(self.click_through_message())
+        self.click_through_hint.adjustSize()
+        self._place_hint()
+        if cfg.click_through and not self._was_click_through and self.isVisible():
+            anchor = self.mapToGlobal(QPoint(self.width() // 2, 0))
+            # Keep a reference: a parentless Toast with none would be garbage-collected
+            # (and vanish) immediately. It deletes itself when its timer ends.
+            self._toast = Toast(self.click_through_message(), self.palette_value)
+            self._toast.show_at(anchor)
+        if cfg.click_through:
+            self._hint_timer.start()
+        else:
+            self._hint_timer.stop()
+            self.click_through_hint.hide()
+        self._was_click_through = cfg.click_through
+
+    def _update_click_through_hint(self) -> None:
+        inside = self.geometry().contains(QCursor.pos())
+        if inside != self.click_through_hint.isVisible():
+            self.click_through_hint.setVisible(inside)
+            if inside:
+                self.click_through_hint.raise_()
+
+    def _place_hint(self) -> None:
+        hint = self.click_through_hint
+        hint.move(max((self.width() - hint.width()) // 2, 0), SPACE.sm)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
+        self._place_hint()
         self.chrome.setGeometry(0, 0, self.width(), WINDOW.chrome_height)
         self.content.setGeometry(0, 0, self.width(), self.height())
         super().resizeEvent(event)
@@ -406,7 +459,7 @@ class FloatingWindow(QWidget):
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         menu = QMenu(self)
-        menu.setStyleSheet(build_qss(self.palette_value))
+        menu.setStyleSheet(window_qss(self.palette_value))
         menu.addAction("Style…", self.open_style_popover)
         menu.addAction("New window", self.new_window_requested.emit)
         menu.addSeparator()

@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core.state import DisplayMode, Source, WindowConfig
 from livetranslator.theme.palette_gen import palette_for
-from livetranslator.theme.qss import build_qss
+from livetranslator.theme.qss import window_qss
 from livetranslator.theme.tokens import (
     DEFAULT_CUSTOM_SEED,
     FONTS,
@@ -132,7 +132,7 @@ class StylePopover(QFrame):
         self.locked = QCheckBox("Lock position and size", self)
         self.locked.toggled.connect(lambda on: controller.set_locked(window_id, on))
         root.addWidget(self.locked)
-        self.click_through = QCheckBox("Click-through (Ctrl+Alt+T turns it off)", self)
+        self.click_through = QCheckBox("Click-through", self)
         self.click_through.toggled.connect(self._on_click_through)
         root.addWidget(self.click_through)
         self.mica = QCheckBox("Frosted glass (Windows 11)", self)
@@ -167,7 +167,7 @@ class StylePopover(QFrame):
         palette = palette_for(style.palette_id, style.custom_seed, style.custom_dark)
         if palette != self._palette:
             self._palette = palette
-            self.setStyleSheet(build_qss(palette))
+            self.setStyleSheet(window_qss(palette))
             self.swatches.set_ring_color(palette.accent)
             self.update()
         widgets = (
@@ -205,6 +205,10 @@ class StylePopover(QFrame):
         for source, box in self.sources.items():
             box.setChecked(source in cfg.sources)
         self.locked.setChecked(cfg.locked)
+        combo = self._controller.store.state.config.hotkeys.get("click_through_all")
+        self.click_through.setText(
+            f"Click-through ({combo} turns it off)" if combo else "Click-through (no shortcut set)"
+        )
         self.click_through.setChecked(cfg.click_through)
         self.mica.setChecked(style.mica)
         for w in widgets:
