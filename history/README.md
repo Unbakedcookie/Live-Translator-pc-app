@@ -11,3 +11,5 @@ Append with a shell append (`cat >> history/Mxx-name.md <<'EOF' ... EOF`); don't
 | M02 Floating window (gate G1) | `M02-floating-window.md` | 2026-10-17 → |
 | M08 Hotkeys + OCR | `M08-hotkeys-ocr.md` | 2026-10-17 → (T081 early) |
 | M03 Benchmarks (gate G4) | `M03-benchmarks.md` | 2026-10-17 → |
+| M04 Audio + ASR | `M04-audio-asr.md` | 2026-10-17 → |
+| M05 Translation | `M05-translation.md` | 2026-10-17 → |
