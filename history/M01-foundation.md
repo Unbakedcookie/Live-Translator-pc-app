@@ -209,3 +209,25 @@
   - Batch atomicity (failure leaves the input state untouched);
   - duplicate window ids rejected.
 - Full suite 132 passed. pre-commit: all 7 hooks pass (pyright strict on core/). License gate: 18 runtime packages, 0 violations (pydantic + 4 transitive dependencies added to the register).
+
+## 2026-10-17 - T014 Store (autonomous)
+
+### What was built
+- `core/store.py`: `Store(QObject)` holds the AppState.
+  - `dispatch` applies at once on the store's own thread. From any other thread it emits a private `_queued(object)` signal connected with QueuedConnection, so the reducer and all signal handlers run on the main thread.
+  - Narrow signals: config_changed(section), window_changed(id), utterance_added / updated / removed(id), session_cleared(), speaker_changed(id), runtime_changed(key), action_failed(type).
+
+### Design forks
+- **Errors.** Invalid actions never raise out of `dispatch`; they are logged and reported through `action_failed`. Spec section 9 says the app keeps running.
+- **Privacy in the error log.** pydantic validation errors echo the rejected input, which could be transcript text. So the log line records only the action type and exception type. This follows the T011 privacy rule.
+- **Main-thread dispatch applies synchronously** rather than always queueing. That keeps UI interactions immediate and deterministic in tests, and worker threads still go through the queue.
+
+### Verification (Tier A, pytest-qt)
+- 6 tests:
+  - A style change emits exactly [window_changed w2, config_changed windows] and no chat-log signals.
+  - A no-op emits nothing.
+  - The session signal sequence is checked.
+  - An invalid action leaves the state object identical and emits action_failed.
+  - A worker-thread dispatch is NOT applied until the event loop runs. The handler then runs on store.thread().
+  - 2 threads x 100 actions: all 200 applied, with per-thread order preserved.
+- Full suite: 138 passed. pre-commit: all hooks pass (ruff auto-sorted one import block).
