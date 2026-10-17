@@ -132,3 +132,8 @@
   - Decision (mine, reported to the user): remove the toggle from overlays. Keep `theme/backdrop.py` + win32mica for normal windows (Settings in M07), where Mica works.
   - **Schema v2:** `WindowStyle.mica` removed; migration `_v1_to_v2` strips `style.mica` from every window. The user's real v1 settings file migrates on next launch. A test covers it.
 - Verification: full suite passes. Search popup render-checked in Midnight + Paper (scratchpad search.png).
+- Follow-up while committing round 2:
+  - ruff RUF002 flagged an en dash in a docstring.
+  - pyright strict wanted explicit casts for the raw-JSON dicts in `_v1_to_v2`.
+  - **A real bug caught by the existing corrupt-file test:** my first v1→v2 migration turned a non-list `windows` value ("lots") into `[]`, silently "repairing" a damaged file instead of letting validation reject it and set the file aside. Fix: the migration now leaves non-list data untouched.
+  - The running app had already loaded the user's valid v1 file correctly; it rewrites as v2 on the next change.
