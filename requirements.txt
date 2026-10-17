@@ -5,6 +5,7 @@ PySide6-Essentials==6.12.0
 coloraide==8.13.1
 loguru==0.7.3
 materialyoucolor==3.0.4
+numpy==2.5.4
 platformdirs==4.13.3
 pydantic==2.14.1
 QtAwesome==1.4.2

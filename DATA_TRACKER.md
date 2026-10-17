@@ -60,6 +60,7 @@ Status: C = Confirmed (2 primary sources) · M = Medium (1 source, or a conflict
 | huggingface_hub 2.2.0 | yes | Apache-2.0 | C | Include the license text. |
 | lingua-language-detector 2.2.0 | yes | Apache-2.0 | C | Model size not yet checked. |
 | pypresence 4.6.2 | yes | MIT | C | Maintained (released 2026-07-08). |
+| numpy 2.5.4 | yes | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | M | Installed License-Expression (gate, T016); every component allowed. Keep the bundled third-party notices. |
 | pydantic 2.14.1 | yes | MIT | C | GitHub API + installed License-Expression MIT (gate, T013). |
 | pydantic-core, annotated-types, typing-inspection (via pydantic) | yes | MIT | M | License-Expression from installed metadata (gate, T013). |
 | typing-extensions (via pydantic) | yes | PSF-2.0 | M | License-Expression (gate, T013). |

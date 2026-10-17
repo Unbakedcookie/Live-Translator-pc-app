@@ -267,3 +267,27 @@
   - flush;
   - save-failure status set, then cleared.
 - Full suite 154 passed; all hooks pass.
+
+## 2026-10-17 - T016 Engine interfaces (autonomous)
+
+### What was built
+- `services/errors.py`: EngineError, EngineNotLoaded, UnsupportedLanguage.
+- `services/asr/base.py`: SAMPLE_RATE 16000; Audio = float32 ndarray; frozen Word, Segment and Transcription (with `.text` and `.words` helpers); runtime-checkable `ASREngine` protocol (`is_loaded`, `load`, `unload`, `transcribe(audio, *, language, prompt)`).
+- `services/mt/base.py`: `TranslationEngine` protocol (`supports`, `load`, `unload`, `translate(texts, src, tgt)` keeping order and length).
+- `services/ocr/base.py`: Image = HxWx3 uint8 RGB; OcrLine (text, box, confidence); OcrResult (`.text` joins non-blank lines); `OcrEngine` protocol (`available_languages`, `recognize`).
+- numpy 2.5.4 added to runtime deps. Its compound SPDX expression (BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0) passed the gate's AND evaluation, which is the first real-world AND case.
+
+### Design forks
+- **Protocols (structural typing) rather than ABCs.** Adapters for third-party engines don't need to inherit anything, and fakes in tests stay trivial. `runtime_checkable` lets the composition root assert conformance.
+- **Diarization contract left to M10 T102**, as the task map says. It depends on the G4 engine choice (sherpa-onnx sliding window vs diart).
+
+### Verification (Tier A)
+- 6 tests:
+  - fake ASR/MT/OCR satisfy the protocols, statically (pyright) and at runtime;
+  - the ASR flow (EngineNotLoaded before load, language passthrough, timestamps);
+  - Transcription text/words helpers (blank segment skipped);
+  - MT UnsupportedLanguage;
+  - OcrResult.text;
+  - a subprocess check that importing the three base modules loads none of faster_whisper, ctranslate2, torch, onnxruntime, sherpa_onnx, winrt, rapidocr or llama_cpp.
+- Full suite 160 passed; all hooks pass.
+- **M01 code is complete.** Only the G1 palette confirmation from the user remains.
