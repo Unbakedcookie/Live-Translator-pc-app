@@ -2,7 +2,7 @@
 # Anything not listed here fails the gate. GPL/AGPL and non-commercial licenses are never allowed.
 
 allowed = [
-    "MIT", "MIT-0", "0BSD", "BSD", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Zlib",
+    "MIT", "MIT-0", "MIT-CMU", "0BSD", "BSD", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Zlib",
     "Apache-2.0", "PSF-2.0", "Python-2.0", "MPL-2.0", "Unlicense", "HPND",
     "OFL-1.1", "CC0-1.0", "CC-BY-4.0",
 ]

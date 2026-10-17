@@ -30,3 +30,4 @@ strict = ["tools", "livetranslator/core", "livetranslator/theme"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q --import-mode=importlib"
+qt_api = "pyside6"

@@ -2,5 +2,9 @@
 # tools/check_licenses.py and have a row in DATA_TRACKER's license register (D-022).
 # Qt: Essentials only, never the full "PySide6" / "PySide6-Addons" (GPL-only modules; D-021).
 PySide6-Essentials==6.12.0
+coloraide==8.13.1
 loguru==0.7.3
+materialyoucolor==3.0.4
 platformdirs==4.13.3
+QtAwesome==1.4.2
+win32mica==3.0; sys_platform == "win32"

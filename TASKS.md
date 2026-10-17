@@ -2,8 +2,8 @@
 
 ## Current state
 - **Phase:** 1 **approved 2026-10-17** (spec rev 2; diarization default sherpa-onnx, diart benchmark-only). Speaker plan stands (voice labels + opt-in Discord own-app + ≤ 50 testers); the user may report a bot-based approach → possible post-MVP add-on. → **Phase 2 starts with T010.**
-- **Next:** T012 design tokens/palettes/fonts/icons (feeds gate G1). M03 benchmarks + Discord spike can start once T016 is done.
-- **Tests:** 35 passing
+- **Next:** T013 state models/reducers (palette feedback from the user may come in any time; it's T012 rework, not a blocker). M03 benchmarks + Discord spike can start once T016 is done.
+- **Tests:** 108 passing
 - **Last commit:** `chore: Phase 0 docs skeleton, agent roster, verify helper` (see `git log -1`)
 - **Open flags:** D-013 (Discord voice API partner-only → opt-in own-app mode), D-021 (LGPL compliance steps), D-024 (gated pyannote models), D-026/D-027 (NVIDIA + FFmpeg binaries), D-029/D-030 (sherpa models, secretless token), D-004/D-005/D-015 (unmeasured).
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -12,7 +12,7 @@
 | Milestone | Task IDs | Spec file | History file | Gate | Status |
 |---|---|---|---|---|---|
 | M00 Setup | T001–T004 | `docs/tasks/M00-setup.md` | `history/M00-setup.md` | — | Done 2026-10-17 |
-| M01 Foundation | T010–T016 | `docs/tasks/M01-foundation.md` | `history/M01-foundation.md` | G1 (palettes) | In progress (T010–T011 ✓) |
+| M01 Foundation | T010–T016 | `docs/tasks/M01-foundation.md` | `history/M01-foundation.md` | G1 (palettes) | In progress (T010–T012 ✓) |
 | M02 Floating window | T021–T025 | `docs/tasks/M02-floating-window.md` | `history/M02-floating-window.md` | **G1** | Planned |
 | M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | Planned |
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | Planned |
@@ -31,7 +31,8 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
 - **M00 Setup** — Private repo created & pushed; Python 3.12.10 venv; docs skeleton; 6-agent roster; `tools/verify/win.ps1` tested (list + window shot). Stack approved.
 - **Phase 1** — Approved 2026-10-17: `project-spec.md` rev 2, M01–M11 task files, license register (D-022) fact-checked.
 - **M01 Foundation** — T010 done: pre-commit (gitleaks, ruff, bandit, pyright, pip-audit, license gate) all passing; license gate has 24 tests and was probed on 43 real packages; a planted fake token was blocked.
-  T011 done: package skeleton, `--version`/`--paths`, platformdirs paths (`LIVETRANSLATOR_HOME` override), loguru with transcript filter + `diagnose=False`; runtime deps PySide6-Essentials/loguru/platformdirs pass the gate (6 packages). Next: T012.
+  T011 done: package skeleton, `--version`/`--paths`, platformdirs paths (`LIVETRANSLATOR_HOME` override), loguru with transcript filter + `diagnose=False`; runtime deps PySide6-Essentials/loguru/platformdirs pass the gate (6 packages).
+  T012 done: tokens + 5 palettes + one-colour generator, all contrast/ΔE-checked; QSS; Phosphor icons; Inter/Noto Sans bundled; Mica helper; style-literal lint test. Palette preview awaiting user feedback (G1 part 1). Next: T013.
 
 ## Conventions
 - **Python:** `.venv/Scripts/python.exe` (3.12.10). Never use the system 3.10.
@@ -47,6 +48,7 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
   - `list` reports Topmost (pin), Alpha (opacity, -1 = none), ClickThrough per window.
   - Desktop: two 2560×1440 monitors side by side (virtual 5120×1440).
 - **Screenshots:** save to the session scratchpad, never into the repo.
+- **Palette preview:** `.venv/Scripts/python.exe -m tools.palette_preview --out <scratchpad>/palette-preview.png` (repo tools that import the app run with `-m tools.<name>`).
 - **Git:** stage by name; commit after tier passes; push only on request. pre-commit hooks must pass (from T010 on).
 - **Licenses:** a new dependency needs a D-022 register row + fact-check before it goes in `requirements.txt`.
 - **Task IDs:** milestone Mnn → tasks Tnn1… (e.g. M06 → T061). Cite IDs in code comments.

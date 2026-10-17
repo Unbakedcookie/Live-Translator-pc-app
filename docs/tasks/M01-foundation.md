@@ -42,6 +42,7 @@ Gate: palette preview screenshot is part 1 of **G1** (shown together with M02).
   - **Fonts**: `fonts.py` registers the bundled Inter/Noto Sans, and builds the overlay font stack per script (unit test on the stack logic).
   - **Backdrop**: `backdrop.py` applies win32mica only on Windows 11 builds that support it (version check is unit-tested). Otherwise it's a no-op.
   - **Lint test**: fails on colour/size literals outside `theme/`.
+  - **G1 part 1**: `python -m tools.palette_preview --out <png>` renders every palette (+ a generated one) as mock overlays at 70 % background opacity over a busy backdrop, for the user's review.
 
 ### T013 — State models + actions + reducers · Tier A · SHARED
 - Files: `livetranslator/core/state.py`, `core/actions.py`, `core/reducers.py`, `tests/core/test_reducers.py`

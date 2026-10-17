@@ -46,9 +46,11 @@ Status: C = Confirmed (2 primary sources) · M = Medium (1 source, or a conflict
 | QtPy 2.4.3 | yes | MIT | M | |
 | Phosphor icons | yes | MIT | C | Via QtAwesome. Keep the MIT notice. |
 | Fluent UI System Icons | no | MIT | M | Not chosen (not in QtAwesome). |
-| Inter | yes | OFL-1.1 | M | Can't sell the font alone. Keep the OFL text. Rename if modified (Reserved Font Name). |
-| Noto Sans / Noto Sans CJK etc. | yes (downloaded per pack) | OFL-1.1 | M | The noto-cjk LICENSE file says OFL, but the GitHub API says null. CJK fonts are ~16 MB+ per weight, so download only the weights we use. |
-| materialyoucolor 3.0.4 | yes | MIT | M | PyPI fields are blank, so read the LICENSE file in the wheel. |
+| Inter 4.1 (Regular/Medium/SemiBold/Bold static TTF) | yes (bundled, `livetranslator/theme/fonts/`) | OFL-1.1 | C | GitHub API + the release's LICENSE.txt (bundled as `OFL-Inter.txt`). Source: github.com/rsms/inter v4.1 `Inter-4.1.zip` sha256 9883FDD4…B11E (T012). Can't sell the font alone. No Reserved Font Name line; unmodified. |
+| Noto Sans 2.015 (Regular/Bold, hinted TTF) | yes (bundled) | OFL-1.1 | M | Release `OFL.txt` (bundled as `OFL-NotoSans.txt`). Source: notofonts/latin-greek-cyrillic `NotoSans-v2.015.zip` sha256 0C34DF07…58F5 (T012). One direct source. |
+| Noto Sans CJK / script Noto fonts | yes (downloaded per pack, M05) | OFL-1.1 | M | The noto-cjk LICENSE file says OFL, but the GitHub API says null. CJK fonts are ~16 MB+ per weight, so download only the weights we use. |
+| materialyoucolor 3.0.4 | yes | MIT | C | GitHub API MIT + the wheel's `dist-info/licenses/LICENSE` is the MIT text (read 2026-10-17, T012). Override in `tools/license_overrides.toml`. |
+| pillow 13.0.0 (via materialyoucolor) | yes | MIT-CMU | M | Permissive; keep the copyright + permission notice. Read from the wheel's LICENSE (T012). Only used by materialyoucolor's image quantizer, which we don't call, so it could be excluded from the bundle later. |
 | coloraide 8.13.1 | yes | MIT | C | |
 | win32mica 3.0 | yes | MIT | C | |
 | platformdirs 4.13.3 | yes | MIT | M | |

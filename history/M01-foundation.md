@@ -98,3 +98,68 @@
 - After the full test run, `%APPDATA%\LiveTranslator` and `%LOCALAPPDATA%\LiveTranslator` did NOT exist, so tests never touched the real profile.
 - License gate on the real runtime closure: 6 packages, 0 violations. LGPL accepted only for pyside6-essentials/shiboken6. New transitive dependencies colorama (BSD) and win32-setctime (MIT) were added to the D-022 register.
 - pre-commit run --all-files: all 7 hooks passed.
+
+## 2026-10-17 - T012 Design tokens, palettes, fonts, icons
+
+### What was built
+- `theme/tokens.py`:
+  - `Palette` dataclass with 13 named colours + an 8-colour speaker ramp.
+  - 5 built-in palettes: Midnight (default), Subtitle, Paper, Neon, High Contrast.
+  - Frozen token groups FONTS, SPACE, RADIUS, MOTION, OVERLAY, WINDOW, with values from spec 5.1/6.5.
+- `theme/contrast.py` (ColorAide):
+  - WCAG 2.1 ratio rules: text >= 4.5, accent UI >= 3.0.
+  - CIEDE2000 >= 20 between neighbouring speaker colours and between Me and Screen.
+  - `ensure_contrast` shifts OKLCH lightness away from the background, keeping hue and chroma.
+- `theme/palette_gen.py` (materialyoucolor, tonal-spot scheme):
+  - Surfaces, text, accent and error colours come from Material roles.
+  - Speaker colours are generated in HCT (chroma 48; tone 80 dark / 40 light), ramp hues 22.5 + 45k degrees from the seed, ordered so neighbours are >= 135 degrees apart.
+  - Every text colour goes through `ensure_contrast`.
+- `theme/qss.py`: QSS for QWidget, tooltips, menus, buttons, inputs/combos, sliders and scrollbars, built only from tokens.
+- `theme/icons.py`: QtAwesome Phosphor-only wrapper. Bare names only (dotted names rejected); colours come from palette roles.
+- `theme/fonts.py`:
+  - Registers the bundled TTFs.
+  - Script mapping from language to Noto family (JP/KR/SC/TC/Arabic/Devanagari/Thai/Hebrew/Bengali).
+  - `overlay_families` builds the stack: user choice, then Inter, then script Noto, then Noto Sans; filtered to installed fonts, case-insensitive, deduplicated.
+- `theme/backdrop.py`: win32mica only when the build is >= 22000. Returns True only when ApplyMica returns 0.
+- Bundled fonts:
+  - Inter 4.1 Regular/Medium/SemiBold/Bold (static extras/ttf).
+  - Noto Sans 2.015 Regular/Bold (hinted).
+  - Both OFL texts.
+- `tools/palette_preview.py`: G1 part 1 review sheet. Mock overlay panels at 70 % bg opacity over a striped, colourful "game" backdrop.
+
+### License gate in action (first real catches)
+- **materialyoucolor**: UNKNOWN, because its metadata is blank. I read the wheel's `dist-info/licenses/LICENSE` (the MIT text) and added an override citing D-022. Register status moved to Confirmed (GitHub API + file).
+- **pillow 13.0.0**: MIT-CMU, which was not on the allow-list. Pulled in only by materialyoucolor (for an image quantizer we never call). I read the LICENSE (permissive, notice-preserving) and added MIT-CMU to the allow-list. A candidate to exclude from the bundle later.
+- Fonts: downloaded the official release zips into a fresh scratch folder, recorded SHA-256, and copied out only the TTFs + license texts. Both are OFL-1.1, read from the release files.
+
+### Design forks
+- **Palette representation.** A frozen dataclass rather than a dict, so "every palette defines every token" is guaranteed by construction. `color_tokens()` flattens it for tests/QSS.
+- **Speaker colours in generated palettes.** Material's `tertiary` came out near-white (#EFDFFF) for a blue seed, too close to the text colour, so I generate speakers from HCT instead of Material roles.
+- **materialyoucolor 3.0.4 defaults to spec 2025**, which gives muted primaries (#B6C6EE for the #3B82F6 seed). I kept it, because the accent still passes 3:1 and looks calm on an overlay. Revisit if the user wants punchier custom palettes.
+- **Contrast checks use the opaque background colour.** At 70 % background opacity over a game, legibility comes from the text outline. This is documented in contrast.py, and the preview checks it visually.
+- **Font weights on Windows.** Qt registers "Inter Medium" / "Inter SemiBold" as extra family aliases, but `QFont("Inter")` with weight 500/600 resolves to the right file (checked with QFontInfo), so no special handling is needed.
+- **CJK before packs are installed.** Yu Gothic, Malgun Gothic and Microsoft YaHei are present on this PC, and Qt's per-glyph fallback uses them, so Japanese/Korean/Chinese render even without our Noto packs.
+- **Icon colour test.** A test renders `square-fill` and reads the centre pixel, which must equal the palette role colour. That proves colours really come from tokens.
+- **Style-literal lint test.** It uses `tokenize` (STRING and FSTRING_MIDDLE tokens), so comments like "# T012" and issue refs like "#12" never trigger. It also flags QColor(<number or string>). The checker itself is tested with bad and good snippets.
+
+### Problems hit
+- One wrong expected count in my own test (15 + 8 instead of 13 + 8 colour tokens). It was caught by reasoning before the first run.
+- ruff format (4 files) and RUF007 (use itertools.pairwise) were fixed.
+- `python tools/palette_preview.py` failed with ModuleNotFoundError: running by path puts tools/ on sys.path, not the repo root. Fix: run as `python -m tools.palette_preview`. Convention added to TASKS.md.
+- The ruff cache "Access is denied" warning appeared again (parallel pre-commit batches). Harmless.
+
+### Verification (Tier A + render check)
+- pytest: 108 passed (73 new). Hand-computed WCAG cases are in the test docstring:
+  - #777777 on white = 4.4786.
+  - #3B82F6 on black = 5.7098.
+  - white/black = 21.
+  - QSS output compared against a hand-written 18-line expectation.
+  - ramp_hues(0) and ramp_hues(350) written out by hand.
+  - Window metrics match spec 5.1.
+- All 5 built-in palettes and 18 generated palettes (9 seeds, including black, white, grey and pale yellow, in dark and light) pass every rule. A forced bad tone (speaker tone 25 on a dark background) gets auto-adjusted and passes.
+- Qt parses every palette's QSS with no warnings (qtlog).
+- pre-commit: all 7 hooks pass. pyright strict covers `theme/` and `tools/`.
+- Palette preview rendered (1656x648) and inspected by me. Every palette is readable over the busy backdrop, and speakers are distinct.
+  - Paper's white outline looks slightly soft on a light background.
+  - Neon and Midnight look similar at a glance.
+  - Both points were raised with the user for G1 feedback.

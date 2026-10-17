@@ -6,3 +6,9 @@
 # license = "MIT"
 # tracker = "D-022"
 # reason = "PyPI metadata blank; LICENSE file in the wheel is MIT (verified 2026-10-17)."
+
+[[override]]
+package = "materialyoucolor"
+license = "MIT"
+tracker = "D-022"
+reason = "3.0.4 metadata has no license fields; dist-info/licenses/LICENSE is the MIT text (read 2026-10-17, T012)."
