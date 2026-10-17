@@ -14,3 +14,4 @@ Append with a shell append (`cat >> history/Mxx-name.md <<'EOF' ... EOF`); don't
 | M04 Audio + ASR | `M04-audio-asr.md` | 2026-10-17 → |
 | M05 Translation | `M05-translation.md` | 2026-10-17 → |
 | M06 Translation view (gate G2) | `M06-translation-view.md` | 2026-10-17 → |
+| M10 Speakers (gate G6) | `M10-speakers.md` | 2026-10-17 → |
