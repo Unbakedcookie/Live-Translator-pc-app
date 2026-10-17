@@ -11,7 +11,7 @@ You verify the running Live Translator app (PySide6, Windows 11) against a list 
 
 ## Environment facts
 - Repo root: `D:\Live Translator pc app`. Shell: Git Bash. Interpreter: `.venv/Scripts/python.exe`.
-- Desktop: two 2560×1440 monitors side by side, virtual desktop 5120×1440, origin (0,0) top-left of the left monitor. All coordinates are physical pixels.
+- Desktop: ONE 5120×1440 super-ultrawide (Samsung Odyssey G95C) at 100 % scale, origin (0,0) top-left; work area 5120×1392 (48 px taskbar at the bottom). Physical pixels = Qt pixels at 100 %. (Corrected 2026-10-17; earlier notes wrongly said two 2560×1440 monitors.)
 - Save screenshots ONLY to the scratchpad directory the caller gives you (never inside the repo). If none was given, use `$TEMP/lt-verify/`.
 - The user is present and has allowed desktop screenshots. Their other apps (Discord, browser, VS Code) are open — never click on, type into, or close windows that are not the Live Translator app.
 
@@ -42,3 +42,6 @@ Be literal and honest. If a check is ambiguous from the evidence, mark it FAIL w
 
 ## Hard-won procedure notes (append as learned)
 - `CopyFromScreen` can't capture layered windows with combined flags in .NET Framework; win.ps1 uses raw BitBlt + CAPTUREBLT, so translucent windows DO appear in shots.
+- (T024) Qt translucent windows use per-pixel alpha (UpdateLayeredWindow), so `list` shows `Alpha=-1` even when window opacity is set. Judge opacity from the slider's % label, settings.json `window_opacity`, and screenshots instead of Alpha.
+- (T024) Popups, dropdown lists and context menus also appear in `list` titled "Live Translator". Use the overlay's known size/position to pick the right row, and expect `shot -Title` to grab a popup while one is open.
+- (T024) Budget turns: 16 checks with fresh shots used all 40 turns. Use `list` for numeric checks and save shots for visual ones. Deliver the report before the limit.

@@ -68,6 +68,7 @@ def build_qss(p: Palette) -> str:
             f"padding: {SPACE.xs // 2}px",
         ),
         _rule("QToolButton:hover", f"background: {p.surface_alt}"),
+        _rule("QToolButton:checked", "background: transparent"),  # state shows in the icon
         _rule("QPushButton:checked", f"background: {p.accent}", f"color: {p.on_accent}"),
         _rule(
             "QLineEdit, QComboBox, QSpinBox",
@@ -80,6 +81,12 @@ def build_qss(p: Palette) -> str:
             "QLineEdit:focus, QComboBox:focus, QSpinBox:focus",
             f"border-color: {p.accent}",
         ),
+        _rule(
+            'QComboBox[flat="true"]',
+            "background: transparent",
+            "border: none",
+        ),
+        _rule('QComboBox[flat="true"]:hover', f"background: {p.surface_alt}"),
         _rule(
             "QComboBox QAbstractItemView",
             f"background: {p.surface}",

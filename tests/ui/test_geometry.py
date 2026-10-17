@@ -117,3 +117,33 @@ def test_default_placement_cascades_upwards():
 def test_default_placement_uses_primary_in_dual():
     # (2560 - 520) / 2 = 1020
     assert default_placement(DUAL) == Rect(1020, 1148, 520, 220)
+
+
+# ---------------------------------------------------------------- resize
+
+
+def test_edges_at_corners_and_sides():
+    from livetranslator.ui.geometry import EDGE_BOTTOM, EDGE_LEFT, EDGE_RIGHT, EDGE_TOP, edges_at
+
+    assert edges_at(520, 220, 2, 2) == EDGE_LEFT | EDGE_TOP
+    assert edges_at(520, 220, 517, 218) == EDGE_RIGHT | EDGE_BOTTOM
+    assert edges_at(520, 220, 260, 219) == EDGE_BOTTOM
+    assert edges_at(520, 220, 260, 110) == 0  # grip is 6 px: 6..513 / 6..213 is the body
+    assert edges_at(520, 220, 6, 6) == 0
+    assert edges_at(520, 220, 514, 110) == EDGE_RIGHT  # 520 - 6 = 514 is inside the grip
+
+
+def test_resize_right_bottom_grows():
+    from livetranslator.ui.geometry import EDGE_BOTTOM, EDGE_RIGHT, resize_rect
+
+    start = Rect(100, 100, 520, 220)
+    assert resize_rect(start, EDGE_RIGHT | EDGE_BOTTOM, 80, 30) == Rect(100, 100, 600, 250)
+
+
+def test_resize_left_keeps_right_edge_and_minimum():
+    from livetranslator.ui.geometry import EDGE_LEFT, EDGE_TOP, resize_rect
+
+    start = Rect(100, 100, 520, 220)  # right 620, bottom 320
+    assert resize_rect(start, EDGE_LEFT, -50, 0) == Rect(50, 100, 570, 220)
+    # Dragging left edge far right stops at right - 160 = 460; top stops at 320 - 60 = 260.
+    assert resize_rect(start, EDGE_LEFT | EDGE_TOP, 900, 900) == Rect(460, 260, 160, 60)

@@ -46,6 +46,13 @@ class IconButton(QToolButton):
         self._palette = palette
         self._refresh()
 
+    def set_checked_silently(self, checked: bool) -> None:
+        """Reflect store state without emitting `toggled` (no echo back to the controller)."""
+        self.blockSignals(True)
+        self.setChecked(checked)
+        self.blockSignals(False)
+        self._refresh()
+
     def _refresh(self) -> None:
         on = self.isChecked() and self._checked_icon is not None
         name = self._checked_icon if on and self._checked_icon else self._icon_name

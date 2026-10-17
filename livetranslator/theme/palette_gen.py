@@ -10,10 +10,11 @@ palette that passes `check_palette`.
 from __future__ import annotations
 
 import importlib
+from functools import lru_cache
 from typing import Any
 
 from livetranslator.theme.contrast import TEXT_MIN_RATIO, UI_MIN_RATIO, ensure_contrast
-from livetranslator.theme.tokens import Palette
+from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES, Palette
 
 # materialyoucolor ships without type information.
 _hct: Any = importlib.import_module("materialyoucolor.hct")
@@ -47,6 +48,15 @@ def _hct_hex(hue: float, chroma: float, tone: float) -> str:
 
 def ramp_hues(seed_hue: float) -> list[float]:
     return [(seed_hue + 22.5 + 45.0 * step) % 360.0 for step in _RAMP_STEPS]
+
+
+@lru_cache(maxsize=32)
+def palette_for(palette_id: str, custom_seed: str | None, custom_dark: bool) -> Palette:
+    """The palette a window uses: generated from its seed if it has one, else a built-in
+    (unknown ids fall back to the default so a stale setting never breaks a window)."""
+    if custom_seed:
+        return generate_palette(custom_seed, dark=custom_dark)
+    return PALETTES.get(palette_id, PALETTES[DEFAULT_PALETTE_ID])
 
 
 def generate_palette(seed: str, *, dark: bool = True, name: str | None = None) -> Palette:

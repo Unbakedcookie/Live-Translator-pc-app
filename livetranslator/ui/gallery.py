@@ -20,7 +20,14 @@ from PySide6.QtWidgets import (
 
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.qss import build_qss
-from livetranslator.theme.tokens import PALETTES, RADIUS, SPACE, WINDOW, Palette
+from livetranslator.theme.tokens import (
+    DEFAULT_CUSTOM_SEED,
+    PALETTES,
+    RADIUS,
+    SPACE,
+    WINDOW,
+    Palette,
+)
 from livetranslator.ui.widgets.colour_seed_picker import ColourSeedPicker
 from livetranslator.ui.widgets.icon_button import IconButton
 from livetranslator.ui.widgets.language_picker import LanguagePicker
@@ -67,7 +74,7 @@ class PalettePanel(QWidget):
         layout.addWidget(swatches)
         seed_row = QHBoxLayout()
         seed_row.addWidget(QLabel("One colour", self))
-        seed_row.addWidget(ColourSeedPicker("#3B82F6", palette.is_dark, self))
+        seed_row.addWidget(ColourSeedPicker(DEFAULT_CUSTOM_SEED, palette.is_dark, self))
         seed_row.addStretch(1)
         layout.addLayout(seed_row)
         buttons = QHBoxLayout()

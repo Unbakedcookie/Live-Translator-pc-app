@@ -109,6 +109,47 @@ def snap(
     return moving.moved(_best_shift(dx, threshold), _best_shift(dy, threshold))
 
 
+EDGE_LEFT = 1
+EDGE_RIGHT = 2
+EDGE_TOP = 4
+EDGE_BOTTOM = 8
+
+
+def edges_at(width: int, height: int, px: int, py: int, grip: int = WINDOW.resize_grip) -> int:
+    """Which resize edges (EDGE_* bits) a point inside a width x height window is on."""
+    edges = 0
+    if px < grip:
+        edges |= EDGE_LEFT
+    elif px >= width - grip:
+        edges |= EDGE_RIGHT
+    if py < grip:
+        edges |= EDGE_TOP
+    elif py >= height - grip:
+        edges |= EDGE_BOTTOM
+    return edges
+
+
+def resize_rect(
+    start: Rect,
+    edges: int,
+    dx: int,
+    dy: int,
+    min_width: int = WINDOW.min_width,
+    min_height: int = WINDOW.min_height,
+) -> Rect:
+    """Drag the given edges by (dx, dy); the opposite edges stay put; never below the minimum."""
+    left, top, right, bottom = start.left, start.top, start.right, start.bottom
+    if edges & EDGE_LEFT:
+        left = min(left + dx, right - min_width)
+    if edges & EDGE_RIGHT:
+        right = max(right + dx, left + min_width)
+    if edges & EDGE_TOP:
+        top = min(top + dy, bottom - min_height)
+    if edges & EDGE_BOTTOM:
+        bottom = max(bottom + dy, top + min_height)
+    return Rect(left, top, right - left, bottom - top)
+
+
 def clamp_into(rect: Rect, area: Rect) -> Rect:
     """Fit `rect` inside `area`: shrink to the area if needed (never below the minimum size),
     then move it the shortest distance so it lies inside."""

@@ -197,6 +197,7 @@ HIGH_CONTRAST = Palette(
 
 PALETTES: dict[str, Palette] = {p.id: p for p in (MIDNIGHT, SUBTITLE, PAPER, NEON, HIGH_CONTRAST)}
 DEFAULT_PALETTE_ID = MIDNIGHT.id
+DEFAULT_CUSTOM_SEED = "#3B82F6"  # starting colour offered by the "pick one colour" theme
 
 
 @dataclass(frozen=True)
