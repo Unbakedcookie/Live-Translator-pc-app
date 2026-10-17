@@ -167,3 +167,26 @@ def test_echo_of_others_on_the_mic_is_removed_either_order(qtbot):
     store.dispatch(a.AddUtterance(utt("m3", Source.ME, "sounds good, I'm ready", 30.5)))
     store.dispatch(a.UpdateUtterance("m3", {"end": 33.0}))
     assert store.state.session.utterance("m3") is not None
+
+
+def test_speaker_worker_follows_settings_and_forgets_voices_with_the_session(qtbot):
+    from livetranslator.core.state import SpeakerConfig, SpeakerMode
+    from livetranslator.services.speakers.worker import SpeakerWorker
+    from tests.services.speakers.test_worker import FakeEmbedder, job
+
+    store = Store(AppState())
+    speakers = SpeakerWorker(FakeEmbedder(), store.dispatch)
+    worker = ASRWorker(NullEngine(), store.dispatch, vad_factory=FakeVad)
+    speech = SpeechController(store, worker, lambda: DEVICES, FakeCapture, speakers=speakers)
+    speech.start()
+    try:
+        speakers.handle(job("u1", 0))
+        assert speakers.clusters.count == 1
+        store.dispatch(a.UpdateConfigSection("speakers", {"mode": SpeakerMode.OFF}))
+        assert not speakers.enabled
+        assert store.state.config.speakers == SpeakerConfig(mode=SpeakerMode.OFF)
+        store.dispatch(a.AddUtterance(utt("o1", Source.OTHERS, "hi", 1.0)))
+        store.dispatch(a.ClearSession())
+        assert speakers.clusters.count == 0  # voices never outlive the session (D-028)
+    finally:
+        speech.stop()

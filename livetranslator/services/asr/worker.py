@@ -40,6 +40,8 @@ from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_en
 from livetranslator.services.audio.ring import Float, RingBuffer
 
 Emit = Callable[[a.Action], None]
+# (utterance id, audio, start time, end time, final): an Others line's audio for speaker labels
+LineAudioFn = Callable[[str, Float, float, float, bool], None]
 
 
 class VadFn(Protocol):
@@ -52,6 +54,7 @@ class VadFn(Protocol):
 
 MIN_PARTIAL_S = 0.5  # Whisper guesses wildly on shorter audio
 MIN_FINAL_S = 0.25
+EARLY_LABEL_S = 1.5  # audio needed before a partial line gets a provisional speaker label
 LANGUAGE_LOCK_P = 0.7  # "Others": keep the detected language once this sure
 NO_SPEECH_P = 0.6  # drop a segment Whisper itself thinks is not speech...
 LOW_LOGPROB = -1.0  # ...and decoded with low confidence (faster-whisper's own thresholds)
@@ -81,6 +84,7 @@ class OpenUtterance:
     language: str | None = None  # locked language
     end_sample: int | None = None
     end_time: float | None = None
+    early_audio_sent: bool = False  # speaker labels: provisional fingerprint handed over
 
 
 @dataclass
@@ -144,8 +148,10 @@ class ASRWorker:
         settings: AsrSettings | None = None,
         vad_factory: Callable[[], VadFn] | None = None,
         clock: Callable[[], float] = time.monotonic,
+        on_line_audio: LineAudioFn | None = None,
     ) -> None:
         self._engine = engine
+        self._on_line_audio = on_line_audio
         self._emit = emit
         self._settings = settings or AsrSettings()
         self._vad_factory = vad_factory or _silero
@@ -309,6 +315,15 @@ class ASRWorker:
         language = self._language(job, settings) or result.language
         fields: dict[str, object] = {"committed": state.committed, "tentative": state.tentative}
         self._publish(u, fields, language)
+        if (
+            self._on_line_audio is not None
+            and stream.source is Source.OTHERS
+            and not u.early_audio_sent
+            and len(audio) >= EARLY_LABEL_S * SAMPLE_RATE
+        ):
+            u.early_audio_sent = True
+            end_time = u.start_time + len(audio) / SAMPLE_RATE
+            self._on_line_audio(u.id, audio, u.start_time, end_time, False)
 
     def _finalize(self, job: Job, settings: AsrSettings) -> None:
         u, stream = job.utterance, job.stream
@@ -334,6 +349,9 @@ class ASRWorker:
             "end": u.end_time,
         }
         self._publish(u, fields, language)
+        if self._on_line_audio is not None and stream.source is Source.OTHERS:
+            end_time = u.end_time if u.end_time is not None else u.start_time
+            self._on_line_audio(u.id, audio, u.start_time, end_time, True)
 
     def _publish(self, u: OpenUtterance, fields: dict[str, object], language: str | None) -> None:
         if language is not None:

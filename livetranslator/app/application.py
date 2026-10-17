@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.log import setup_logging
 from livetranslator.app.paths import AppPaths, app_paths
-from livetranslator.app.speech_controller import SpeechController
+from livetranslator.app.speech_controller import SpeechController, line_audio_to
 from livetranslator.app.translation_controller import TranslationController
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
@@ -26,6 +26,7 @@ from livetranslator.core.store import Store
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService
 from livetranslator.services.mt.router import TranslationRouter
+from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 
 HOTKEY_LABELS = {
@@ -128,10 +129,12 @@ def build_speech(store: Store, models_dir: Path) -> SpeechController:
     """Mic + loopback capture feeding faster-whisper (T045). Heavy imports stay lazy."""
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
     from livetranslator.services.audio.devices import list_devices
+    from livetranslator.services.speakers.sherpa_engine import SherpaEmbedder
 
+    speakers = SpeakerWorker(SherpaEmbedder(models_dir), store.dispatch)
     engine = FasterWhisperEngine(models_dir)
-    worker = ASRWorker(engine, store.dispatch)
-    return SpeechController(store, worker, list_devices)
+    worker = ASRWorker(engine, store.dispatch, on_line_audio=line_audio_to(speakers))
+    return SpeechController(store, worker, list_devices, speakers=speakers)
 
 
 def run(demo: bool = False, speech: bool = True) -> int:

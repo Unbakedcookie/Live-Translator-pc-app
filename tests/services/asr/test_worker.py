@@ -268,3 +268,39 @@ def test_thread_loads_engine_and_feeds_the_store(qtbot, fails):
     final = store.state.session.utterances[-1]
     assert final.committed.startswith("w0") and final.language == "es"
     assert store.state.runtime.statuses["asr"].level is StatusLevel.OK
+
+
+def test_others_line_audio_is_handed_over_early_and_final():
+    # T102 hook: one provisional hand-over once >= 1.5 s of audio was decoded, one at the end;
+    # never for the mic.
+    handed: list[tuple[str, int, bool]] = []
+    emitted: list[a.Action] = []
+    worker = ASRWorker(
+        FakeEngine(),
+        emitted.append,
+        AsrSettings(),
+        vad_factory=fake_vad,
+        clock=lambda: NOW[0],
+        on_line_audio=lambda uid, audio, start, end, final: handed.append((uid, len(audio), final)),
+    )
+    others, me = RingBuffer(60, SAMPLE_RATE), RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, others)
+    worker.add_stream(Source.ME, me)
+    for _ in range(12):
+        others.write(tone(0.25, SPEECH))
+        me.write(tone(0.25, SPEECH))
+        NOW[0] += 0.25
+        drain(worker)
+    for _ in range(4):
+        others.write(tone(0.25, 0.0))
+        me.write(tone(0.25, 0.0))
+        NOW[0] += 0.25
+        drain(worker)
+    others_id = next(
+        x.utterance.id
+        for x in emitted
+        if isinstance(x, a.AddUtterance) and x.utterance.source is Source.OTHERS
+    )
+    assert [h[0] for h in handed] == [others_id, others_id]
+    assert [h[2] for h in handed] == [False, True]
+    assert handed[0][1] >= 1.5 * SAMPLE_RATE

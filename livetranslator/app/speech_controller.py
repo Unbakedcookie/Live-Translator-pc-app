@@ -23,10 +23,11 @@ from livetranslator.core.chatlog import is_echo
 from livetranslator.core.state import AppConfig, Source, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.base import SAMPLE_RATE
-from livetranslator.services.asr.worker import AsrSettings, ASRWorker
+from livetranslator.services.asr.worker import AsrSettings, ASRWorker, LineAudioFn
 from livetranslator.services.audio.capture import AudioCapture
 from livetranslator.services.audio.devices import AudioDevice, DeviceList, match
-from livetranslator.services.audio.ring import RingBuffer
+from livetranslator.services.audio.ring import Float, RingBuffer
+from livetranslator.services.speakers.worker import LabelJob, SpeakerSettings, SpeakerWorker
 
 RING_SECONDS = 60.0  # spec §5.3
 STREAM_NAMES = {Source.ME: "microphone", Source.OTHERS: "speakers"}
@@ -63,6 +64,19 @@ def asr_settings(config: AppConfig) -> AsrSettings:
     )
 
 
+def speaker_settings(config: AppConfig) -> SpeakerSettings:
+    return SpeakerSettings(mode=config.speakers.mode, max_speakers=config.speakers.max_speakers)
+
+
+def line_audio_to(speakers: SpeakerWorker) -> LineAudioFn:
+    """The ASR worker's line-audio hook, feeding the speaker worker."""
+
+    def hand_over(utterance_id: str, audio: Float, start: float, end: float, final: bool) -> None:
+        speakers.submit(LabelJob(utterance_id, audio, start, end, final))
+
+    return hand_over
+
+
 def _default_capture(
     device: AudioDevice, ring: RingBuffer, on_status: Callable[[StatusLevel, str], None]
 ) -> AudioCapture:
@@ -76,11 +90,13 @@ class SpeechController(QObject):
         worker: ASRWorker,
         list_devices: Callable[[], DeviceList],
         capture_factory: CaptureFactory = _default_capture,
+        speakers: SpeakerWorker | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._store = store
         self.worker = worker
+        self.speakers = speakers
         self._list_devices = list_devices
         self._capture_factory = capture_factory
         self.captures: dict[Source, CaptureHandle] = {}
@@ -89,11 +105,15 @@ class SpeechController(QObject):
         self._applied: tuple[object, ...] | None = None
         store.config_changed.connect(self._on_config_changed)
         store.utterance_updated.connect(self._check_echo)
+        store.session_cleared.connect(self._on_session_cleared)
 
     # ------------------------------------------------------------ lifecycle
 
     def start(self) -> None:
         self.worker.configure(asr_settings(self._store.state.config))
+        if self.speakers is not None:
+            self.speakers.configure(speaker_settings(self._store.state.config))
+            self.speakers.start()
         self._apply_audio()
         self.worker.start()
 
@@ -101,6 +121,12 @@ class SpeechController(QObject):
         for source in list(self.captures):
             self._stop_capture(source)
         self.worker.stop()
+        if self.speakers is not None:
+            self.speakers.stop()
+
+    def _on_session_cleared(self) -> None:
+        if self.speakers is not None:
+            self.speakers.reset()  # voices are never remembered across sessions (D-028)
 
     # ------------------------------------------------------------ config
 
@@ -109,6 +135,8 @@ class SpeechController(QObject):
             self.worker.configure(asr_settings(self._store.state.config))
         if section in ("audio", "all"):
             self._apply_audio()
+        if section in ("speakers", "all") and self.speakers is not None:
+            self.speakers.configure(speaker_settings(self._store.state.config))
 
     def _status(self, source: Source, level: StatusLevel, message: str) -> None:
         self._store.dispatch(a.SetStatus(f"audio.{source.value}", level, message))

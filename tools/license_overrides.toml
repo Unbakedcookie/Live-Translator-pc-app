@@ -12,3 +12,9 @@ package = "materialyoucolor"
 license = "MIT"
 tracker = "D-022"
 reason = "3.0.4 metadata has no license fields; dist-info/licenses/LICENSE is the MIT text (read 2026-10-17, T012)."
+
+[[override]]
+package = "sherpa-onnx"
+license = "Apache-2.0"
+tracker = "D-029"
+reason = "1.13.8 metadata is free text ('Apache licensed, as found in the LICENSE file'); dist-info/licenses/LICENSE is the Apache License 2.0 text (read 2026-10-17, T102). sherpa-onnx-core declares Apache-2.0."
