@@ -231,3 +231,39 @@
   - A worker-thread dispatch is NOT applied until the event loop runs. The handler then runs on store.thread().
   - 2 threads x 100 actions: all 200 applied, with per-thread order preserved.
 - Full suite: 138 passed. pre-commit: all hooks pass (ruff auto-sorted one import block).
+
+## 2026-10-17 - T015 Persistence (autonomous)
+
+### What was built
+- `core/migrations.py`: MIGRATIONS dict keyed by from-version. v0 means "no schema_version field": the layout is identical to v1, so that migration only stamps the version. The migrator:
+  - rejects negative or non-int versions;
+  - raises NewerSchemaError for files written by a newer app;
+  - checks that each step stamps its version.
+- `core/persistence.py`:
+  - `load_config`: a missing file gives defaults. A damaged file (syntax, non-object root, invalid field, bad version, bad encoding, OS error) is renamed `settings.corrupt-<ts>.json`, then defaults are loaded and a plain-language notice is returned. A newer-schema file is renamed `settings.newer-version-<ts>.json`, so it is never overwritten.
+  - `save_config`: writes JSON (indent 2, UTF-8, LF) to `settings.json.tmp`, then flush + fsync + `os.replace`. The temp file is removed if anything fails.
+  - `Persistence(QObject)`: listens to `config_changed`, uses a single-shot QTimer (500 ms) as the debounce, `flush()` for quit, and emits `saved`. A write failure dispatches a WARNING status ("Couldn't save your settings...") and the next success clears it.
+
+### Design forks
+- **What "migrate v0 to v1" means.** No pre-versioned files exist, so I didn't invent a fake old format. v0 = an unversioned file, migrated by stamping. A monkeypatched hypothetical v1-to-v2 rename tests that the mechanism chains steps.
+- **The session can't leak into settings by construction.** `save_config` takes an AppConfig, not AppState. A test still greps the file for the utterance text, the speaker rename, the status message and the slice names.
+- **Newer-schema files are set aside rather than loaded partially**, so a downgrade can never destroy settings made by a newer app.
+
+### Problems hit
+- pyright strict: `isinstance(raw, dict)` on `json.loads` output narrows to `dict[Unknown, Unknown]`. Fixed by annotating `raw: object` and casting to RawConfig after the check; the data is still validated by migrate and pydantic.
+
+### Verification (Tier A, pytest-qt)
+- 16 tests:
+  - exact round trip of a fully populated config (negative x on the left monitor, a device ref, a custom seed, hotkeys, a D: models dir);
+  - the JSON shape;
+  - missing file;
+  - 5 corrupt variants (file set aside byte-for-byte, notice names it);
+  - newer-schema file;
+  - v0 migration;
+  - migration chain + errors;
+  - atomic failure (os.replace patched to fail: original bytes intact, no leftover temp file);
+  - debounce (5 rapid changes = 1 write; no second write after the debounce);
+  - session/runtime never written;
+  - flush;
+  - save-failure status set, then cleared.
+- Full suite 154 passed; all hooks pass.
