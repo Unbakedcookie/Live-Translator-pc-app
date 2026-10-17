@@ -17,7 +17,7 @@ exclude_dirs = [".venv"]
 skips = ["*/test_*.py", "*/conftest.py"]
 
 [tool.pyright]
-include = ["livetranslator", "tools", "tests"]
+include = ["livetranslator", "tools", "tests", "benchmarks"]
 exclude = ["**/__pycache__", ".venv"]
 pythonVersion = "3.12"
 pythonPlatform = "Windows"
