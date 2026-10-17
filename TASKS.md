@@ -47,7 +47,7 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
 - **Verify helper (Tier B):** `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify/win.ps1 -Action <list|shot|focus|move|click|drag|scroll|keys> ...`
   - Physical pixels. `shot -MaxWidth N` prints `origin` and `scale`: screen = origin + px / scale.
   - `list` reports Topmost (pin), Alpha (opacity, -1 = none), ClickThrough per window.
-  - Desktop: two 2560×1440 monitors side by side (virtual 5120×1440).
+  - Desktop: ONE 5120×1440 super-ultrawide (Odyssey G95C), 100 % scale, work area 5120×1392 (D-014; corrected T021).
 - **Screenshots:** save to the session scratchpad, never into the repo.
 - **Palette preview:** `.venv/Scripts/python.exe -m tools.palette_preview --out <scratchpad>/palette-preview.png` (repo tools that import the app run with `-m tools.<name>`).
 - **Git:** stage by name; commit after tier passes; push only on request. pre-commit hooks must pass (from T010 on).

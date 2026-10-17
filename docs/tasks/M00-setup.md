@@ -70,7 +70,7 @@ Global hotkeys (show/hide all, pin toggle, capture-translate, push-to-translate)
 **Excluded for licensing:** NLLB-200, SeamlessStreaming (CC-BY-NC); piper1-gpl (GPL-3.0; don't bundle); TranslateGemma (Gemma terms not reviewed); Hunyuan-MT (license unspecified).
 
 ### Hardware (user PC)
-RTX 3060 12 GB (driver 610.74), i5-10400F 6-core, 16 GB RAM, two 2560×1440 monitors, D: 291 GB free, C: 75 GB free. Parsec virtual display adapter present.
+RTX 3060 12 GB (driver 610.74), i5-10400F 6-core, 16 GB RAM, one 5120×1440 super-ultrawide (Odyssey G95C; originally mis-recorded as two 2560×1440 monitors, corrected 2026-10-17, D-014), D: 291 GB free, C: 75 GB free. Parsec virtual display adapter present.
 
 ### Open question for Phase 1: Discord speaker names (asked 2026-10-17)
 The loopback stream is one mixed audio signal, so the app can't tell *which* other person is talking from the audio alone. Options to spec in Phase 1 (see DATA_TRACKER D-013):

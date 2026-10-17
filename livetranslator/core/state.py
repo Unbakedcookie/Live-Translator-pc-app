@@ -64,13 +64,14 @@ FontSize = Annotated[int, Field(ge=FONTS.overlay_size_min, le=FONTS.overlay_size
 
 
 class Geometry(Frozen):
-    """Window rectangle in physical pixels, plus the monitor it was on (spec §5.1)."""
+    """Window rectangle in Qt device-independent pixels (virtual desktop), plus the monitor it
+    was on (spec §5.1). Qt handles per-monitor DPI scaling."""
 
     x: int
     y: int
     width: Annotated[int, Field(ge=WINDOW.min_width)]
     height: Annotated[int, Field(ge=WINDOW.min_height)]
-    screen: str = ""  # monitor device name; "" = unknown
+    screen: str = ""  # QScreen.name(), e.g. "Odyssey G95C"; "" = unknown
 
 
 class WindowStyle(Frozen):
