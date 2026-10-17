@@ -137,3 +137,21 @@
   - pyright strict wanted explicit casts for the raw-JSON dicts in `_v1_to_v2`.
   - **A real bug caught by the existing corrupt-file test:** my first v1→v2 migration turned a non-list `windows` value ("lots") into `[]`, silently "repairing" a damaged file instead of letting validation reject it and set the file aside. Fix: the migration now leaves non-list data untouched.
   - The running app had already loaded the user's valid v1 file correctly; it rewrites as v2 on the next change.
+
+## 2026-10-17 — G1 round 3: one look for every control (commit 5253cd8)
+- **User feedback:** "the arrows and menu for the pixel size in the settings doesn't really match the language dropdown. it should. keep the app uniform."
+- **What was off** (seen in an offscreen render of the popover in Midnight and Paper):
+  - Both number boxes (font pt, outline px) used the stock Windows up/down arrows.
+  - The font box was a stock QFontComboBox: a square list with "T" icons and no search.
+  - The checkboxes were stock too.
+- **Fix:**
+  - The searchable popup moved out of `language_picker.py` into a shared `widgets/search_combo.py` (`SearchCombo` + `SearchPopup`).
+  - `LanguagePicker` and a new `FontPicker` both use it. FontPicker lists installed families A–Z, leaving out private and "@" vertical variants. Fonts that can write Latin are previewed in their own face; symbol and non-Latin fonts show in Inter so the name stays readable. A saved font that isn't installed is still shown.
+  - Number boxes now use the same Phosphor caret, stacked in a column as wide as the dropdown's arrow, with the same hover colour. Checkboxes use a rounded token box with an accent fill and a Phosphor tick.
+  - `build_qss` now takes a `QssImages` set (caret down/up, tick) instead of a single arrow path.
+- **Tests:**
+  - The hand-written QSS expectation was extended with the new rules.
+  - New tests: image rules; the icon files exist; font list sorting and filtering; search, pick, and unknown-font handling.
+  - The popover test now also covers choosing a font, and that Inter is stored as None.
+  - Result: all tests pass, ruff is clean, and pyright reports 0 errors.
+- **Slowed us:** a Bash heredoc turned `"\n"` into a real newline inside Python source twice. Multi-line source edits should go through the Edit tool, not Python-in-heredoc.
