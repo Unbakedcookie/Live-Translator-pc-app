@@ -10,7 +10,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
 from PySide6.QtWidgets import (
     QCheckBox,
-    QFontComboBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -35,6 +34,7 @@ from livetranslator.theme.tokens import (
     default_outline_width,
 )
 from livetranslator.ui.widgets.colour_seed_picker import ColourSeedPicker
+from livetranslator.ui.widgets.font_picker import FontPicker
 from livetranslator.ui.widgets.slider import LabeledSlider
 from livetranslator.ui.widgets.swatch import SwatchRow
 
@@ -92,8 +92,8 @@ class StylePopover(QFrame):
         root.addWidget(self._heading("Text"))
         text_grid = QGridLayout()
         text_grid.setHorizontalSpacing(SPACE.sm)
-        self.font_box = QFontComboBox(self)
-        self.font_box.currentFontChanged.connect(self._on_font)
+        self.font_box = FontPicker(FONTS.overlay_family, parent=self)
+        self.font_box.font_changed.connect(self._on_font)
         self.font_size = QSpinBox(self)
         self.font_size.setRange(FONTS.overlay_size_min, FONTS.overlay_size_max)
         self.font_size.setSuffix(" pt")
@@ -171,6 +171,7 @@ class StylePopover(QFrame):
             self._palette = palette
             self.setStyleSheet(window_qss(palette))
             self.swatches.set_ring_color(palette.accent)
+            self.font_box.apply_palette(palette)
             self.update()
         widgets = (
             self.light,
@@ -193,10 +194,7 @@ class StylePopover(QFrame):
         self.light.setEnabled(style.custom_seed is not None)
         self.bg_opacity.set_value(style.bg_opacity)
         self.window_opacity.set_value(style.window_opacity)
-        if style.font_family:
-            self.font_box.setCurrentFont(QFont(style.font_family))
-        else:
-            self.font_box.setCurrentFont(QFont(FONTS.overlay_family))
+        self.font_box.set_family(style.font_family or FONTS.overlay_family)
         self.font_size.setValue(style.font_size)
         self.outline.setChecked(style.outline)
         self.outline_width.setValue(style.outline_width or default_outline_width(palette))
@@ -224,8 +222,7 @@ class StylePopover(QFrame):
         if cfg is not None and cfg.style.custom_seed:
             self._controller.set_custom_palette(self._window_id, cfg.style.custom_seed, not light)
 
-    def _on_font(self, font: QFont) -> None:
-        family = font.family()
+    def _on_font(self, family: str) -> None:
         self._controller.set_style(
             self._window_id, font_family=None if family == FONTS.overlay_family else family
         )

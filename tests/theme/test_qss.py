@@ -1,10 +1,11 @@
 """T012 — QSS generated from tokens (Tier A + pytest-qt parse check)."""
 
 from dataclasses import replace
+from pathlib import Path
 
 from PySide6.QtWidgets import QWidget
 
-from livetranslator.theme.qss import build_qss
+from livetranslator.theme.qss import QssImages, build_qss, window_qss
 from livetranslator.theme.tokens import MIDNIGHT, PALETTES
 
 # Distinct placeholder colours so each token's position in the output is unambiguous.
@@ -21,7 +22,8 @@ SAMPLE = replace(
 )
 
 # Hand-written from the tokens: border 1 px, space xs/sm/md/xl = 4/8/12/24, radius sm/md = 4/8,
-# UI font Inter 10 pt; slider groove 4 (radius 2), handle 12 (radius 6, margin -(12-4)/2 = -4).
+# UI font Inter 10 pt; arrow column lg+xs = 20, checkbox md+xs = 16;
+# slider groove 4 (radius 2), handle 12 (radius 6, margin -(12-4)/2 = -4).
 EXPECTED = """\
 QWidget { color: #000004; font-family: "Inter"; font-size: 10pt; }
 QToolTip { background: #000002; color: #000004; border: 1px solid #000008; padding: 4px 8px; border-radius: 4px; }
@@ -44,6 +46,17 @@ QComboBox QAbstractItemView { background: #000002; border: 1px solid #000008; bo
 QComboBox QAbstractItemView::item { min-height: 28px; padding: 0px 8px; border-radius: 4px; color: #000004; }
 QComboBox QAbstractItemView::item:hover { background: #000003; }
 QComboBox QAbstractItemView::item:selected { background: #000006; color: #000007; }
+QSpinBox { padding-right: 20px; }
+QSpinBox::up-button, QSpinBox::down-button { subcontrol-origin: border; width: 20px; border: none; background: transparent; border-radius: 4px; }
+QSpinBox::up-button { subcontrol-position: top right; }
+QSpinBox::down-button { subcontrol-position: bottom right; }
+QSpinBox::up-button:hover, QSpinBox::down-button:hover { background: #000003; }
+QCheckBox { spacing: 8px; }
+QCheckBox::indicator { width: 16px; height: 16px; background: #000001; border: 1px solid #000008; border-radius: 4px; }
+QCheckBox::indicator:hover { border-color: #000006; }
+QCheckBox::indicator:checked { background: #000006; border-color: #000006; }
+QCheckBox:disabled { color: #000005; }
+QCheckBox::indicator:disabled { background: #000003; border-color: #000003; }
 QSlider::groove:horizontal { height: 4px; background: #000003; border-radius: 2px; }
 QSlider::sub-page:horizontal { background: #000006; border-radius: 2px; }
 QSlider::handle:horizontal { background: #000004; width: 12px; margin: -4px 0px; border-radius: 6px; }
@@ -66,3 +79,24 @@ def test_qt_accepts_every_palette_stylesheet(qtbot, qtlog):
         widget.ensurePolished()
     parse_errors = [r for r in qtlog.records if "parse" in r.message.lower()]
     assert parse_errors == []
+
+
+def test_image_rules_use_the_same_caret_everywhere():
+    images = QssImages(Path("i/down.png"), Path("i/up.png"), Path("i/check.png"))
+    tail = build_qss(SAMPLE, images).removeprefix(EXPECTED)
+    # Dropdown caret md = 12; number-box carets sm + xs/2 = 10 (half-height buttons);
+    # tick md = 12.
+    assert tail.splitlines() == [
+        'QComboBox::down-arrow { image: url("i/down.png"); width: 12px; height: 12px; }',
+        'QSpinBox::up-arrow { image: url("i/up.png"); width: 10px; height: 10px; }',
+        'QSpinBox::down-arrow { image: url("i/down.png"); width: 10px; height: 10px; }',
+        'QCheckBox::indicator:checked { image: url("i/check.png"); width: 12px; height: 12px; }',
+    ]
+    assert tail.endswith("\n")
+
+
+def test_window_qss_icon_files_exist(qtbot):
+    qss = window_qss(SAMPLE)
+    paths = [part.split('")')[0] for part in qss.split('url("')[1:]]
+    assert len(paths) == 4
+    assert all(Path(path).is_file() for path in paths)

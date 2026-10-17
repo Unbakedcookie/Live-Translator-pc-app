@@ -195,6 +195,11 @@ def test_style_popover_controls_update_store(setup, qtbot):
         popover.sources[source].setChecked(False)
     assert cfg(store).sources == (Source.SCREEN,)  # the last source can't be unticked
     assert popover.sources[Source.SCREEN].isChecked()
+    popover.font_box.set_family("Arial")
+    popover.font_box.activated.emit(popover.font_box.currentIndex())
+    assert cfg(store).style.font_family == "Arial"
+    popover.font_box.activated.emit(popover.font_box.findData("Inter"))
+    assert cfg(store).style.font_family is None  # Inter is the default: stored as None
     popover.close()
 
 

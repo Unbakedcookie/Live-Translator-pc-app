@@ -3,10 +3,12 @@
 from PySide6.QtCore import QPoint, QSize, Qt
 
 from livetranslator.core.languages import DEFAULT_LANGUAGES, language
+from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.palette_gen import generate_palette
 from livetranslator.theme.tokens import MIDNIGHT, PALETTES, PAPER
 from livetranslator.ui.gallery import Gallery
 from livetranslator.ui.widgets.colour_seed_picker import ColourSeedPicker
+from livetranslator.ui.widgets.font_picker import FontPicker, installed_families
 from livetranslator.ui.widgets.icon_button import IconButton
 from livetranslator.ui.widgets.language_picker import LanguagePicker
 from livetranslator.ui.widgets.pin_button import PinButton
@@ -154,3 +156,32 @@ def test_language_popup_is_wide_enough_for_long_names(qtbot):
     assert popup.list.width() >= popup.list.sizeHintForColumn(0)
     assert popup.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
     popup.hide()
+
+
+def test_font_picker_lists_installed_fonts_a_to_z(qtbot):
+    register_fonts(bundled_font_files())
+    families = installed_families()
+    assert "Inter" in families  # bundled with the app
+    assert families == sorted(families, key=str.casefold)
+    assert not any(f.startswith("@") for f in families)
+
+
+def test_font_picker_search_picks_and_keeps_unknown_fonts(qtbot):
+    picker = FontPicker("Inter", ["Arial", "Georgia", "Inter", "Inter SemiBold"])
+    qtbot.addWidget(picker)
+    picker.resize(160, 24)
+    picker.show()
+    chosen: list[str] = []
+    picker.font_changed.connect(chosen.append)
+    picker.showPopup()
+    popup = picker.popup
+    assert popup is not None and popup.search.placeholderText() == "Search fonts"
+    popup.search.setText("inter")
+    assert popup.proxy.rowCount() == 2  # Inter, Inter SemiBold
+    qtbot.keyClick(popup.search, Qt.Key.Key_Down)
+    qtbot.keyClick(popup.search, Qt.Key.Key_Return)
+    assert chosen == ["Inter SemiBold"]
+    assert picker.current_family() == "Inter SemiBold"
+    picker.set_family("Font From Another PC")  # saved setting, not installed here
+    assert picker.current_family() == "Font From Another PC"
+    assert chosen == ["Inter SemiBold"]  # set_family never emits

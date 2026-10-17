@@ -7,6 +7,7 @@ palette, so windows can use different themes side by side.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from livetranslator.theme.tokens import FONTS, RADIUS, SPACE, WINDOW, Palette
@@ -16,22 +17,20 @@ def _rule(selector: str, *declarations: str) -> str:
     return f"{selector} {{ {' '.join(d + ';' for d in declarations)} }}"
 
 
-def build_qss(p: Palette, down_arrow: Path | None = None) -> str:
-    """The stylesheet for palette `p`. `down_arrow` (a PNG) replaces the native combobox
-    arrow; `window_qss` supplies it, plain `build_qss` stays pure for tests."""
-    arrow = (
-        [
-            _rule(
-                "QComboBox::down-arrow",
-                f'image: url("{down_arrow.as_posix()}")',
-                f"width: {SPACE.md}px",
-                f"height: {SPACE.md}px",
-            )
-        ]
-        if down_arrow is not None
-        else []
-    )
-    return _base_rules(p) + "".join(r + "\n" for r in arrow)
+@dataclass(frozen=True)
+class QssImages:
+    """Icon PNGs for the parts QSS can only draw from files (G1: one look for every
+    dropdown, number box and checkbox instead of the native Windows arrows and ticks)."""
+
+    caret_down: Path
+    caret_up: Path
+    check: Path
+
+
+def build_qss(p: Palette, images: QssImages | None = None) -> str:
+    """The stylesheet for palette `p`. `images` replace the native arrows and tick;
+    `window_qss` supplies them, plain `build_qss` stays pure for tests."""
+    return _base_rules(p) + ("" if images is None else _image_rules(images))
 
 
 def badge_qss(p: Palette) -> str:
@@ -44,10 +43,33 @@ def badge_qss(p: Palette) -> str:
 
 
 def window_qss(p: Palette) -> str:
-    """build_qss with the themed Phosphor caret as the combobox arrow (needs a QApplication)."""
+    """build_qss with themed Phosphor arrows and tick (needs a QApplication)."""
     from livetranslator.theme.icons import icon_file
 
-    return build_qss(p, icon_file("caret-down", p, "text_secondary", SPACE.md * 2))
+    size = SPACE.md * 2  # drawn at half size in QSS: sharp on high-DPI screens
+    return build_qss(
+        p,
+        QssImages(
+            caret_down=icon_file("caret-down", p, "text_secondary", size),
+            caret_up=icon_file("caret-up", p, "text_secondary", size),
+            check=icon_file("check-bold", p, "on_accent", size),
+        ),
+    )
+
+
+def _image_rules(images: QssImages) -> str:
+    def image(selector: str, path: Path, size: int) -> str:
+        return _rule(
+            selector, f'image: url("{path.as_posix()}")', f"width: {size}px", f"height: {size}px"
+        )
+
+    rules = [
+        image("QComboBox::down-arrow", images.caret_down, SPACE.md),
+        image("QSpinBox::up-arrow", images.caret_up, SPACE.sm + SPACE.xs // 2),
+        image("QSpinBox::down-arrow", images.caret_down, SPACE.sm + SPACE.xs // 2),
+        image("QCheckBox::indicator:checked", images.check, SPACE.md),
+    ]
+    return "".join(r + "\n" for r in rules)
 
 
 def _base_rules(p: Palette) -> str:
@@ -56,6 +78,7 @@ def _base_rules(p: Palette) -> str:
     groove = SPACE.xs
     handle = SPACE.md
     handle_margin = -(handle - groove) // 2
+    arrow_col = SPACE.lg + SPACE.xs  # width of the dropdown / number-box arrow column
     rules = [
         _rule(
             "QWidget",
@@ -126,7 +149,7 @@ def _base_rules(p: Palette) -> str:
         _rule(
             "QComboBox::drop-down",
             "border: none",
-            f"width: {SPACE.lg + SPACE.xs}px",
+            f"width: {arrow_col}px",
             "subcontrol-position: center right",
         ),
         _rule(
@@ -149,6 +172,44 @@ def _base_rules(p: Palette) -> str:
             "QComboBox QAbstractItemView::item:selected",
             f"background: {p.accent}",
             f"color: {p.on_accent}",
+        ),
+        # Number boxes: the same caret as the dropdowns, stacked in a column of the
+        # dropdown arrow's width (G1 feedback: keep the app uniform).
+        _rule("QSpinBox", f"padding-right: {arrow_col}px"),
+        _rule(
+            "QSpinBox::up-button, QSpinBox::down-button",
+            "subcontrol-origin: border",
+            f"width: {arrow_col}px",
+            "border: none",
+            "background: transparent",
+            f"border-radius: {RADIUS.sm}px",
+        ),
+        _rule("QSpinBox::up-button", "subcontrol-position: top right"),
+        _rule("QSpinBox::down-button", "subcontrol-position: bottom right"),
+        _rule(
+            "QSpinBox::up-button:hover, QSpinBox::down-button:hover",
+            f"background: {p.surface_alt}",
+        ),
+        _rule("QCheckBox", f"spacing: {SPACE.sm}px"),
+        _rule(
+            "QCheckBox::indicator",
+            f"width: {SPACE.md + SPACE.xs}px",
+            f"height: {SPACE.md + SPACE.xs}px",
+            f"background: {p.bg}",
+            f"border: {border}",
+            f"border-radius: {RADIUS.sm}px",
+        ),
+        _rule("QCheckBox::indicator:hover", f"border-color: {p.accent}"),
+        _rule(
+            "QCheckBox::indicator:checked",
+            f"background: {p.accent}",
+            f"border-color: {p.accent}",
+        ),
+        _rule("QCheckBox:disabled", f"color: {p.text_secondary}"),
+        _rule(
+            "QCheckBox::indicator:disabled",
+            f"background: {p.surface_alt}",
+            f"border-color: {p.surface_alt}",
         ),
         _rule(
             "QSlider::groove:horizontal",
