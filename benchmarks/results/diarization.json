@@ -1,0 +1,812 @@
+[
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1172069825436409,
+        "confusion": 0.0,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.12323687687967322
+  },
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1172069825436409,
+        "confusion": 0.0,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.10930616625337279
+  },
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.7",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.11758360302049622,
+        "confusion": 0.07281553398058252,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 3.0,
+        "switches": 0.25
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.3403990024937656,
+        "confusion": 0.2231920199501247,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.24242424242424243,
+        "confusion": 0.24242424242424243,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.6666666666666666,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.15551839464882944,
+        "confusion": 0.13238573021181718,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 5.0,
+        "switches": 0.125
+      }
+    },
+    "compute_s": 0.11381495124769572
+  },
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1172069825436409,
+        "confusion": 0.0,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.2020624303232999,
+        "confusion": 0.17892976588628762,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.0469514012502259
+  },
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1172069825436409,
+        "confusion": 0.0,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.2020624303232999,
+        "confusion": 0.17892976588628762,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.04392076937474485
+  },
+  {
+    "material": "as recorded",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.7",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1172069825436409,
+        "confusion": 0.0,
+        "miss": 0.1172069825436409,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.24242424242424243,
+        "confusion": 0.24242424242424243,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.6666666666666666,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.042432384374478715
+  },
+  {
+    "material": "as recorded",
+    "approach": "A offline",
+    "embedding": "titanet-large",
+    "setting": "distance 0.2",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.6618122977346278,
+        "confusion": 0.27885652642934194,
+        "miss": 0.38295577130528585,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.5430174563591023,
+        "confusion": 0.42019950124688277,
+        "miss": 0.12281795511221945,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 2.0,
+        "switches": 0.25
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.45454545454545453,
+        "confusion": 0.45454545454545453,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.6981605351170569,
+        "confusion": 0.28929765886287623,
+        "miss": 0.4088628762541806,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.25,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.14455230577096143
+  },
+  {
+    "material": "as recorded",
+    "approach": "A offline",
+    "embedding": "titanet-large",
+    "setting": "distance 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.38295577130528585,
+        "confusion": 0.0,
+        "miss": 0.38295577130528585,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.5193266832917706,
+        "confusion": 0.39650872817955113,
+        "miss": 0.12281795511221945,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 1.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.3253588516746411,
+        "confusion": 0.3253588516746411,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.6666666666666666,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.4088628762541806,
+        "confusion": 0.0,
+        "miss": 0.4088628762541806,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.14391122884722976
+  },
+  {
+    "material": "as recorded",
+    "approach": "B window 10s/1s",
+    "embedding": "titanet-large",
+    "setting": "dist 0.5 / sim 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.42718446601941745,
+        "confusion": 0.0,
+        "miss": 0.42718446601941745,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 1.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.529925187032419,
+        "confusion": 0.3734413965087282,
+        "miss": 0.15648379052369077,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 1.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.03508771929824561,
+        "confusion": 0.0,
+        "miss": 0.03508771929824561,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.4080267558528428,
+        "confusion": 0.020624303232998884,
+        "miss": 0.3874024526198439,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.625,
+        "speakers_found": 4.0,
+        "switches": 0.375
+      }
+    },
+    "compute_s": 0.2046702120968812
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.1163712162486263
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.11111064437482128
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-large",
+    "setting": "similarity 0.7",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.11758360302049622,
+        "confusion": 0.07281553398058252,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 3.0,
+        "switches": 0.25
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.24242424242424243,
+        "confusion": 0.24242424242424243,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.6666666666666666,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.15551839464882944,
+        "confusion": 0.13238573021181718,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 5.0,
+        "switches": 0.125
+      }
+    },
+    "compute_s": 0.11812348125258723
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.04554481062714331
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.11789297658862877,
+        "confusion": 0.0947603121516165,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.875,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.041865595622039106
+  },
+  {
+    "material": "level-matched",
+    "approach": "C per-line",
+    "embedding": "titanet-small",
+    "setting": "similarity 0.7",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.0447680690399137,
+        "confusion": 0.0,
+        "miss": 0.0447680690399137,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.11097256857855362,
+        "confusion": 0.0,
+        "miss": 0.11097256857855362,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.24242424242424243,
+        "confusion": 0.24242424242424243,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.6666666666666666,
+        "speakers_found": 4.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.18979933110367894,
+        "confusion": 0.16666666666666666,
+        "miss": 0.023132664437012264,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 5.0,
+        "switches": 0.0
+      }
+    },
+    "compute_s": 0.04492058687264944
+  },
+  {
+    "material": "level-matched",
+    "approach": "A offline",
+    "embedding": "titanet-large",
+    "setting": "distance 0.2",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.3559870550161812,
+        "confusion": 0.24379719525350593,
+        "miss": 0.1121898597626753,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 3.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.5031172069825436,
+        "confusion": 0.3802992518703242,
+        "miss": 0.12281795511221945,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 5.0,
+        "switches": 0.25
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.4082934609250399,
+        "confusion": 0.4043062200956938,
+        "miss": 0.003987240829346092,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 5.0,
+        "switches": 0.0
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.5011148272017837,
+        "confusion": 0.4428651059085842,
+        "miss": 0.05824972129319955,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.5,
+        "speakers_found": 7.0,
+        "switches": 0.125
+      }
+    },
+    "compute_s": 0.1722438852555303
+  },
+  {
+    "material": "level-matched",
+    "approach": "A offline",
+    "embedding": "titanet-large",
+    "setting": "distance 0.5",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.1121898597626753,
+        "confusion": 0.0,
+        "miss": 0.1121898597626753,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.12281795511221945,
+        "confusion": 0.0,
+        "miss": 0.12281795511221945,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.25
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.11323763955342903,
+        "confusion": 0.11323763955342903,
+        "miss": 0.0,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.16666666666666666
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.2895763656633222,
+        "confusion": 0.23132664437012262,
+        "miss": 0.05824972129319955,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.75,
+        "speakers_found": 7.0,
+        "switches": 0.375
+      }
+    },
+    "compute_s": 0.17054756825125952
+  },
+  {
+    "material": "level-matched",
+    "approach": "B window 10s/1s",
+    "embedding": "titanet-large",
+    "setting": "dist 0.5 / sim 0.6",
+    "per_mix": {
+      "2 speakers, en, M+F": {
+        "der": 0.10625674217907227,
+        "confusion": 0.0,
+        "miss": 0.10625674217907227,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.0
+      },
+      "2 speakers, en, F+F": {
+        "der": 0.1745635910224439,
+        "confusion": 0.01683291770573566,
+        "miss": 0.15773067331670823,
+        "false_alarm": 0.0,
+        "turn_accuracy": 1.0,
+        "speakers_found": 2.0,
+        "switches": 0.25
+      },
+      "3 speakers, es, M+M+F": {
+        "der": 0.19537480063795853,
+        "confusion": 0.16267942583732056,
+        "miss": 0.03269537480063796,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.8333333333333334,
+        "speakers_found": 3.0,
+        "switches": 0.16666666666666666
+      },
+      "4 speakers, 3 en + 1 es": {
+        "der": 0.3787625418060201,
+        "confusion": 0.29821627647714605,
+        "miss": 0.08054626532887403,
+        "false_alarm": 0.0,
+        "turn_accuracy": 0.625,
+        "speakers_found": 5.0,
+        "switches": 0.125
+      }
+    },
+    "compute_s": 0.2323442523934493
+  }
+]

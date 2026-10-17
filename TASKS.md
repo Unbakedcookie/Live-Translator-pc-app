@@ -38,7 +38,7 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
 - **M02 Floating window** — T021–T025 done. G1 APPROVED 2026-10-17 after 3 feedback rounds.
 - **M03 Benchmarks** — T031–T033 done. ASR: turbo int8 WER 3–7%, 1.16 GB.
   MT: Opus-MT p50 116 ms GPU / 166 ms CPU (provisional default); MADLAD best chrF but p50 1.07 s; Qwen3-4B p50 485 ms.
-  Next: T034 G4 recommendation; T035 diarization and T036 Discord spike pending.
+  T034 G4 sheet written (awaiting user). Next: T035 diarization; T036 Discord spike needs the user.
 - **M04 Audio + ASR** — speech pipeline live (T041–T046 done; T045 loopback verified). Fixed Silero state carry-over deafness and LocalAgreement seam duplicates.
   Not live-verified: mic+loopback together, CPU fallback. T042 WAV listen-check deferred to user.
 - **M05 Translation** — translation live in app via Opus-MT (provisional until G4). T051–T053 done.
