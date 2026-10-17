@@ -81,6 +81,8 @@ Status: C = Confirmed (2 primary sources) · M = Medium (1 source, or a conflict
 | faster-whisper 1.2.1 / ctranslate2 4.8.3 | yes (if chosen at G4) | MIT / MIT | C (faster-whisper) / M | Installed for T032. ctranslate2 from PyPI metadata; confirm when added to requirements.txt. |
 | nvidia-cublas-cu12 12.9 / nvidia-cudnn-cu12 9.27 | benchmark now; ship TBD | NVIDIA EULA | Unresolved | D-026. |
 | onnxruntime 1.31 / av 19.0.1 (via faster-whisper) | transitive | MIT / BSD + FFmpeg (LGPL/GPL build?) | M / Unresolved | D-027 for av. |
+| PyAudioWPatch 0.2.12.9 | yes | Apache-2.0 | C | Wheel `licenses/LICENSE.txt` (Apache-2.0, © 2022 S0D3S) + classifier (T041). Bundles PortAudio (MIT-style licence): include its notice in THIRD_PARTY_LICENSES (T113). |
+| rapidfuzz 3.14.6 (runtime since T046) | yes | MIT | C | |
 | sentencepiece 0.2.2 | yes (if an SP-based MT engine wins) | Apache-2.0 | M | Installed for T033. |
 | MADLAD-400 3B ct2 int8 (Nextcloud-AI, rev aa32bbde) | model, if chosen | Apache-2.0 | M | HF API cardData; upstream google/madlad400-3b-mt is Apache-2.0 as well, so 2 sources: C once the Nextcloud card is read. |
 | Qwen3-4B-Instruct-2507 GGUF Q4_K_M (unsloth, rev a06e946b) | model, if chosen | Apache-2.0 | M | HF API cardData; upstream Qwen repo is Apache-2.0 too. |

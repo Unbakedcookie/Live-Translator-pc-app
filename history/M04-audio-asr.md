@@ -30,3 +30,20 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
   - partial Me and Screen lines are never judged;
   - open Others line uses its start.
 - D-010 still Unresolved: the thresholds get tuned with real audio in T045.
+
+### T041 — Device enumeration (`services/audio/devices.py`)
+- **What it does.** `list_devices()` returns WASAPI inputs, WASAPI loopbacks and both defaults, via PyAudioWPatch (Apache-2.0, now a runtime dependency; license file + classifier read, gate 21/0).
+- **Matching** (`match()`): exact name + host API first, then the "stable" name (USB-port number like "(3- " and the " [Loopback]" suffix removed, casefolded), then the Windows default. A loopback is saved under its output device's own name, so the Settings choice "Headphones (A50 Game)" maps back to its loopback.
+- **Real devices found on the user's PC** (the fixtures use these names):
+  - Astro A50 with separate **Game** and **Voice** outputs (default output = A50 Voice), plus an A50 Mic.
+  - NexiGo webcam mic; Steam Streaming virtual devices; Odyssey G95C HDMI audio; Realtek S/PDIF.
+- **User benefit to point out:** if Discord outputs to A50 Voice and games to A50 Game, capturing the A50 Voice loopback gives Discord-only "Others" audio without game sound. That's a hardware stand-in for the post-MVP per-app capture.
+- **Verification:** 7 Tier A matching tests:
+  - stable name;
+  - default follow;
+  - exact wins;
+  - replugged port "(4- A50 Mic)" → "(3- A50 Mic)";
+  - missing → default / None;
+  - loopback ref round trip;
+  - exact preferred over a stable duplicate.
+  - Plus a live listing smoke test on this PC: inputs and loopbacks present, flags consistent, both defaults found.
