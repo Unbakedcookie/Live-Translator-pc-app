@@ -23,10 +23,10 @@ from livetranslator.core.chatlog import is_echo
 from livetranslator.core.state import AppConfig, Source, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.base import SAMPLE_RATE
-from livetranslator.services.asr.worker import AsrSettings, ASRWorker, LineAudioFn
+from livetranslator.services.asr.worker import AsrSettings, ASRWorker, LineAudio, LineAudioFn
 from livetranslator.services.audio.capture import AudioCapture
 from livetranslator.services.audio.devices import AudioDevice, DeviceList, match
-from livetranslator.services.audio.ring import Float, RingBuffer
+from livetranslator.services.audio.ring import RingBuffer
 from livetranslator.services.speakers.worker import LabelJob, SpeakerSettings, SpeakerWorker
 
 RING_SECONDS = 60.0  # spec §5.3
@@ -71,8 +71,18 @@ def speaker_settings(config: AppConfig) -> SpeakerSettings:
 def line_audio_to(speakers: SpeakerWorker) -> LineAudioFn:
     """The ASR worker's line-audio hook, feeding the speaker worker."""
 
-    def hand_over(utterance_id: str, audio: Float, start: float, end: float, final: bool) -> None:
-        speakers.submit(LabelJob(utterance_id, audio, start, end, final))
+    def hand_over(line: LineAudio) -> None:
+        speakers.submit(
+            LabelJob(
+                line.utterance_id,
+                line.audio,
+                line.start,
+                line.end,
+                line.final,
+                line.words,
+                line.language,
+            )
+        )
 
     return hand_over
 

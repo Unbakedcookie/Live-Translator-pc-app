@@ -281,7 +281,7 @@ def test_others_line_audio_is_handed_over_early_and_final():
         AsrSettings(),
         vad_factory=fake_vad,
         clock=lambda: NOW[0],
-        on_line_audio=lambda uid, audio, start, end, final: handed.append((uid, len(audio), final)),
+        on_line_audio=lambda line: handed.append((line.utterance_id, len(line.audio), line.final)),
     )
     others, me = RingBuffer(60, SAMPLE_RATE), RingBuffer(60, SAMPLE_RATE)
     worker.add_stream(Source.OTHERS, others)

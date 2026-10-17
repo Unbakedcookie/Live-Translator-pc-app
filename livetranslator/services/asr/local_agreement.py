@@ -63,6 +63,11 @@ class LocalAgreement:
     def committed_text(self) -> str:
         return join_words(self._committed)
 
+    @property
+    def committed_words(self) -> tuple[tuple[str, float, float], ...]:
+        """(text, start, end) of every committed word, in utterance time (T105)."""
+        return tuple((w.text, w.start, w.end) for w in self._committed)
+
     def _tail(self, words: Sequence[TimedWord]) -> list[TimedWord]:
         if not self._committed:
             return [w for w in words if _norm(w.text)]

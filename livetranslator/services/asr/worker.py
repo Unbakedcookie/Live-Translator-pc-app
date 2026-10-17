@@ -40,8 +40,23 @@ from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_en
 from livetranslator.services.audio.ring import Float, RingBuffer
 
 Emit = Callable[[a.Action], None]
-# (utterance id, audio, start time, end time, final): an Others line's audio for speaker labels
-LineAudioFn = Callable[[str, Float, float, float, bool], None]
+
+
+@dataclass(frozen=True)
+class LineAudio:
+    """An Others line's audio for speaker labels (T102/T105). Times on the app clock;
+    `words` are (text, start, end) relative to the line start (final lines only)."""
+
+    utterance_id: str
+    audio: Float
+    start: float
+    end: float
+    final: bool
+    words: tuple[tuple[str, float, float], ...] = ()
+    language: str | None = None
+
+
+LineAudioFn = Callable[[LineAudio], None]
 
 
 class VadFn(Protocol):
@@ -323,7 +338,7 @@ class ASRWorker:
         ):
             u.early_audio_sent = True
             end_time = u.start_time + len(audio) / SAMPLE_RATE
-            self._on_line_audio(u.id, audio, u.start_time, end_time, False)
+            self._on_line_audio(LineAudio(u.id, audio, u.start_time, end_time, False))
 
     def _finalize(self, job: Job, settings: AsrSettings) -> None:
         u, stream = job.utterance, job.stream
@@ -351,7 +366,17 @@ class ASRWorker:
         self._publish(u, fields, language)
         if self._on_line_audio is not None and stream.source is Source.OTHERS:
             end_time = u.end_time if u.end_time is not None else u.start_time
-            self._on_line_audio(u.id, audio, u.start_time, end_time, True)
+            self._on_line_audio(
+                LineAudio(
+                    u.id,
+                    audio,
+                    u.start_time,
+                    end_time,
+                    True,
+                    u.agreement.committed_words,
+                    language,
+                )
+            )
 
     def _publish(self, u: OpenUtterance, fields: dict[str, object], language: str | None) -> None:
         if language is not None:

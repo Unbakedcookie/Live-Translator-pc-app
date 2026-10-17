@@ -22,8 +22,15 @@ from loguru import logger
 from numpy.typing import NDArray
 
 from livetranslator.core import actions as a
-from livetranslator.core.state import SpeakerMode, StatusLevel
+from livetranslator.core.state import Source, SpeakerMode, StatusLevel, Utterance
 from livetranslator.services.speakers.base import SAMPLE_RATE, SpeakerEmbedder
+from livetranslator.services.speakers.change import (
+    LONG_LINE_S,
+    WINDOW_S,
+    find_change,
+    snap_to_words,
+    window_starts,
+)
 from livetranslator.services.speakers.clusters import DEFAULT_THRESHOLD, VoiceClusters
 from livetranslator.services.speakers.fusion import (
     OTHERS,
@@ -36,7 +43,13 @@ Emit = Callable[[a.Action], None]
 IntervalsFn = Callable[[float, float], Sequence[SpeakingInterval]]
 
 MIN_EMBED_S = 0.5  # shorter audio gives meaningless fingerprints
+MIN_PART_S = 1.0  # each side of a split must be a real turn
 STATUS_KEY = "speakers"
+
+
+def _join(words: Sequence[tuple[str, float, float]]) -> str:
+    """Whisper words carry their own leading spaces (none for CJK)."""
+    return "".join(text for text, _, _ in words).strip()
 
 
 @dataclass(frozen=True)
@@ -53,6 +66,8 @@ class LabelJob:
     start: float
     end: float
     final: bool
+    words: tuple[tuple[str, float, float], ...] = ()  # (text, start, end) in line time
+    language: str | None = None
 
 
 class SpeakerWorker:
@@ -122,6 +137,8 @@ class SpeakerWorker:
             return
         use_voice = settings.mode in (SpeakerMode.AUTO, SpeakerMode.VOICE)
         use_discord = settings.mode in (SpeakerMode.AUTO, SpeakerMode.DISCORD)
+        if job.final and use_voice and self._split_at_change(job, use_discord):
+            return
         cluster: str | None = None
         confidence: float | None = None
         if use_voice:
@@ -141,6 +158,62 @@ class SpeakerWorker:
         if result.speaker_id == OTHERS and not job.final:
             return
         self._emit(a.UpdateUtterance(job.utterance_id, {"speaker_id": result.speaker_id}))
+
+    def _label(self, audio: NDArray[np.float32], start: float, end: float, discord: bool) -> str:
+        """Final label for one stretch of speech (learns its voice)."""
+        assignment = self.clusters.assign(self._embedder.embed(audio), len(audio) / SAMPLE_RATE)
+        intervals = self._intervals(start, end) if discord else ()
+        result = fuse(start, end, assignment.cluster, assignment.similarity, intervals, self._votes)
+        self._votes = add_vote(self._votes, result.vote)
+        return result.speaker_id
+
+    def _split_at_change(self, job: LabelJob, discord: bool) -> bool:
+        """T105: two people back-to-back in one line -> two lines. True if it split."""
+        duration = len(job.audio) / SAMPLE_RATE
+        if duration < LONG_LINE_S or self.clusters.count == 0 or not job.words:
+            return False
+        window = int(WINDOW_S * SAMPLE_RATE)
+        labels = [
+            self.clusters.peek(
+                self._embedder.embed(
+                    job.audio[int(t * SAMPLE_RATE) : int(t * SAMPLE_RATE) + window]
+                )
+            ).cluster
+            for t in window_starts(duration)
+        ]
+        estimate = find_change(labels)
+        if estimate is None:
+            return False
+        cut = snap_to_words(estimate, [(s, e) for _, s, e in job.words])
+        left = [w for w in job.words if (w[1] + w[2]) / 2 < cut]
+        right = [w for w in job.words if (w[1] + w[2]) / 2 >= cut]
+        if not left or not right or cut < MIN_PART_S or duration - cut < MIN_PART_S:
+            return False
+        sample = int(cut * SAMPLE_RATE)
+        middle = job.start + cut
+        left_id = self._label(job.audio[:sample], job.start, middle, discord)
+        right_id = self._label(job.audio[sample:], middle, job.end, discord)
+        self._emit(
+            a.UpdateUtterance(
+                job.utterance_id,
+                {"committed": _join(left), "end": middle, "speaker_id": left_id},
+            )
+        )
+        self._emit(
+            a.AddUtterance(
+                Utterance(
+                    id=f"{job.utterance_id}-2",
+                    source=Source.OTHERS,
+                    speaker_id=right_id,
+                    start=middle,
+                    end=job.end,
+                    committed=_join(right),
+                    language=job.language,
+                    is_final=True,
+                )
+            )
+        )
+        return True
 
     def run_pending(self) -> int:
         done = 0
