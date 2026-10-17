@@ -17,5 +17,65 @@ Surface the relevant items whenever work touches them, before any release, and p
 | D-010 | Echo duplicate-filter thresholds | Time window and similarity threshold not yet defined | — | Unresolved | chat log | Define in spec; tune with real tests. |
 | D-011 | Transcribing other people (consent laws) | Mitigation: in-memory only, deleted on close, export offered, nothing uploaded | Not legal advice | Medium | chat log, release | Revisit before public release (add a disclosure/notice?). |
 | D-012 | Virtual audio driver distribution | Unsigned kernel drivers won't load on Win11 without test-signing; distributing a driver needs signing | Memory | Unresolved | voice-out (post-MVP) | Investigate before voice-out milestone. |
-| D-013 | Discord speaker names | RPC has `SPEAKING_START`/`SPEAKING_STOP` with `user_id` + `channel_id` (confirmed in discord-api-types / discord.js docs). Whether the `rpc` scope still requires approval or tester-listing is unverified. DAVE E2EE is mandatory for voice since 2026-03-01 (Discord blog + dev docs), so bots need DAVE support. | discord-api-types.dev, discord.js docs, discord.com blog, docs.discord.com | Medium | speaker labels | `fact-checker` should check current RPC access rules in the Discord dev portal docs before we spec option B. |
+| D-013 | Discord speaker names | RPC has `SPEAKING_START`/`SPEAKING_STOP` with `user_id` + `channel_id` (confirmed in discord-api-types / discord.js docs). Whether the `rpc` scope still requires approval or tester-listing is unverified. DAVE E2EE is mandatory for voice since 2026-03-01 (Discord blog + dev docs), so bots need DAVE support. | discord-api-types.dev, discord.js docs, discord.com blog, docs.discord.com | Resolved (blocked for zero-config) | speaker labels | **Fact-check 2026-10-17**: docs.discord.com OAuth2 + RPC pages say `rpc`/`rpc.voice.read` are "only available to approved partners". Unapproved apps: owner/team + max 50 testers, 10 guilds. No open approval process found. SPEAKING payload has `user_id` only; nick data via GET_SELECTED_VOICE_CHANNEL is unverified. Plan: opt-in own-app mode (§5.13). Live test in T036. |
 | D-014 | Desktop geometry | Two 2560×1440 monitors, virtual desktop 5120×1440 | `win.ps1 -Action list` 2026-10-17 | Resolved | verifier | Re-check if the monitor setup changes. |
+| D-015 | Latency / resource budgets | First partial ≤ 1.0 s; final translated line ≤ 1.5 s after speech end; app VRAM ≤ 6 GB (game mode ≤ 3 GB); CPU ≤ 25 % | Phase 1 targets (spec §8), not measured | Unresolved | M03, M09 | Measure in M03 and M09; revise with the user if unreachable. |
+| D-016 | Silero VAD source | Assumed to be bundled as ONNX inside faster-whisper (MIT), so no torch/silero-vad dependency is needed | fact-checker 2026-10-17: faster-whisper 1.2.1 ships `faster_whisper/assets/silero_vad_v6.onnx`; snakers4/silero-vad repo is MIT | Medium | M04 T043 | The v6 model file's own license line was not read. Confirm when installing (T043). |
+| D-017 | Benchmark datasets | google/fleurs is CC-BY-4.0 and not gated. Used locally for measurement only, never shipped or committed. Attribute it if results are published | HF datasets API (fact-checker 2026-10-17) | Medium | M03 | One source. Fine for local benchmarks. |
+| D-018 | One vs two Whisper instances for two streams | Assumed one worker with a fair queue is enough at a 0.5 s update interval | Assumption | Unresolved | M03 T032, M04 T045 | Measure sustained decodes/s on the 3060. |
+| D-019 | llama-cpp-python CUDA wheels on Windows | Availability of prebuilt CUDA 12 wheels for Python 3.12 unverified; building from source needs MSVC + CUDA toolkit | Memory | Unresolved | M03 T033 | Try the install in T033; drop Qwen from the benchmark if it costs more than about 30 min. |
+| D-020 | Global hotkeys and anti-cheat | `RegisterHotKey` assumed safe; low-level keyboard hooks avoided because some anti-cheats flag them | General knowledge, unverified per game | Unresolved | M08 T081 | Test with the user's games; note any anti-cheat warnings. |
+| D-021 | PySide6 / Qt license | PySide6/-Essentials/-Addons/shiboken6 6.12.0 = `LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only`. Shareable under LGPLv3 if we: use **Essentials only** (no GPL-only modules, e.g. Quick3D/VirtualKeyboard/Graphs/Charts/DataViz); package onedir with replaceable DLLs; ship LGPL+GPL texts + a notice; **host the matching Qt source ourselves** + a written offer (a qt.io link isn't enough); no reverse-engineering ban in our terms; scan the build for GPL-only DLLs | PyPI metadata ×4 (Confirmed), doc.qt.io/qt-6/lgpl.html, doc.qt.io/qt-6/licensing.html, Qt FAQ quoted on the pyside mailing list (fact-checker 2026-10-17) | Medium | packaging, T113 | "Onedir satisfies LGPL §4d" is an inference, and the Qt/PyInstaller deployment page is unread. Re-check at installer time. Contingency: swap the UI to wxPython (spec §11). |
+| D-022 | **License register** (all planned dependencies) | See the "License register" table below | fact-checker 2026-10-17 (PyPI JSON, GitHub API/LICENSE, HF API) | Mixed (per row) | every dependency, license gate T010 | Rows marked Medium need a second source (usually reading the LICENSE file inside the installed wheel during T010/T011). |
+| D-023 | diart maintenance/compat | Last release 0.9.2 (2025-02-12). Pins numpy < 2. Heavy dependencies (torch, torchvision, pandas, matplotlib, optuna, rx). README says Python 3.10–3.12 but PyPI says 3.8–3.10. Open issue about pyannote 4.0 | PyPI, GitHub issues (fact-checker) | Medium | T035, T102 | Benchmark only in a separate venv. Not the default engine. |
+| D-024 | pyannote models gated | pyannote/segmentation, segmentation-3.0 and embedding are MIT but **gated** (HF account + terms + token). wespeaker-voxceleb-resnet34-LM is ungated but **CC-BY-4.0**. VoxCeleb training-data terms not reviewed | HF API (fact-checker) | Medium | diart, sherpa-onnx | Don't mirror the gated weights without checking the gate terms. sherpa-onnx re-hosts segmentation-3.0 as ONNX: verify that this redistribution is clean (D-029). |
+| D-025 | Discord event vs audio lag | Unknown offset between SPEAKING_START and the loopback audio onset | — | Unresolved | T036, T101 | Measure over 20 events in T036. Calibrate at runtime. |
+| D-026 | NVIDIA CUDA runtime redistribution | ctranslate2 needs the cuBLAS/cuDNN wheels, and torch CUDA (if used) bundles more. These fall under the NVIDIA EULA, not BSD/MIT | fact-checker red flag | Unresolved | packaging | Check NVIDIA's redistribution attachment before the installer. Option: download CUDA libs on first run instead of bundling. |
+| D-027 | PyAV / FFmpeg via faster-whisper | `av` bundles FFmpeg, which may be an LGPL or GPL build | fact-checker red flag | Unresolved | packaging | We feed numpy audio and never decode files. Try to exclude `av` from the bundle, or verify that the wheel's FFmpeg is an LGPL build. |
+| D-028 | Voiceprints are biometric data | Speaker embeddings can count as biometric data under GDPR, BIPA and similar laws | General knowledge, not legal advice | Medium | §5.13, release | Mitigation: memory only, never persisted or uploaded. Cross-session voice memory stays post-MVP and opt-in. Disclose in the privacy note. |
+| D-029 | sherpa-onnx diarization models | sherpa-onnx assumed Apache-2.0. Segmentation-3.0 ONNX (MIT upstream). 3D-Speaker/WeSpeaker embeddings assumed Apache-2.0; NeMo TitaNet assumed CC-BY-4.0. Offline-only API, so streaming means sliding-window re-runs | Memory + k2-fsa docs (fact-checker, unverified) | Unresolved | T035, T102 | Verify each model file's license at its source before benchmarking and shipping. Measure label stability. |
+| D-030 | Discord token exchange without a secret | Public Client flag / PKCE may allow it (unofficial userdoccers wiki). Official docs show `client_secret` | fact-checker | Unresolved | T036 | Test in T036. Never commit or ship a secret (gitleaks). |
+
+## License register (D-022)
+Status: C = Confirmed (2 primary sources) · M = Medium (1 source, or a conflict that doesn't change the answer). "Ship" = included in the distributed app.
+
+| Component | Ship | License | Status | Notes |
+|---|---|---|---|---|
+| PySide6-Essentials / shiboken6 6.12.0 | yes | LGPL-3.0-only (chosen option) | C | See D-021. The full `PySide6`/Addons package is never installed. |
+| QtAwesome 1.4.2 | yes | MIT | C | Bundles FA 5/6 (OFL), Elusive (OFL), MDI (Apache-2.0), **Phosphor 1.3.0 (MIT)**, Remix (Apache-2.0), Codicons (CC-BY-4.0). Strip all but Phosphor from the build. **No Fluent icons.** |
+| QtPy 2.4.3 | yes | MIT | M | |
+| Phosphor icons | yes | MIT | C | Via QtAwesome. Keep the MIT notice. |
+| Fluent UI System Icons | no | MIT | M | Not chosen (not in QtAwesome). |
+| Inter | yes | OFL-1.1 | M | Can't sell the font alone. Keep the OFL text. Rename if modified (Reserved Font Name). |
+| Noto Sans / Noto Sans CJK etc. | yes (downloaded per pack) | OFL-1.1 | M | The noto-cjk LICENSE file says OFL, but the GitHub API says null. CJK fonts are ~16 MB+ per weight, so download only the weights we use. |
+| materialyoucolor 3.0.4 | yes | MIT | M | PyPI fields are blank, so read the LICENSE file in the wheel. |
+| coloraide 8.13.1 | yes | MIT | C | |
+| win32mica 3.0 | yes | MIT | C | |
+| platformdirs 4.13.3 | yes | MIT | M | |
+| loguru 0.7.3 | yes | MIT | C | |
+| huggingface_hub 2.2.0 | yes | Apache-2.0 | C | Include the license text. |
+| lingua-language-detector 2.2.0 | yes | Apache-2.0 | C | Model size not yet checked. |
+| pypresence 4.6.2 | yes | MIT | C | Maintained (released 2026-07-08). |
+| pydantic 2.14.1 | yes | MIT | M | |
+| rapidfuzz 3.14.6 | yes | MIT | C | |
+| mss 10.2.0 | yes | MIT | C | |
+| winrt-runtime / winrt-Windows.Media.Ocr 3.2.1 | yes | MIT | C | |
+| nvidia-ml-py 13.615.71 | yes | BSD (clause count unverified) | M | Read the wheel's license file. |
+| faster-whisper 1.2.1 | yes | MIT | C | Brings ctranslate2, onnxruntime and av (D-027). |
+| Silero VAD v6 (bundled) | yes | MIT | M | D-016. |
+| RapidOCR 3.10.0 + default PP-OCR models | yes | Apache-2.0 | C / M | Models per RapidOCR's MODEL_LICENSES.md only. Needs NOTICE + modification note. |
+| diart 0.9.2 | optional / benchmark | MIT | C | D-023. Not in the default bundle. |
+| pyannote.audio 4.0.7 | optional / benchmark | MIT | M | |
+| torch 2.14.1 / torchaudio 2.11.0 | optional / benchmark | BSD-3 (+ third-party components) / BSD-2 | M / C | CUDA builds carry NVIDIA EULA parts (D-026). Not in the default bundle. |
+| pyannote segmentation / segmentation-3.0 / embedding | optional | MIT, **gated** | M | D-024. |
+| pyannote wespeaker-voxceleb-resnet34-LM | optional | CC-BY-4.0 | M | Attribution needed. |
+| sherpa-onnx + diarization models | yes (planned) | Apache-2.0? / mixed | Unresolved | D-029. |
+| PyInstaller 6.22.3 | build | GPL-2.0-or-later WITH Bootloader-exception | C | The exception allows any license for the bundled app. |
+| Inno Setup | build | Inno Setup License (permissive, custom) | M | Free for commercial use. |
+| pre-commit, gitleaks, ruff, pip-licenses, pytest, pytest-qt | dev | MIT | M | |
+| bandit, pip-audit, jiwer, sacrebleu | dev | Apache-2.0 | M | |
+| pyright / basedpyright | dev | MIT (GitHub shows NOASSERTION) | M | Read the LICENSE file. |
+| google/fleurs | benchmark data | CC-BY-4.0 | M | D-017. |
+| PyQt-Fluent-Widgets | **excluded** | GPL-3.0 | M | |
+| PyQt-Frameless-Window | **excluded** | GPL-3.0 | M | |
+| Nuitka | **excluded** | AGPL-3.0 | M | |

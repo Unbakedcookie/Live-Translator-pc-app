@@ -67,3 +67,75 @@ Also created `CLAUDE.md` holding the condensed standing rules, so the new Phase 
 - Thin, low-quality web search results for model comparisons. Primary API metadata was far better.
 - The .NET enum quirk in screenshot capture (one iteration).
 - PATH not refreshed after the winget install (minor).
+
+## 2026-10-17 — Session 2: Phase 1 (spec + task breakdown)
+
+### What was done
+- Read TASKS.md + M00 "Approved decisions", then wrote `project-spec.md` (sections 1-13) and the milestone task files `docs/tasks/M01`-`M10` (43 tasks, each with a Tier A/B label). Updated the TASKS.md map and added D-015 to D-021 to DATA_TRACKER.
+
+### Design forks and choices made in the draft (all pending user approval)
+- **MVP trim.** In: hotkeys, click-through, transcript + export, original+translation toggle, snap/lock, auto-detect, font/outline, Language Manager, game mode + readout, CPU fallback. Post-MVP: installer, OCR auto-watch, diarization, Discord RPC names, profiles, glossary, per-app capture, push-to-translate, voice-out. Reasoning: the core loop (hear, translate, show in an overlay) has to work well before the extras.
+- **Streaming policy.** I chose our own LocalAgreement-2 on top of faster-whisper rather than SimulStreaming. AlignAtt needs the PyTorch whisper backend (heavy). SimulStreaming stays a benchmark challenger.
+- **VAD.** Use the Silero ONNX model bundled in faster-whisper to avoid a torch dependency (D-016, to be verified).
+- **Opacity.** Two controls: background opacity (painted, text stays crisp) and whole-window opacity. Pin and click-through use ctypes `SetWindowPos`/ex-styles to avoid the flicker caused by Qt flag toggling.
+- **Hotkeys.** `RegisterHotKey` instead of low-level keyboard hooks (anti-cheat caution, D-020).
+- **Store.** Frozen pydantic state + pure reducers + a thread-safe `dispatch` that queues to the main thread, with granular signals. Persistence is debounced and atomic, and the session (chat log) is never persisted.
+- **Licensing catch.** PySide6 is LGPL-3.0, not permissive. It's allowed with dynamic linking (onedir), so I added the exception to spec section 11 + D-021.
+- **Gates.** G1 window shell (blocks UI), G2 chat line, G3 settings/wizard, G4 engine defaults from benchmark, G5 OCR selector. Non-UI milestones (M03-M05) can proceed while G1 waits for feedback.
+
+### What slowed us
+- A multi-file bash heredoc failed with "unexpected EOF while looking for matching quote". The cause was most likely apostrophes in the content clashing with how the tool wraps the command, so nothing was written. Switched to one Write call per file. Lesson: use Write for multi-file docs and keep shell appends free of apostrophes, or use a PowerShell here-string.
+
+### Open questions sent to the user (spec section 13)
+Discord names post-MVP; OCR auto-watch post-MVP; default 15 languages; the two opacity controls; profiles/glossary post-MVP; performance targets.
+
+## 2026-10-17 - Session 2b: Phase 1 revision 2 (user additions + fact-checks)
+
+### User feedback on draft 1
+- Wants to share the app "without worrying". If the PySide6 license is a problem, a workaround is needed.
+- **Speaker names on day one**, not post-launch.
+- Additions:
+  - Dev tooling early: pre-commit with gitleaks, ruff, bandit, pip-audit, pip-licenses, pyright.
+  - UI: QtAwesome + one icon set (Phosphor or Fluent, my pick), Inter, Noto via the Language Manager, materialyoucolor, ColorAide, win32mica.
+  - Utilities: platformdirs, loguru, huggingface_hub, lingua-py, jiwer.
+  - Speakers: diart (A) + pypresence (B).
+- Avoid GPL/AGPL (PyQt-Fluent-Widgets, PyQt-Frameless-Window, Nuitka). Log all licenses and have fact-checker confirm them.
+
+### Fact-checks (2 background fact-checker agents, about 2 min each)
+1. **License sweep** of about 45 components (PyPI JSON / GitHub API / HF API). All shipped candidates are permissive except PySide6 (LGPL) and the gated pyannote models.
+   - QtAwesome bundles Phosphor 1.3.0 (MIT) but not Fluent. That decided the icon set: Phosphor.
+   - QtAwesome also bundles Codicons (CC-BY), to be stripped from the build.
+   - The user's exclusions were confirmed: PyQt-Fluent-Widgets GPL-3.0, PyQt-Frameless-Window GPL-3.0, Nuitka AGPL-3.0.
+   - Red flags: NVIDIA CUDA wheels sit under the NVIDIA EULA; faster-whisper pulls in PyAV/FFmpeg; diart pins numpy<2 and has heavy dependencies.
+2. **Deep questions:**
+   - **PySide6 LGPL:** shareable if we use Essentials only + onedir + license texts + **self-hosted Qt source or a written offer** (a qt.io link is not enough) + no reverse-engineering ban + a build scan for GPL-only Qt DLLs. Not a blocker. A wxPython contingency is noted, but not planned.
+   - **Discord RPC:** `rpc`/`rpc.voice.read` are approved-partner-only (owner/team + 50 testers). No open approval process was found. Zero-config Discord names for the public are therefore NOT possible. That clashes with the user's day-one wish.
+     - The plan became voice labels (zero-config) + an opt-in own-app setup.
+     - A Discord RPC spike (T036) was moved early, into M03.
+   - **diart:** last release Feb 2025, default models gated on HF (each end user would need a token), torch-heavy.
+     - Recommended sherpa-onnx (ONNX models from GitHub releases, no token, no torch) as the default, using a sliding window because it is offline-only.
+     - diart is kept as an optional/benchmark engine pending the user's decision.
+
+### Doc changes
+- The spec now covers: goals, the MVP table, the new section 5.13 (speaker identification: labels, Discord own-app mode, diarization adapters, fusion algorithm, utterance splitting), fonts/icons/palette generation/contrast in 6.5, the dev tooling table in 10.1, the LGPL compliance plan + transitive binaries in 11, and new gate G6.
+- New tasks:
+  - T010 dev tooling + license gate (first task).
+  - T035 diarization benchmark, T036 Discord RPC spike.
+  - M10 Speakers (T101-T105).
+- Hardening was renumbered from M10 to M11 (T111-T113). The draft M10-hardening.md was replaced, since it had never been committed.
+- DATA_TRACKER: D-013 resolved (blocked for zero-config); D-016/D-017/D-021 updated; new D-022 license register + D-023 to D-030.
+
+### Design forks
+- Icons: Phosphor over Fluent. It is bundled in QtAwesome and has outline/fill pairs for toggles.
+- License gate: walk the runtime dependency closure from requirements.txt so dev tools are excluded, with LGPL allowed only for PySide6-Essentials/shiboken6.
+- Discord token handling: no secret is ever shipped. Try a Public Client + PKCE. If Discord needs a secret, it is the user's own one, encrypted with DPAPI on their PC.
+
+### User decision (2026-10-17, end of Phase 1)
+- **Approved**: spec rev 2. Sub-decisions: diart is benchmark-only with sherpa-onnx as the default; host the Qt source copy on GitHub releases; start T010.
+- **Speaker plan (Q1)**: the user asked how another person's small Discord program shows who is talking.
+- My answer, most likely first:
+  1. Their own Discord app (the owner can always authorize it), which matches our opt-in mode.
+  2. A voice bot, which receives per-user audio. It is legitimate but needs an invite, hosting and DAVE support. Candidate post-MVP add-on.
+  3. A client mod (BetterDiscord/Vencord), which breaks the ToS. Rejected.
+  4. Screen-reading the speaking ring. Fragile.
+- The current plan stands unless the user reports it was a bot.
