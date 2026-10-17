@@ -61,3 +61,11 @@ def test_damaged_settings_show_a_notice(qtbot, tmp_path: Path):
         assert len(list(settings.parent.glob("settings.corrupt-*.json"))) == 1
     finally:
         live.shutdown()
+
+
+def test_partial_translation_follows_game_mode():
+    from livetranslator.app.application import partials_allowed
+    from livetranslator.core.state import AppConfig, PerformanceConfig
+
+    assert partials_allowed(AppConfig())
+    assert not partials_allowed(AppConfig(performance=PerformanceConfig(game_mode=True)))

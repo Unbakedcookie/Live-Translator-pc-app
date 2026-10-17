@@ -10,7 +10,14 @@ from livetranslator.app.translation_controller import (
     target_languages,
 )
 from livetranslator.core import actions as a
-from livetranslator.core.state import AppConfig, AppState, Source, Utterance, WindowConfig
+from livetranslator.core.state import (
+    AppConfig,
+    AppState,
+    Source,
+    StatusLevel,
+    Utterance,
+    WindowConfig,
+)
 from livetranslator.core.store import Store
 from livetranslator.services.errors import UnsupportedLanguage
 from livetranslator.services.mt.router import TranslationRouter
@@ -129,8 +136,11 @@ def test_unknown_source_language_is_skipped(env):
 def test_engine_error_does_not_crash(env):
     store, _engine, controller, _ = env
     store.dispatch(a.AddUtterance(utt("u1", Source.OTHERS, "zzz", "xx", True)))
-    controller.worker.run_pending()  # UnsupportedLanguage logged, nothing dispatched
+    controller.worker.run_pending()  # UnsupportedLanguage: no translation dispatched...
     assert store.state.session.utterance("u1").translations == {}
+    status = store.state.runtime.statuses["translation"]  # ...but the user is told (T051)
+    assert status.level is StatusLevel.WARNING
+    assert status.message.startswith("No translation model for")
 
 
 def test_real_worker_thread_delivers_on_main_thread(env, qtbot):

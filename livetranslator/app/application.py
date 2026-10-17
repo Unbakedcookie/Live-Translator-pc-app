@@ -16,14 +16,16 @@ from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.log import setup_logging
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.speech_controller import SpeechController
+from livetranslator.app.translation_controller import TranslationController
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
 from livetranslator.core.persistence import Persistence, load_config
-from livetranslator.core.state import AppState, StatusLevel
+from livetranslator.core.state import AppConfig, AppState, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService
+from livetranslator.services.mt.router import TranslationRouter
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 
 HOTKEY_LABELS = {
@@ -46,6 +48,11 @@ class LiveTranslatorApp(QObject):
         if loaded.notice:
             self.store.dispatch(a.SetStatus("settings.load", StatusLevel.WARNING, loaded.notice))
         self.controller = WindowController(self.store)
+        # Declared before any signal can reach _on_config_changed (adding the first window
+        # below emits config_changed).
+        self.demo: QObject | None = None  # `--demo` feed (T062)
+        self.speech: SpeechController | None = None
+        self.translation: TranslationController | None = None
         self.hotkeys = HotkeyService(self)
         self.hotkeys.triggered.connect(self.controller.handle_hotkey)
         self.store.config_changed.connect(self._on_config_changed)
@@ -53,15 +60,22 @@ class LiveTranslatorApp(QObject):
         if not self.store.state.config.windows:
             self.controller.add_window()
         self.windows = WindowManager(self.store, self.controller, quit_app, self)
-        self.demo: QObject | None = None  # `--demo` feed (T062)
-        self.speech: SpeechController | None = None
         if speech:
-            self.speech = build_speech(self.store, paths)
+            models_dir = self.models_dir(paths)
+            self.translation = build_translation(self.store, models_dir)
+            self.translation.start()
+            self.speech = build_speech(self.store, models_dir)
             self.speech.start()
+
+    def models_dir(self, paths: AppPaths) -> Path:
+        configured = self.store.state.config.models_dir
+        return Path(configured) if configured else paths.default_models_dir
 
     def _on_config_changed(self, section: str) -> None:
         if section in ("hotkeys", "all"):
             self._register_hotkeys()
+        if self.translation is not None and section in ("performance", "all"):
+            self.translation.translate_partials = partials_allowed(self.store.state.config)
 
     def _register_hotkeys(self) -> None:
         bindings = self.store.state.config.hotkeys
@@ -86,19 +100,35 @@ class LiveTranslatorApp(QObject):
     def shutdown(self) -> None:
         if self.speech is not None:
             self.speech.stop()
+        if self.translation is not None:
+            self.translation.stop()
         self.persistence.flush()
         self.hotkeys.close()
         self.windows.close_all()
         logger.info("{} stopped", APP_DISPLAY_NAME)
 
 
-def build_speech(store: Store, paths: AppPaths) -> SpeechController:
+def partials_allowed(config: AppConfig) -> bool:
+    """Spec §5.5: translate partial lines (2x/s) only with a fast engine, never in game mode.
+    Opus-MT measured p50 116 ms on GPU / 166 ms on CPU (benchmarks/results/mt.md)."""
+    return not config.performance.game_mode
+
+
+def build_translation(store: Store, models_dir: Path) -> TranslationController:
+    """Opus-MT through the router (T051/T053). Provisional default until gate G4."""
+    from livetranslator.services.mt.engines.opus_mt import OpusMtEngine
+
+    engine = OpusMtEngine(models_dir)
+    engine.load()  # picks the device only; each language pair loads on first use
+    router = TranslationRouter([engine])
+    return TranslationController(store, router, partials_allowed(store.state.config))
+
+
+def build_speech(store: Store, models_dir: Path) -> SpeechController:
     """Mic + loopback capture feeding faster-whisper (T045). Heavy imports stay lazy."""
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
     from livetranslator.services.audio.devices import list_devices
 
-    configured = store.state.config.models_dir
-    models_dir = Path(configured) if configured else paths.default_models_dir
     engine = FasterWhisperEngine(models_dir)
     worker = ASRWorker(engine, store.dispatch)
     return SpeechController(store, worker, list_devices)

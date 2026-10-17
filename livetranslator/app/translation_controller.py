@@ -14,12 +14,15 @@ import time
 from collections.abc import Callable
 
 from livetranslator.core import actions as a
-from livetranslator.core.state import AppConfig, Source, Utterance
+from livetranslator.core.languages import language
+from livetranslator.core.state import AppConfig, Source, StatusLevel, Utterance
 from livetranslator.core.store import Store
+from livetranslator.services.errors import UnsupportedLanguage
 from livetranslator.services.mt.router import TranslationRouter
 from livetranslator.services.mt.worker import TranslationJob, TranslationWorker
 
 PARTIAL_RATE_HZ = 2.0
+STATUS_KEY = "translation"
 
 
 def target_languages(source: Source, config: AppConfig) -> set[str]:
@@ -48,7 +51,7 @@ class TranslationController:
         # What was last sent per line. A translation result updates the utterance too, and
         # without this the update would re-submit the same text (found by test_fanout).
         self._submitted: dict[str, tuple[str, bool]] = {}
-        self.worker = TranslationWorker(router, self.on_result, self.is_current)
+        self.worker = TranslationWorker(router, self.on_result, self.is_current, self.on_error)
         store.utterance_added.connect(self._on_utterance)
         store.utterance_updated.connect(self._on_utterance)
         store.utterance_removed.connect(self._forget)
@@ -97,6 +100,15 @@ class TranslationController:
         """Still worth doing: the utterance exists and its text hasn't moved on."""
         utterance = self._store.state.session.utterance(job.utterance_id)
         return utterance is not None and utterance.text == job.text
+
+    def on_error(self, job: TranslationJob, error: Exception) -> None:
+        """Called on the worker thread; the store queues the status to the UI thread."""
+        pair = f"{language(job.src).english} to {language(job.tgt).english}"
+        if isinstance(error, UnsupportedLanguage):
+            message = f"No translation model for {pair} yet, so those lines stay untranslated."
+        else:
+            message = f"Translating {pair} failed. Details are in the log."
+        self._store.dispatch(a.SetStatus(STATUS_KEY, StatusLevel.WARNING, message))
 
     def on_result(self, job: TranslationJob, text: str) -> None:
         self._store.dispatch(a.SetTranslation(job.utterance_id, job.tgt, text, job.text))
