@@ -8,5 +8,6 @@ materialyoucolor==3.0.4
 numpy==2.5.4
 platformdirs==4.13.3
 pydantic==2.14.1
+rapidfuzz==3.14.6
 QtAwesome==1.4.2
 win32mica==3.0; sys_platform == "win32"
