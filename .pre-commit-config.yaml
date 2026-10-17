@@ -1,0 +1,50 @@
+﻿# T010 — commit-time guards (spec §10.1). Python hooks run from the project venv,
+# so tool versions are the ones pinned in requirements-dev.txt.
+# Windows note: pre-commit splits `entry` like a POSIX shell, so backslashes are doubled.
+minimum_pre_commit_version: "4.0.0"
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: ruff-lint
+        name: ruff (lint)
+        entry: .venv\\Scripts\\python.exe -m ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format
+        name: ruff (format check)
+        entry: .venv\\Scripts\\python.exe -m ruff format --check --force-exclude
+        language: system
+        types_or: [python, pyi]
+
+      - id: bandit
+        name: bandit (security lint)
+        entry: .venv\\Scripts\\python.exe -m bandit -c pyproject.toml -q
+        language: system
+        types: [python]
+
+      - id: pyright
+        name: pyright (types)
+        entry: .venv\\Scripts\\python.exe -m pyright
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pip-audit
+        name: pip-audit (known vulnerabilities in the venv)
+        entry: .venv\\Scripts\\python.exe -m pip_audit --skip-editable --progress-spinner off
+        language: system
+        files: ^requirements(-dev)?\.txt$
+        pass_filenames: false
+
+      - id: license-gate
+        name: license gate (runtime dependency closure)
+        entry: .venv\\Scripts\\python.exe tools/check_licenses.py
+        language: system
+        files: ^(requirements\.txt|tools/license_(policy|overrides)\.toml|tools/check_licenses\.py)$
+        pass_filenames: false

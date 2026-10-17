@@ -1,0 +1,9 @@
+# T010 — developer tooling (never shipped). Runtime deps live in requirements.txt (T011).
+bandit[toml]==1.9.4
+packaging==26.3
+pip-audit==2.10.1
+pip-licenses==5.5.5
+pre-commit==4.7.0
+pyright==1.1.414
+pytest==9.1.1
+ruff==0.17.1

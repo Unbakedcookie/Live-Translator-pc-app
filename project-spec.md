@@ -358,9 +358,10 @@ These are measured in M03/M09 and adjusted with the user if they can't be met.
 | ruff (lint + format check) | style/bugs | every commit |
 | bandit (`-c pyproject.toml`, asserts allowed in tests) | insecure Python patterns | every commit |
 | pyright (basic mode; strict for `core/` and `theme/`) | type errors | every commit |
-| pip-audit (`-r requirements.txt`) | known-vulnerable dependencies | when `requirements*.txt` changes + manual run |
+| pip-audit (audits the installed venv: runtime + dev) | known-vulnerable dependencies | when `requirements*.txt` changes + manual run |
 | license gate: `tools/check_licenses.py` wrapping **pip-licenses** | only allow-listed licenses in the **runtime** dependency closure (walked from `requirements.txt` via `importlib.metadata`). Dev tools are excluded. | when `requirements*.txt` changes + manual run |
-- License allow-list: MIT, BSD-2/3-Clause, Apache-2.0, ISC, PSF-2.0, MPL-2.0 (file-level; unmodified), Unlicense, OFL-1.1 (fonts), CC0, CC-BY-4.0 (models; attribution), and LGPL-3.0 **only** for `PySide6-Essentials` / `shiboken6`.
+- License allow-list (source of truth: `tools/license_policy.toml`): MIT, MIT-0, 0BSD, BSD, BSD-2/3-Clause, ISC, Zlib, Apache-2.0, PSF-2.0, Python-2.0, MPL-2.0 (file-level; unmodified), Unlicense, HPND, OFL-1.1 (fonts), CC0-1.0, CC-BY-4.0 (models; attribution), and LGPL-3.0 **only** for `PySide6-Essentials` / `shiboken6`.
+- SPDX expressions are evaluated properly: `OR` = any option allowed, `AND` = all allowed, `WITH` judged on the base license. Multiple trove classifiers are treated as AND (safe direction).
 - Fail on: GPL, AGPL, any NC/ND, "UNKNOWN". An `UNKNOWN` can only be cleared by an override file `tools/license_overrides.toml`, which needs a DATA_TRACKER reference (D-022) per entry.
 
 ## 11. Packaging and licensing

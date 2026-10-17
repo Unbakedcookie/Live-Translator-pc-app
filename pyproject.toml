@@ -1,0 +1,31 @@
+# T010 — tool configuration (spec §10.1). Project metadata is added in T011.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.bandit]
+exclude_dirs = [".venv"]
+
+[tool.bandit.assert_used]
+# pytest relies on assert; tests are never shipped.
+skips = ["*/test_*.py", "*/conftest.py"]
+
+[tool.pyright]
+include = ["tools", "tests"]
+exclude = ["**/__pycache__", ".venv"]
+pythonVersion = "3.12"
+pythonPlatform = "Windows"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
+strict = ["tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --import-mode=importlib"

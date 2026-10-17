@@ -2,8 +2,8 @@
 
 ## Current state
 - **Phase:** 1 **approved 2026-10-17** (spec rev 2; diarization default sherpa-onnx, diart benchmark-only). Speaker plan stands (voice labels + opt-in Discord own-app + ≤ 50 testers); the user may report a bot-based approach → possible post-MVP add-on. → **Phase 2 starts with T010.**
-- **Next after approval:** M01 Foundation (T010 dev tooling → T011 →). M03 benchmarks + Discord spike can run in parallel once T016/T011 are done.
-- **Tests:** 0 (no app code yet)
+- **Next:** T011 scaffold. M03 benchmarks + Discord spike can run in parallel once T016/T011 are done.
+- **Tests:** 24 passing (license gate)
 - **Last commit:** `chore: Phase 0 docs skeleton, agent roster, verify helper` (see `git log -1`)
 - **Open flags:** D-013 (Discord voice API partner-only → opt-in own-app mode), D-021 (LGPL compliance steps), D-024 (gated pyannote models), D-026/D-027 (NVIDIA + FFmpeg binaries), D-029/D-030 (sherpa models, secretless token), D-004/D-005/D-015 (unmeasured).
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -12,7 +12,7 @@
 | Milestone | Task IDs | Spec file | History file | Gate | Status |
 |---|---|---|---|---|---|
 | M00 Setup | T001–T004 | `docs/tasks/M00-setup.md` | `history/M00-setup.md` | — | Done 2026-10-17 |
-| M01 Foundation | T010–T016 | `docs/tasks/M01-foundation.md` | `history/M01-foundation.md` | G1 (palettes) | Planned |
+| M01 Foundation | T010–T016 | `docs/tasks/M01-foundation.md` | `history/M01-foundation.md` | G1 (palettes) | In progress (T010 ✓) |
 | M02 Floating window | T021–T025 | `docs/tasks/M02-floating-window.md` | `history/M02-floating-window.md` | **G1** | Planned |
 | M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | Planned |
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | Planned |
@@ -29,11 +29,14 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
 
 ## Milestone status
 - **M00 Setup** — Private repo created & pushed; Python 3.12.10 venv; docs skeleton; 6-agent roster; `tools/verify/win.ps1` tested (list + window shot). Stack approved.
-- **Phase 1** — `project-spec.md` rev 2 + M01–M11 task files; license register (D-022) fact-checked; awaiting approval.
+- **Phase 1** — Approved 2026-10-17: `project-spec.md` rev 2, M01–M11 task files, license register (D-022) fact-checked.
+- **M01 Foundation** — T010 done: pre-commit (gitleaks, ruff, bandit, pyright, pip-audit, license gate) all passing; license gate has 24 tests and was probed on 43 real packages; a planted fake token was blocked. Next: T011.
 
 ## Conventions
 - **Python:** `.venv/Scripts/python.exe` (3.12.10). Never use the system 3.10.
-- **Install deps:** `.venv/Scripts/python.exe -m pip install -r requirements-dev.txt` (created in T011).
+- **Install deps:** `.venv/Scripts/python.exe -m pip install -r requirements-dev.txt` (+ `requirements.txt` from T011).
+- **Hooks:** `.venv/Scripts/pre-commit.exe run --all-files`. Hook entries use `.venv\\Scripts\\python.exe` (pre-commit splits entries POSIX-style on Windows). License gate by hand: `.venv/Scripts/python.exe tools/check_licenses.py`.
+- **PowerShell gotcha:** `Set-Content -Encoding utf8` adds a BOM and `Get-Content` misreads UTF-8 without a BOM, so edit files with the Edit/Write tools, not PS pipelines.
 - **Tests:** `.venv/Scripts/python.exe -m pytest -q`
 - **Lint:** `.venv/Scripts/python.exe -m ruff check .`
 - **Run app:** `.venv/Scripts/python.exe -m livetranslator`

@@ -1,0 +1,8 @@
+# T010 — manual license overrides for packages whose metadata is missing or wrong.
+# Every entry MUST cite a DATA_TRACKER id (e.g. "D-022") where the license was verified.
+#
+# [[override]]
+# package = "example-package"
+# license = "MIT"
+# tracker = "D-022"
+# reason = "PyPI metadata blank; LICENSE file in the wheel is MIT (verified 2026-10-17)."
