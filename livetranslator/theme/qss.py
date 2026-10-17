@@ -60,6 +60,14 @@ def build_qss(p: Palette) -> str:
             f"padding: {SPACE.xs}px {SPACE.md}px",
         ),
         _rule("QPushButton:hover", f"border-color: {p.accent}"),
+        _rule(
+            "QToolButton",
+            "background: transparent",
+            "border: none",
+            f"border-radius: {RADIUS.sm}px",
+            f"padding: {SPACE.xs // 2}px",
+        ),
+        _rule("QToolButton:hover", f"background: {p.surface_alt}"),
         _rule("QPushButton:checked", f"background: {p.accent}", f"color: {p.on_accent}"),
         _rule(
             "QLineEdit, QComboBox, QSpinBox",

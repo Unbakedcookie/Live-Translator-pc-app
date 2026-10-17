@@ -30,3 +30,21 @@
 - `default_placement`: bottom-centre of the primary work area, with extra windows cascading upwards. On this PC: (2300, 1148, 520×220).
 - **Bug found by the tests, in my expectation rather than the code.** In "dock beside another window", the test window's top was 10 px from the other window's top, so it correctly aligned as well. I moved the case to y=1060 and documented the edge distances in the test.
 - Verification: 17 hand-computed tests on the user's ultrawide and a dual 2560×1440 layout (seam crossing, missing monitor, taskbar on only one monitor).
+
+### T022 — Widget kit (`ui/widgets/`, `ui/gallery.py`)
+- What was built:
+  - `IconButton`: a flat Phosphor tool button; an optional checked icon/role turns it into a toggle.
+  - `PinButton`: push-pin (text_secondary) / push-pin-fill (accent) with tooltips.
+  - `LabeledSlider`: label, slider and a live "70 %" readout. Fractions in and out; `set_value` doesn't emit, so a store push never echoes back as a user change.
+  - `PaletteSwatch` / `SwatchRow`: exclusive palette picker. Each swatch is a circle in the palette's bg with accent, Me and first-speaker dots, and the selection ring takes the owning window's accent. Selecting a custom palette clears every built-in swatch.
+  - `ColourSeedPicker`: a swatch of the generated palette; clicking opens QColorDialog and emits the '#RRGGBB' seed.
+  - `LanguagePicker`: the 15 default languages as "English · Native" labels. It emits the ISO code, and an unknown code is added on the fly.
+  - `Toast`: a frameless tooltip-type window that doesn't take focus and deletes itself after MOTION.toast_ms.
+  - `core/languages.py`: the 15-language catalog approved in spec section 13 Q3.
+  - QSS gained `QToolButton` rules (transparent, radius sm, padding xs/2, surface_alt on hover); the hand-written expected QSS string in test_qss was updated to match.
+  - Gallery: `python -m livetranslator.ui.gallery` shows every widget in all 5 palettes.
+- Design: every widget gets its colours via `apply_palette` or the generated QSS. Widgets that read the store are NoFocus, so they never steal keyboard focus from a game.
+- Problem hit: my toast test touched the widget after WA_DeleteOnClose had already deleted it ("Internal C++ object already deleted"). The widget was right; the test now waits for `destroyed`.
+- Verification:
+  - 8 pytest-qt tests. The pin icon's actual pixel colour flips text_secondary to accent on click, and the tooltip changes. Also covered: icon recolour on palette change, slider fraction and silent set_value, swatch selection and custom clearing, language picker (15 entries, labels, silent set, unknown code), seed picker id, toast self-deletion, and the gallery building 5 panels.
+  - Gallery render (scratchpad gallery.png) inspected: correct in all 5 palettes. A cosmetic nit for the G1 review: Paper's combobox shows the native Windows dropdown arrow.

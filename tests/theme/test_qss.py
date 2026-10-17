@@ -31,6 +31,8 @@ QMenu::item:selected { background: #000003; }
 QMenu::separator { height: 1px; background: #000008; margin: 4px 0px; }
 QPushButton { background: #000003; border: 1px solid #000008; border-radius: 4px; padding: 4px 12px; }
 QPushButton:hover { border-color: #000006; }
+QToolButton { background: transparent; border: none; border-radius: 4px; padding: 2px; }
+QToolButton:hover { background: #000003; }
 QPushButton:checked { background: #000006; color: #000007; }
 QLineEdit, QComboBox, QSpinBox { background: #000001; border: 1px solid #000008; border-radius: 4px; padding: 4px 8px; }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus { border-color: #000006; }
