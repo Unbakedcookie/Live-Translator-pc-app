@@ -4,7 +4,7 @@
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
 - **Next:** user look reviews (Settings, transcript, quit dialog, readout, rename, language tag, region selector); user decisions: Qwen for Chinese on by default? lingua replaced OK?; then T054 model manager, T073 wizard, T074 Language Manager.
 - **Mandarin (user priority, 2026-10-18):** OCR excellent; speech ≈ best shippable (Whisper 5.8 % vs SenseVoice 5.4 %); one-script output (OpenCC); optional Qwen translation for Chinese (fixes slang) — off by default pending user.
-- **Tests:** 564 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Tests:** 595 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
 - **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -17,12 +17,12 @@
 | M02 Floating window | T021–T025 | `docs/tasks/M02-floating-window.md` | `history/M02-floating-window.md` | **G1** | Done (T025 G1 approved) |
 | M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | Done except T036 (G4 approved 2026-10-17; T036 needs user's Discord app) |
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | In progress (T041–T046 done; T045 live loopback verified; mic+loopback and CPU fallback not yet live-verified; T042 WAV listen-check deferred to user) |
-| M05 Translation | T051–T054 | `docs/tasks/M05-translation.md` | `history/M05-translation.md` | — | In progress (T051–T053 done, Opus-MT default per G4; T054 pending) |
+| M05 Translation | T051–T054 | `docs/tasks/M05-translation.md` | `history/M05-translation.md` | — | In progress (T051–T054 done; Opus-MT catalogue entries wait for hosting; optional Qwen for Chinese) |
 | M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | Done (T061–T064; G2 approved 2026-10-17) |
 | M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | In progress (T071 tray, T072 Settings done; G3 review pending; T073–T074 next) |
 | M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | In progress (T081–T083 done; G5 look review + in-game capture pending) |
 | M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Done except the with-a-game measurement (T091–T093; look review with G3 batch) |
-| M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101, T102, T105 done; T104 rename done; T103 + T104 Discord parts need T036) |
+| M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101–T105 built; Discord needs the user's own app for the live test — guide is in Settings → Speakers) |
 | M11 Hardening | T111–T113 | `docs/tasks/M11-hardening.md` | `history/M11-hardening.md` | MVP sign-off | Planned |
 | Post-MVP | backlog | `project-spec.md` §4.2 | — | — | — |
 
