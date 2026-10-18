@@ -11,6 +11,7 @@ Windows default. The stable name ignores the USB-port number Windows inserts int
 from __future__ import annotations
 
 import re
+import threading
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -18,6 +19,10 @@ from typing import Any
 from livetranslator.core.state import DeviceRef
 
 WASAPI = "Windows WASAPI"
+# PortAudio's Pa_Initialize/Pa_Terminate are not thread-safe: the device list and every
+# capture stream start and stop it, sometimes at the same moment (mic + speakers on two
+# threads). Unguarded, that crashed the app with a PortAudio assertion (2026-10-18).
+PORTAUDIO_LOCK = threading.RLock()
 LOOPBACK_SUFFIX = " [Loopback]"
 _USB_PORT = re.compile(r"\(\d+- ")
 
@@ -84,27 +89,30 @@ def list_devices() -> DeviceList:
     """WASAPI inputs and loopbacks via PyAudioWPatch (Windows only)."""
     import pyaudiowpatch as pa
 
-    audio = pa.PyAudio()
-    try:
-        wasapi = audio.get_host_api_info_by_type(pa.paWASAPI)
-        host_api = str(wasapi["name"])
-        inputs: list[AudioDevice] = []
-        loopbacks: list[AudioDevice] = []
-        for i in range(audio.get_device_count()):
-            info = audio.get_device_info_by_index(i)
-            if info["hostApi"] != wasapi["index"] or int(info["maxInputChannels"]) < 1:
-                continue
-            device = _device(info, host_api)
-            (loopbacks if device.is_loopback else inputs).append(device)
-        default_input = next(
-            (d for d in inputs if d.index == int(wasapi["defaultInputDevice"])), None
-        )
+    with PORTAUDIO_LOCK:
+        audio = pa.PyAudio()
         try:
-            default_loopback: AudioDevice | None = _device(
-                audio.get_default_wasapi_loopback(), host_api
-            )
-        except (OSError, LookupError):
-            default_loopback = None
-        return DeviceList(tuple(inputs), tuple(loopbacks), default_input, default_loopback)
-    finally:
-        audio.terminate()
+            return _list(audio, pa)
+        finally:
+            audio.terminate()
+
+
+def _list(audio: Any, pa: Any) -> DeviceList:
+    wasapi = audio.get_host_api_info_by_type(pa.paWASAPI)
+    host_api = str(wasapi["name"])
+    inputs: list[AudioDevice] = []
+    loopbacks: list[AudioDevice] = []
+    for i in range(audio.get_device_count()):
+        info = audio.get_device_info_by_index(i)
+        if info["hostApi"] != wasapi["index"] or int(info["maxInputChannels"]) < 1:
+            continue
+        device = _device(info, host_api)
+        (loopbacks if device.is_loopback else inputs).append(device)
+    default_input = next((d for d in inputs if d.index == int(wasapi["defaultInputDevice"])), None)
+    try:
+        default_loopback: AudioDevice | None = _device(
+            audio.get_default_wasapi_loopback(), host_api
+        )
+    except (OSError, LookupError):
+        default_loopback = None
+    return DeviceList(tuple(inputs), tuple(loopbacks), default_input, default_loopback)

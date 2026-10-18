@@ -16,3 +16,15 @@ rapidfuzz==3.14.6
 sherpa-onnx==1.13.8  # T102 speaker labels on the CPU (Apache-2.0; D-029)
 QtAwesome==1.4.2
 win32mica==3.0; sys_platform == "win32"
+# T083 screen OCR. RapidOCR is the fallback for languages Windows OCR lacks (D-034); the build
+# strips cv2/opencv_videoio_ffmpeg*.dll (LGPL video plugin, not needed for images).
+mss==10.2.0
+opencv-python-headless==4.14.0.94  # pinned: 4.12 forces numpy<2.3, 5.x unvetted
+rapidocr==3.10.0
+winrt-runtime==3.2.1; sys_platform == "win32"
+winrt-Windows.Foundation==3.2.1; sys_platform == "win32"
+winrt-Windows.Foundation.Collections==3.2.1; sys_platform == "win32"
+winrt-Windows.Globalization==3.2.1; sys_platform == "win32"
+winrt-Windows.Graphics.Imaging==3.2.1; sys_platform == "win32"
+winrt-Windows.Media.Ocr==3.2.1; sys_platform == "win32"
+winrt-Windows.Storage.Streams==3.2.1; sys_platform == "win32"

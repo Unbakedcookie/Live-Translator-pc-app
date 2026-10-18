@@ -143,3 +143,9 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
   - Two real streams at once (mic + loopback) on live audio.
   - Long sessions (ring/VAD drift over hours).
   - The CPU fallback on a PC without a GPU. It was only forced through the unit tests' fake engine.
+
+## 2026-10-18 — Crash at start with mic + speakers both on (fixed)
+- **Found when relaunching the user's app** (real profile: mic and speakers both enabled): the process died seconds after start with `Assertion failed: hostApi->info.defaultInputDevice < hostApi->info.deviceCount (pa_front.c)` + an access violation (`python -X faulthandler`).
+- **Cause:** PortAudio's `Pa_Initialize`/`Pa_Terminate` aren't thread-safe. The device list and each capture stream create and terminate their own `PyAudio()`, and with both streams on, the two capture threads did it at the same moment. All my test runs had the mic muted (one capture), which is why it never showed. The code review the night before had flagged "overlapping PyAudio init/terminate" as a risk.
+- **Fix:** one `PORTAUDIO_LOCK` (RLock) around every PortAudio start/open and stop/close/terminate (`devices.list_devices`, `capture._PyAudioStream`). Audio callbacks don't take it.
+- **Verified:** 3 of 3 starts with the user's real settings stay up (window listed after 12 s, no assertion in the logs); full suite 536 passed.

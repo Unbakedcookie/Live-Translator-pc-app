@@ -31,3 +31,11 @@
   - A synthetic press via keybd_event delivers `triggered("test_action")`.
   - After unregistering, the other service can take the combo.
 - Still open for T081's acceptance: "each default hotkey works while a game has focus". That's checked in the M02 G1 live session and with the user's games.
+
+## 2026-10-18 — T082 region selector + T083 OCR building blocks (in progress)
+- **Region selector** (`ui/region_selector.py`): a dimmed pane per monitor, drag a box with a live "W × H" label; Esc, right-click or a mere click cancels. The result comes from Windows' own cursor position (`GetCursorPos`, physical pixels) at press and release, so it's right on mixed-DPI setups and matches what mss captures; Qt's logical coordinates are only used for drawing. Tests: corner order, physical result, click/Esc cancel, one pane per screen.
+- **Grab** (`services/ocr/grab.py`): mss → RGB array.
+- **Windows OCR** (`services/ocr/windows_ocr.py`): pywinrt `Windows.Media.Ocr`; upscales captures under 48 px tall (missed small glyphs otherwise); removes the spaces Windows puts between Japanese/Chinese characters but keeps Korean spacing (a first version stripped Hangul spaces too — caught in review of my own regex). **This PC has only the en-US OCR pack** (D-009 resolved); it reads English and Spanish fixtures exactly.
+- **Language detection** (`services/langdetect.py`): spec named lingua-py, but its wheel is a single 304 MB binary. Replaced by writing-system rules + function words (D-033, user to confirm). 8/8 fixed sentences. Bug caught by a test: `casefold()` turns "ß" into "ss", so German's ß never counted — uses `lower()` now.
+- **RapidOCR** fallback: licence closure fact-checked (D-034): shippable if the build strips opencv's LGPL FFmpeg DLL (verified cv2 works without it). opencv 4.12 forced numpy down to 2.2.6 (pip did it silently); switched to 4.14.0.94 and restored numpy 2.5.4. Prototype on rendered lines: ja and es read perfectly (~1.1–1.7 s on CPU); the default model failed on Korean and Russian (needs their language models — later).
+- Not yet wired into the app (controller, hotkeys, OCR window): next.

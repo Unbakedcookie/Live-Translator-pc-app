@@ -280,6 +280,15 @@ class SettingsMetrics:
     title_size: int = 16  # page title, pt
 
 
+@dataclass(frozen=True)
+class SelectorMetrics:
+    """Screen-region selector for OCR (T082)."""
+
+    dim_alpha: float = 0.45  # darkening over the desktop outside the selection
+    border_width: int = 2
+    min_size: int = 8  # px; a smaller drag counts as a click (cancel)
+
+
 FONTS = Fonts()
 SPACE = Spacing()
 RADIUS = Radius()
@@ -287,6 +296,7 @@ MOTION = Motion()
 OVERLAY = OverlayText()
 WINDOW = WindowMetrics()
 SETTINGS = SettingsMetrics()
+SELECTOR = SelectorMetrics()
 
 
 def default_outline_width(palette: Palette) -> int:

@@ -73,6 +73,20 @@ if sys.platform == "win32":
     ]
     _set_pos.restype = wintypes.BOOL
 
+    _get_cursor = _user32.GetCursorPos
+    _get_cursor.argtypes = [ctypes.POINTER(wintypes.POINT)]
+    _get_cursor.restype = wintypes.BOOL
+
+
+def cursor_pos() -> tuple[int, int]:
+    """The mouse position in physical screen pixels (the process is per-monitor DPI aware),
+    the same space mss captures in (T082)."""
+    _require_windows()
+    point = wintypes.POINT()
+    if not _get_cursor(ctypes.byref(point)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return point.x, point.y
+
 
 def _require_windows() -> None:
     if sys.platform != "win32":

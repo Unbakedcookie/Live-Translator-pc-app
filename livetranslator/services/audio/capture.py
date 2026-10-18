@@ -16,7 +16,7 @@ import numpy as np
 from loguru import logger
 
 from livetranslator.core.state import StatusLevel
-from livetranslator.services.audio.devices import AudioDevice
+from livetranslator.services.audio.devices import PORTAUDIO_LOCK, AudioDevice
 from livetranslator.services.audio.resample import Float, StreamResampler
 from livetranslator.services.audio.ring import RingBuffer
 
@@ -44,8 +44,6 @@ class _PyAudioStream:
     def __init__(self, device: AudioDevice, on_bytes: RawCallback) -> None:
         import pyaudiowpatch as pa
 
-        self._pa: Any = pa.PyAudio()
-
         def callback(
             in_data: bytes | None, frames: int, info: Any, status: int
         ) -> tuple[None, int]:
@@ -53,19 +51,21 @@ class _PyAudioStream:
                 on_bytes(in_data)
             return None, pa.paContinue
 
-        try:
-            self._stream: Any = self._pa.open(
-                format=pa.paFloat32,
-                channels=device.channels,
-                rate=device.sample_rate,
-                input=True,
-                input_device_index=device.index,
-                frames_per_buffer=FRAMES_PER_BUFFER,
-                stream_callback=callback,
-            )
-        except Exception:
-            self._pa.terminate()
-            raise
+        with PORTAUDIO_LOCK:  # never start PortAudio on two threads at once
+            self._pa: Any = pa.PyAudio()
+            try:
+                self._stream: Any = self._pa.open(
+                    format=pa.paFloat32,
+                    channels=device.channels,
+                    rate=device.sample_rate,
+                    input=True,
+                    input_device_index=device.index,
+                    frames_per_buffer=FRAMES_PER_BUFFER,
+                    stream_callback=callback,
+                )
+            except Exception:
+                self._pa.terminate()
+                raise
 
     def is_active(self) -> bool:
         try:
@@ -74,11 +74,12 @@ class _PyAudioStream:
             return False
 
     def close(self) -> None:
-        try:
-            self._stream.stop_stream()
-            self._stream.close()
-        finally:
-            self._pa.terminate()
+        with PORTAUDIO_LOCK:
+            try:
+                self._stream.stop_stream()
+                self._stream.close()
+            finally:
+                self._pa.terminate()
 
 
 def open_pyaudio(device: AudioDevice, on_bytes: RawCallback) -> StreamHandle:
