@@ -107,3 +107,20 @@
 ## 2026-10-17 — Gate G4 approved
 - The user was shown the engine choices in chat (plain-language table + the 5 numbered questions from `benchmarks/results/summary.md`) and answered "everything looks good" — taken as all defaults: 1a Opus-MT default, 2a optional MADLAD "Best quality" off by default, 3a game mode keeps turbo at 1.0 s, 4a per-line speaker labels, 5a publish converted Opus-MT models in an HF repo under the user's account with CC-BY credits.
 - Recorded in `summary.md` ("Decisions"), spec §5.4, §5.5, §5.10, §5.13. If the user meant something else, these are one-line reversals.
+
+## 2026-10-18 — Mandarin deep-dive (user: "make sure Mandarin Chinese works VERY well")
+- **Screen text:** RapidOCR (PP-OCRv6) read 8/8 rendered Chinese game-chat lines (Simplified and Traditional, 22 px and 14 px); the only difference was a full-width vs half-width colon. Language detection said zh for all.
+- **Speech:** the M03 figure (turbo CER 14.2 %) was mostly the test set: FLEURS zh references contain unspoken English names in brackets and mix 十三/13 number styles. Re-measured on **150 FLEURS zh dev clips** with a Han-characters-only CER (brackets and numerals removed):
+  | Engine | CER (raw) | Han-only CER | p50 per clip |
+  |---|---|---|---|
+  | SenseVoice-Small int8 (sherpa-onnx, CPU 4 threads) | 0.080 | **0.054** | 0.33 s |
+  | Paraformer-zh int8 (CPU) | 0.103 | 0.056 | 0.24 s |
+  | Whisper large-v3-turbo int8 (GPU, language given) | 0.081 | 0.058 | 0.45 s |
+  | Whisper turbo, auto-detect | 0.081 | 0.058 | 1.04 s |
+  FireRedASR-AED-L (Apache-2.0) was 0.118 on the 20-clip set and **13 s per clip on CPU** — unusable live. No Traditional characters appeared in any Whisper output offline (an initial Simplified prompt changed nothing); the drift seen live (T045) is still worth guarding with OpenCC t2s (Apache-2.0, 9.5 MB) for zh output.
+  Conclusion: on clean read speech, Whisper turbo is within ~0.4 points of the best shippable Mandarin model. Licences (fact-checker): FireRedASR Apache-2.0; SenseVoice under the FunASR Model License (commercial OK with attribution); Paraformer Apache/MODEL_LICENSE; anything trained on WenetSpeech is out (non-commercial data terms). Recorded as D-035.
+- **Translation is the real gap.** 16 hand-written casual/gaming Mandarin lines, zh→en:
+  - Opus-MT: "Your **wheat**'s a little noisy" (麦 = mic), "Let's **keep it dark** tomorrow" (开黑 = play together), "Who's got time for a **copy**?" (副本 = dungeon instance), "Wasn't that a great **band** fight?" (团战 = team fight), "I'm **out of line**" (掉线 = disconnected).
+  - MADLAD: similar slang misses, plus dropped content ("I'm bleeding." for "any spare potions? I'm low on health").
+  - **Qwen3-4B (llama.cpp Vulkan): got all of those right** ("microphone", "continue gaming at 8 PM", "clear the instance", "team fight", "I went offline"), p50 **0.26 s**.
+  This matches FLORES zh→en chrF (Opus 50.4, MADLAD 56.6, Qwen 58.0) but the practical difference on chat is much bigger than the score gap suggests.
