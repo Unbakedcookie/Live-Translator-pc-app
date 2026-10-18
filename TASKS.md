@@ -18,7 +18,7 @@
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | In progress (T041–T046 done; T045 live loopback verified; mic+loopback and CPU fallback not yet live-verified; T042 WAV listen-check deferred to user) |
 | M05 Translation | T051–T054 | `docs/tasks/M05-translation.md` | `history/M05-translation.md` | — | In progress (T051–T053 done, Opus-MT default per G4; T054 pending) |
 | M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | In progress (T061, T062 done; G2 approved 2026-10-17; T063–T064 pending) |
-| M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | Planned |
+| M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | In progress (T071 tray done) |
 | M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | In progress (T081 done, pulled forward) |
 | M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Planned |
 | M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101, T102, T105 done; T103 needs T036; T104 pending) |

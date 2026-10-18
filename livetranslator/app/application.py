@@ -10,13 +10,14 @@ from pathlib import Path
 
 from loguru import logger
 from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.log import setup_logging
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.speech_controller import SpeechController, line_audio_to
 from livetranslator.app.translation_controller import TranslationController
+from livetranslator.app.tray import Tray
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
@@ -60,13 +61,29 @@ class LiveTranslatorApp(QObject):
         self._register_hotkeys()
         if not self.store.state.config.windows:
             self.controller.add_window()
-        self.windows = WindowManager(self.store, self.controller, quit_app, self)
+        self.tray: Tray | None = None
+        self._quit_app = quit_app
+        self.windows = WindowManager(
+            self.store, self.controller, quit_app, self, on_last_closed=self._on_last_closed
+        )
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray = Tray(self.controller, quit_app, parent=self)
+            self.tray.show()
         if speech:
             models_dir = self.models_dir(paths)
             self.translation = build_translation(self.store, models_dir)
             self.translation.start()
             self.speech = build_speech(self.store, models_dir)
             self.speech.start()
+
+    def _on_last_closed(self) -> None:
+        """Spec §5.11: closing the last window doesn't quit while the tray icon is there."""
+        if self.tray is None:
+            self._quit_app()
+            return
+        self.tray.notify(
+            f"{APP_DISPLAY_NAME} is still running. Use the tray icon to open a new window or quit."
+        )
 
     def models_dir(self, paths: AppPaths) -> Path:
         configured = self.store.state.config.models_dir
@@ -106,6 +123,8 @@ class LiveTranslatorApp(QObject):
         self.persistence.flush()
         self.hotkeys.close()
         self.windows.close_all()
+        if self.tray is not None:
+            self.tray.hide()
         logger.info("{} stopped", APP_DISPLAY_NAME)
 
 

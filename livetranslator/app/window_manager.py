@@ -2,7 +2,8 @@
 
 Also places new windows (default bottom-centre placement, cascading), restores saved ones
 onto existing monitors, implements show/hide-all and per-window hide (runtime only).
-Until the tray exists (T071), closing the last window quits the app.
+Closing the last window calls `on_last_closed`: with a tray icon (T071) the app keeps running
+there; without a system tray it quits (spec §5.11).
 """
 
 from __future__ import annotations
@@ -25,11 +26,13 @@ class WindowManager(QObject):
         controller: WindowController,
         quit_app: Callable[[], None],
         parent: QObject | None = None,
+        on_last_closed: Callable[[], None] | None = None,
     ) -> None:
         super().__init__(parent)
         self._store = store
         self._controller = controller
         self._quit_app = quit_app
+        self._on_last_closed = on_last_closed or quit_app
         self.windows: dict[str, FloatingWindow] = {}
         self.hidden: set[str] = set()
         store.window_changed.connect(self._sync)
@@ -49,7 +52,7 @@ class WindowManager(QObject):
             window.close()
             window.deleteLater()
             if not self.windows:
-                self._quit_app()  # T071 replaces this with "the tray stays"
+                self._on_last_closed()
 
     def _create(self, window_id: str) -> None:
         window = FloatingWindow(self._controller, window_id, self.other_rects)

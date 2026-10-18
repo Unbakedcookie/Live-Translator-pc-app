@@ -69,3 +69,18 @@ def test_partial_translation_follows_game_mode():
 
     assert partials_allowed(AppConfig())
     assert not partials_allowed(AppConfig(performance=PerformanceConfig(game_mode=True)))
+
+
+def test_closing_the_last_window_keeps_the_app_in_the_tray(qtbot, tmp_path: Path, monkeypatch):
+    live, quits = start(tmp_path)
+    try:
+        assert live.tray is not None and live.tray.icon.isVisible()
+        notes: list[str] = []
+        monkeypatch.setattr(live.tray, "notify", notes.append)
+        live.controller.remove_window(live.store.state.config.windows[0].id)
+        assert quits == [] and len(notes) == 1
+        live.tray.actions["new_window"].trigger()
+        assert len(live.windows.windows) == 1
+    finally:
+        live.shutdown()
+    assert not live.tray.icon.isVisible()

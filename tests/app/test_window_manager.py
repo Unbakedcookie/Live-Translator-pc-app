@@ -66,11 +66,23 @@ def test_offscreen_saved_window_is_pulled_back(qtbot):
         manager.close_all()
 
 
-def test_remove_last_window_quits_until_tray_exists(env):
+def test_remove_last_window_quits_without_a_tray(env):
     _, controller, manager, quits = env
     controller.remove_window("a")
     assert manager.windows == {}
     assert quits == [1]
+
+
+def test_remove_last_window_calls_the_tray_hook_instead(qtbot):
+    quits: list[int] = []
+    closed: list[int] = []
+    store = Store(AppState(config=AppConfig(windows=(WindowConfig(id="a"),))))
+    controller = WindowController(store)
+    manager = WindowManager(
+        store, controller, lambda: quits.append(1), on_last_closed=lambda: closed.append(1)
+    )
+    controller.remove_window("a")
+    assert manager.windows == {} and closed == [1] and quits == []
 
 
 def test_hide_one_and_show_hide_all(env):
