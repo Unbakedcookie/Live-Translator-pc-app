@@ -38,3 +38,6 @@
   - G2, the user's look approval of ChatLine, is pending until they're back.
 
 **Noticed for T045:** `Utterance.text` joins committed and tentative with a space. Japanese and Chinese have no spaces, so the ASR worker must decide the joiner per language, or keep Whisper's own leading-space tokens. The demo works around this by keeping unspaced scripts all-tentative until final.
+
+## 2026-10-17 — Gate G2 approved
+- The user watched the `--demo` conversation in their overlay and replied "everything looks good" (same message as the G4 answer). ChatLine/TranslationView look is locked; T063/T064 can build on it.

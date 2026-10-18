@@ -49,6 +49,15 @@ an extra check on long lines (planned in T102).
 | **No NVIDIA GPU** | small on CPU (finals only, ~2 s) | Opus-MT on CPU |
 | *Optional "best quality"* | — | Opus-MT for live partials, **MADLAD re-translates each final line** (+3.5 GB, ~1 s later) |
 
+## Decisions (G4 approved 2026-10-17: all defaults, 1a 2a 3a 4a 5a)
+
+1. Default translation engine: **Opus-MT** (GPU; CPU when no NVIDIA GPU or in game mode).
+2. "Best quality" mode is offered, **off by default**: MADLAD re-translates final lines.
+3. Game mode keeps **turbo**, with 1.0 s updates and no partial translation.
+4. Speaker labels: **per line** (T102), with the back-to-back split (T105).
+5. The converted Opus-MT models will be published in a Hugging Face repo under the user's
+   account, with CC-BY credits and a "converted to CTranslate2" note (T054).
+
 ## Questions for you (answer by number; defaults in bold)
 
 1. Default translation engine: **a) Opus-MT** · b) MADLAD · c) Qwen

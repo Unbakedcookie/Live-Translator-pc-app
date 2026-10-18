@@ -103,3 +103,7 @@
   - Add in-line change detection for long lines: run the pyannote segmentation only on lines over ~3 s and split at a detected change, which is the spec's "utterance splitting" idea.
   - Speaker memory stays in RAM only (D-028).
 - **Not done:** diart. Its models are gated and need the user's HF token (D-024). The spec makes it optional and never default, so this is recorded as blocked rather than worked around.
+
+## 2026-10-17 — Gate G4 approved
+- The user was shown the engine choices in chat (plain-language table + the 5 numbered questions from `benchmarks/results/summary.md`) and answered "everything looks good" — taken as all defaults: 1a Opus-MT default, 2a optional MADLAD "Best quality" off by default, 3a game mode keeps turbo at 1.0 s, 4a per-line speaker labels, 5a publish converted Opus-MT models in an HF repo under the user's account with CC-BY credits.
+- Recorded in `summary.md` ("Decisions"), spec §5.4, §5.5, §5.10, §5.13. If the user meant something else, these are one-line reversals.

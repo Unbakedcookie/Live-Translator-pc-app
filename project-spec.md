@@ -100,7 +100,7 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 
 ### 5.4 Speech recognition (streaming)
 - Engine interface `ASREngine.transcribe(audio, language|None, prompt) -> Segments(words, timestamps, lang, probs)`.
-  The default implementation is faster-whisper (`large-v3-turbo`, CUDA, compute type from benchmark). Parakeet via sherpa-onnx is a benchmark challenger only.
+  The default implementation is faster-whisper (`large-v3-turbo`, CUDA, int8_float16; **G4 2026-10-17**). Game mode keeps turbo with 1.0 s updates. Parakeet via sherpa-onnx is a benchmark challenger only.
 - **VAD**: Silero VAD (the ONNX model bundled with faster-whisper, D-016), 32 ms frames. Speech start opens an utterance. **End of speech** = ≥ 500 ms of silence closes it. Hard cut at 15 s, made at the lowest-energy point in the last 2 s.
 - **Streaming policy**: our own implementation of **LocalAgreement-2** (whisper_streaming approach, MIT reference):
   - While an utterance is open, re-decode the growing buffer every **update interval** (default 0.5 s; game mode 1.0 s).
@@ -117,6 +117,7 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 ### 5.5 Translation
 - Engine interface `TranslationEngine.translate(texts, src, tgt) -> list[str]` plus `supports(src, tgt)` and `load()/unload()`.
   Candidates (M03 benchmark): Opus-MT / Argos (CTranslate2), MADLAD-400 3B (CTranslate2), Qwen3-4B-Instruct (llama.cpp). The user picks the default from the benchmark table (gate G4).
+  - **G4 decision (2026-10-17):** default = **Opus-MT** (CTranslate2; GPU, or CPU with no NVIDIA GPU / in game mode). Argos dropped (no weights licence, D-031). Optional **"Best quality"** setting, off by default: Opus-MT still translates partials, and MADLAD-400 3B re-translates each final line (+3.5 GB VRAM, ~1 s later). Converted Opus-MT models are hosted in an HF repo under the user's account with CC-BY credits (T054).
 - **Router**: picks the engine per (src, tgt). Pivots through English when no direct pair exists (Opus-MT/Argos). Skips translation when src == tgt.
 - **Fan-out**: every final utterance is translated into the set of target languages of the open windows that show its source. Each language is translated once, no matter how many windows use it.
 - **Partials**: translate the committed prefix at most 2×/s when the engine's p50 latency < 150 ms (decided by benchmark). This is off in game mode.
@@ -163,7 +164,7 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
   - Shows free disk space before downloading.
 
 ### 5.10 Game mode and performance readout
-- **Game mode** (toggle in tray/hotkey/Settings) applies a preset: smaller/faster ASR config, update interval 1.0 s, partial translation off, lighter MT engine where one exists. The exact preset is set from M03 data (D-004/D-005).
+- **Game mode** (toggle in tray/hotkey/Settings) applies a preset: smaller/faster ASR config, update interval 1.0 s, partial translation off, lighter MT engine where one exists. The exact preset is set from M03 data (D-004/D-005). **G4 preset (2026-10-17):** turbo at 1.0 s updates, partial translation off, Opus-MT on CPU (0 VRAM), "Best quality" MADLAD unloaded.
 - **Readout**: an optional footer strip per window, or a tiny standalone HUD. Shows GPU %, VRAM used/total (app + total), ASR latency p50, MT latency p50, end-to-end lag (speech end → final line). Data comes via `nvidia-ml-py` (NVML), sampled at 1 Hz.
 
 ### 5.11 Privacy, close and export
@@ -213,6 +214,7 @@ Goal: every line shows *who* said it, from day one.
 - Tokens are stored encrypted with Windows DPAPI (ctypes `CryptProtectData`) in the config dir. The Disconnect button deletes them.
 
 **Source A: voice diarization (engine decided at G4)**
+- **G4 decision (2026-10-17): per-line labels** — one TitaNet-large embedding (sherpa-onnx, CPU) per VAD line matched to running centroids (T102), plus the in-line speaker-change split (T105). Measured DER 0.10 vs 0.35 for the sliding window below (T035). The sliding-window text below is kept as the original plan.
 - Runs on the `Others` loopback stream only, in its own worker, outputting speaker segments `(t0, t1, cluster_id)`.
 - Default max 6 speakers. Embeddings live in memory only and are **never written to disk** (biometric data, D-028).
 - Engine interface `DiarizationEngine` with two adapters, both benchmarked in T035:
