@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001  (real CJK punctuation on purpose)
 """T083 — screen grab conversion and Windows OCR on images drawn by the test."""
 
 import sys
@@ -98,3 +99,29 @@ def test_missing_language_pack_is_reported(qapp):
 
 def test_korean_keeps_its_spaces():
     assert join_cjk("문 앞에서 기다려") == "문 앞에서 기다려"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("队长：在桥那边集合，准备开团！", "队长在桥那边集合准备开团"),
+        ("門で待ってて、鍵を持ってるよ。", "門で待ってて鍵を持ってるよ"),
+        ("Vamos al puente del norte", "vamos al puente del norte"),
+    ],
+)
+def test_rapidocr_reads_chinese_japanese_and_spanish(qapp, text: str, expected: str):
+    from livetranslator.services.ocr.rapid_ocr import RapidOcrEngine
+
+    result = RapidOcrEngine().recognize(render(text))
+    if expected.isascii():
+        assert normalized(result.text) == expected
+    else:  # CJK: drop punctuation only (NFKD would split で into て + a mark)
+        assert "".join(c for c in result.text if c.isalnum()) == expected
+    assert result.lines[0].confidence is not None and result.lines[0].confidence > 0.8
+
+
+def test_rapidocr_does_not_claim_korean():
+    from livetranslator.services.ocr.rapid_ocr import RapidOcrEngine
+
+    with pytest.raises(UnsupportedLanguage):
+        RapidOcrEngine().recognize(np.zeros((8, 8, 3), dtype=np.uint8), "ko")

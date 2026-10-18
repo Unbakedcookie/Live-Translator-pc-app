@@ -147,3 +147,17 @@ def test_resize_left_keeps_right_edge_and_minimum():
     assert resize_rect(start, EDGE_LEFT, -50, 0) == Rect(50, 100, 570, 220)
     # Dragging left edge far right stops at right - 160 = 460; top stops at 320 - 60 = 260.
     assert resize_rect(start, EDGE_LEFT | EDGE_TOP, 900, 900) == Rect(460, 260, 160, 60)
+
+
+def test_beside_prefers_right_then_left_then_below():
+    from livetranslator.ui.geometry import beside
+
+    mon = [Monitor("M", Rect(0, 0, 1920, 1080), Rect(0, 0, 1920, 1040), primary=True)]
+    # region in the middle: room on the right
+    assert beside(Rect(400, 300, 300, 100), mon, 520, 220, 12) == Rect(712, 300, 520, 220)
+    # region at the right edge: 1500+300+12+520 > 1920 -> left side (1500-12-520 = 968)
+    assert beside(Rect(1500, 300, 300, 100), mon, 520, 220, 12) == Rect(968, 300, 520, 220)
+    # full-width region near the top: neither side fits -> below (100+80+12 = 192)
+    assert beside(Rect(0, 100, 1920, 80), mon, 520, 220, 12) == Rect(0, 192, 520, 220)
+    # full-width region at the bottom: above (900-12-220 = 668)
+    assert beside(Rect(0, 900, 1920, 140), mon, 520, 220, 12) == Rect(0, 668, 520, 220)

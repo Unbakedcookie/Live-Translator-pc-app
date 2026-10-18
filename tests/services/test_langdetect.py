@@ -46,3 +46,10 @@ def test_script_rules():
 def test_own_letters_count():
     scores = latin_scores("Straße über Köln")
     assert scores["de"] == 3  # ß, ü, ö
+
+
+def test_a_short_foreign_tag_does_not_decide_the_language():
+    """Live screen test 2026-10-18: a Chinese team tag before an English message."""
+    assert detect("[队伍] Mika: wait for me at the gate") == "en"
+    assert detect("[队伍]小明:兄弟们快上车，我们去打BOSS了") == "zh"  # some English, mostly Chinese
+    assert detect("[Party] 小明：等等我") == "zh"  # Chinese message with an English tag

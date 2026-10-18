@@ -82,8 +82,19 @@ _LETTERS: dict[str, str] = {
 _WORD_RE = re.compile(r"[^\W\d_]+(?:'[^\W\d_]+)?")
 
 
+_LATIN_LETTER = re.compile(r"[A-Za-zÀ-ɏ]")
+_ANY_SCRIPT = re.compile("|".join(pattern for _, pattern in _SCRIPTS))
+
+
 def script_language(text: str) -> str | None:
-    """A language identified by its writing system alone, or None for Latin/unknown."""
+    """A language identified by its writing system, or None for Latin/unknown text.
+
+    The writing system must make up at least as many characters as Latin letters: a game
+    chat row like "[队伍] Mika: wait for me at the gate" has a Chinese team tag but an
+    English message (found in the 2026-10-18 live screen test)."""
+    script_chars = len(_ANY_SCRIPT.findall(text))
+    if script_chars == 0 or script_chars < len(_LATIN_LETTER.findall(text)):
+        return None
     for language, pattern in _SCRIPT_RES:
         if pattern.search(text):
             return language

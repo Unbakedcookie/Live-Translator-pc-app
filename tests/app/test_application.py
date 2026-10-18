@@ -28,7 +28,11 @@ def test_first_start_creates_one_window_and_saves(qtbot, tmp_path: Path):
         registered = set(live.hotkeys.registered)
         warned = {k.removeprefix("hotkey.") for k in live.store.state.runtime.statuses}
         bound = {x for x in ALL_HOTKEY_ACTIONS if x in live.store.state.config.hotkeys}
-        assert bound == set(HOTKEY_ACTIONS) - {"new_window", "lock_all"}  # T072: start unbound
+        expected = (set(HOTKEY_ACTIONS) - {"new_window", "lock_all"}) | {
+            "ocr_region",
+            "ocr_recapture",
+        }
+        assert bound == expected  # T072: new_window/lock_all start unbound
         assert registered | warned == bound  # each one bound, or reported
     finally:
         live.shutdown()

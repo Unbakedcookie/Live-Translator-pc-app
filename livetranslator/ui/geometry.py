@@ -209,3 +209,31 @@ def default_placement(
     x = work.left + (work.width - width) // 2
     y = work.bottom - height - margin - index * (WINDOW.chrome_height + margin)
     return clamp_into(Rect(x, y, width, height), work)
+
+
+def beside(
+    region: Rect,
+    monitors: Sequence[Monitor],
+    width: int = WINDOW.default_width,
+    height: int = WINDOW.default_height,
+    gap: int = SPACE.md,
+) -> Rect:
+    """Where a new "Screen" window goes the first time a region is translated (spec §5.6):
+    to the right of the region if it fits on that monitor, else to the left, else below,
+    else above; always kept inside the monitor's work area."""
+    work = monitor_for(region, monitors).work
+    candidates = (
+        Rect(region.right + gap, region.top, width, height),
+        Rect(region.left - gap - width, region.top, width, height),
+        Rect(region.left, region.bottom + gap, width, height),
+        Rect(region.left, region.top - gap - height, width, height),
+    )
+    for rect in candidates:
+        if (
+            work.left <= rect.left
+            and rect.right <= work.right
+            and work.top <= rect.top
+            and rect.bottom <= work.bottom
+        ):
+            return rect
+    return clamp_into(candidates[0], work)

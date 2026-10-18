@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.lifecycle import Exporter, QuitFlow
 from livetranslator.app.log import setup_logging
+from livetranslator.app.ocr_controller import OcrController
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.settings_controller import HOTKEY_TITLES, SettingsController
 from livetranslator.app.speech_controller import SpeechController, line_audio_to
@@ -29,7 +30,7 @@ from livetranslator.core import actions as a
 from livetranslator.core.languages import language
 from livetranslator.core.persistence import Persistence, load_config
 from livetranslator.core.presets import effective
-from livetranslator.core.state import AppConfig, AppState, SpeakerMode, StatusLevel
+from livetranslator.core.state import AppConfig, AppState, Source, SpeakerMode, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
@@ -38,22 +39,28 @@ from livetranslator.services.metrics import MetricsService, NvmlSampler
 from livetranslator.services.mt.engines.qwen_llama import QwenLlamaEngine
 from livetranslator.services.mt.engines.qwen_llama import installed as qwen_installed
 from livetranslator.services.mt.router import TranslationRouter
+from livetranslator.services.ocr.base import OcrEngine
+from livetranslator.services.ocr.grab import Region, grab
+from livetranslator.services.ocr.rapid_ocr import RapidOcrEngine
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.icons import icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
+from livetranslator.ui.geometry import Rect, beside, monitor_for
+from livetranslator.ui.screens import monitors
 from livetranslator.ui.settings.context import EngineRow, EngineSummary, SettingsContext
 
 if TYPE_CHECKING:
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
     from livetranslator.services.mt.engines.opus_mt import Device, OpusMtEngine
+    from livetranslator.ui.region_selector import RegionSelector
     from livetranslator.ui.settings.settings_window import SettingsWindow
     from livetranslator.ui.transcript_window import TranscriptWindow
 
 # Hotkey actions handled here rather than by the WindowController.
-APP_HOTKEY_ACTIONS = ("open_settings",)
+APP_HOTKEY_ACTIONS = ("open_settings", "ocr_region", "ocr_recapture")
 ALL_HOTKEY_ACTIONS = (*HOTKEY_ACTIONS, *APP_HOTKEY_ACTIONS)
 WHERE = {"cuda": "Graphics card", "cpu": "Processor"}
 STARTING = "Starting…"
@@ -91,6 +98,8 @@ class LiveTranslatorApp(QObject):
         if not self.store.state.config.windows:
             self.controller.add_window()
         self.tray: Tray | None = None
+        self.region_selector: RegionSelector | None = None
+        self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
         self.transcript_window: TranscriptWindow | None = None
         self._quit_app = quit_app
         self.exporter = Exporter(self.store, ask_save_path)
@@ -110,6 +119,7 @@ class LiveTranslatorApp(QObject):
         )
         self.windows.settings_requested.connect(self.open_settings)
         self.windows.transcript_requested.connect(self.open_transcript)
+        self.windows.screen_region_requested.connect(self.select_screen_region)
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray = Tray(
                 self.controller,
@@ -117,6 +127,7 @@ class LiveTranslatorApp(QObject):
                 self.open_settings,
                 parent=self,
                 open_transcript=self.open_transcript,
+                select_region=self.select_screen_region,
             )
             self.tray.show()
         if speech:
@@ -266,8 +277,31 @@ class LiveTranslatorApp(QObject):
     def _on_hotkey(self, action: str) -> None:
         if action == "open_settings":
             self.open_settings()
+        elif action == "ocr_region":
+            self.select_screen_region()
+        elif action == "ocr_recapture":
+            self.ocr.recapture()
         else:
             self.controller.handle_hotkey(action)
+
+    # ------------------------------------------------------------ screen translation (T083)
+
+    def select_screen_region(self) -> None:
+        if self.region_selector is None:
+            from livetranslator.ui.region_selector import RegionSelector
+
+            self.region_selector = RegionSelector(PALETTES[DEFAULT_PALETTE_ID], parent=self)
+            self.region_selector.selected.connect(self.ocr.capture)
+        self.region_selector.start()
+
+    def _open_screen_window(self, region: Region) -> None:
+        """First capture with no window showing Screen lines: one opens beside the region."""
+        window_id = self.controller.add_window()
+        self.controller.set_sources(window_id, (Source.SCREEN,))
+        screens = monitors()
+        if screens:
+            rect = beside(Rect(region.x, region.y, region.width, region.height), screens)
+            self.controller.set_geometry(window_id, rect, monitor_for(rect, screens).name)
 
     def _suspend_hotkeys(self, suspended: bool) -> None:
         """Settings is recording a new shortcut: let every key through to it."""
@@ -346,6 +380,17 @@ class LiveTranslatorApp(QObject):
         if self.tray is not None:
             self.tray.hide()
         logger.info("{} stopped", APP_DISPLAY_NAME)
+
+
+def ocr_engines() -> list[OcrEngine]:
+    """Screen readers in order (T083): RapidOCR reads Chinese, Japanese and Latin text with no
+    language setting; Windows OCR covers whatever packs the user installed (e.g. Korean)."""
+    engines: list[OcrEngine] = [RapidOcrEngine()]
+    if sys.platform == "win32":
+        from livetranslator.services.ocr.windows_ocr import WindowsOcrEngine
+
+        engines.append(WindowsOcrEngine())
+    return engines
 
 
 def open_folder(path: Path) -> None:

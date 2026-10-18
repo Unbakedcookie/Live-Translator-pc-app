@@ -22,6 +22,7 @@ from livetranslator.ui.screens import monitors, rect_from_qrect
 class WindowManager(QObject):
     settings_requested = Signal()  # a window's menu asked for Settings (T072)
     transcript_requested = Signal()  # ... or for the transcript (T063)
+    screen_region_requested = Signal()  # ... or to translate a screen region (T083)
 
     def __init__(
         self,
@@ -64,6 +65,7 @@ class WindowManager(QObject):
         window.quit_requested.connect(self._quit_app)
         window.settings_requested.connect(self.settings_requested)
         window.transcript_requested.connect(self.transcript_requested)
+        window.screen_region_requested.connect(self.screen_region_requested)
         self.windows[window_id] = window
         self._place(window_id, index=len(self.windows) - 1)
         if not self._store.state.runtime.all_hidden:
