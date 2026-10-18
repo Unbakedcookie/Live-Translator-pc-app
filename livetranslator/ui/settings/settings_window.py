@@ -97,6 +97,8 @@ class SettingsWindow(QWidget):
         del section
 
     def _on_runtime(self, key: str) -> None:
+        if key == "status:discord":
+            self._refresh(SpeakersPage.title_text)
         if key.startswith("status:hotkey."):
             self._refresh(HotkeysPage.title_text)
 

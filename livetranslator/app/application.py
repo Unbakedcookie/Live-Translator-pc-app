@@ -16,6 +16,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
+from livetranslator.app.discord_controller import DiscordController
 from livetranslator.app.lifecycle import Exporter, QuitFlow
 from livetranslator.app.log import setup_logging
 from livetranslator.app.ocr_controller import OcrController
@@ -42,6 +43,7 @@ from livetranslator.services.mt.router import TranslationRouter
 from livetranslator.services.ocr.base import OcrEngine
 from livetranslator.services.ocr.grab import Region, grab
 from livetranslator.services.ocr.rapid_ocr import RapidOcrEngine
+from livetranslator.services.speakers.discord_rpc import SpeakingTimeline
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
@@ -99,6 +101,7 @@ class LiveTranslatorApp(QObject):
             self.controller.add_window()
         self.tray: Tray | None = None
         self.region_selector: RegionSelector | None = None
+        self.discord = DiscordController(self.store, paths.config_dir, parent=self)
         self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
         self.transcript_window: TranscriptWindow | None = None
         self._quit_app = quit_app
@@ -143,8 +146,11 @@ class LiveTranslatorApp(QObject):
         self.translation = build_translation(self.store, self.mt_engine, timings, self.smart_engine)
         self.translation.start()
         self.asr_engine = FasterWhisperEngine(models_dir)
-        self.speech = build_speech(self.store, models_dir, self.asr_engine, timings)
+        self.speech = build_speech(
+            self.store, models_dir, self.asr_engine, timings, self.discord.timeline
+        )
         self.speech.start()
+        self.discord.apply()  # Discord names, if the user set up their own Discord app
         self.metrics = MetricsService(
             self.store,
             timings,
@@ -224,6 +230,7 @@ class LiveTranslatorApp(QObject):
             engines=self.engine_summary,
             hotkey_actions=ALL_HOTKEY_ACTIONS,
             smart_translation=qwen_installed(self.models_dir()),
+            discord=self.discord,
         )
 
     def engine_summary(self) -> EngineSummary:
@@ -364,6 +371,7 @@ class LiveTranslatorApp(QObject):
     def shutdown(self) -> None:
         if self.metrics is not None:
             self.metrics.stop()
+        self.discord.stop()
         if self.speech is not None:
             self.speech.stop()
         if self.translation is not None:
@@ -426,13 +434,21 @@ def build_translation(
 
 
 def build_speech(
-    store: Store, models_dir: Path, engine: FasterWhisperEngine, timings: Timings | None = None
+    store: Store,
+    models_dir: Path,
+    engine: FasterWhisperEngine,
+    timings: Timings | None = None,
+    discord: SpeakingTimeline | None = None,
 ) -> SpeechController:
     """Mic + loopback capture feeding faster-whisper (T045). Heavy imports stay lazy."""
     from livetranslator.services.audio.devices import list_devices
     from livetranslator.services.speakers.sherpa_engine import SherpaEmbedder
 
-    speakers = SpeakerWorker(SherpaEmbedder(models_dir), store.dispatch)
+    speakers = SpeakerWorker(
+        SherpaEmbedder(models_dir),
+        store.dispatch,
+        discord_intervals=discord.intervals if discord is not None else None,
+    )
     worker = ASRWorker(
         engine, store.dispatch, on_line_audio=line_audio_to(speakers), timings=timings
     )

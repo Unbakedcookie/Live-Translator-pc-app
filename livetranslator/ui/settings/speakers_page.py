@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QLineEdit, QWidget
+from PySide6.QtWidgets import QLineEdit, QPushButton, QWidget
 
 from livetranslator.core.state import MAX_SPEAKERS_LIMIT, SpeakerMode
 from livetranslator.theme.tokens import SETTINGS
+from livetranslator.ui.discord_setup import DiscordSetup
 from livetranslator.ui.settings.context import SettingsContext
-from livetranslator.ui.settings.rows import SettingsPage, note, number_box, silently
+from livetranslator.ui.settings.rows import SettingRow, SettingsPage, note, number_box, silently
 from livetranslator.ui.widgets.choice_combo import ChoiceCombo
 
 MODES: list[tuple[str, object]] = [
@@ -52,6 +53,12 @@ class SpeakersPage(SettingsPage):
         self.me_label.setMaxLength(ME_LABEL_MAX)
         self.me_label.editingFinished.connect(self._on_me_label)
         labels.row("Name on your own lines", "Shown instead of “Me”.", self.me_label)
+        self.discord_row: SettingRow | None = None
+        self.discord_setup: DiscordSetup | None = None
+        if ctx.discord is not None:
+            setup = QPushButton("Set up…")
+            setup.clicked.connect(self.open_discord_setup)
+            self.discord_row = self.section("Discord").row("Discord names", "", setup)
         self.body.addWidget(
             note(
                 "Voices are told apart in memory only. Nothing about anyone's voice is saved, "
@@ -66,8 +73,27 @@ class SpeakersPage(SettingsPage):
         label = self._ctx.settings.store.state.config.speakers.me_label
         silently(self.me_label, lambda: self.me_label.setText(label))  # blank → back to saved
 
+    def open_discord_setup(self) -> None:
+        if self._ctx.discord is None:
+            return
+        if self.discord_setup is None:
+            self.discord_setup = DiscordSetup(self._ctx.discord, self._ctx.palette)
+        self.discord_setup.load()
+        self.discord_setup.show()
+        self.discord_setup.raise_()
+        self.discord_setup.activateWindow()
+
     def refresh(self) -> None:
         speakers = self._ctx.settings.store.state.config.speakers
+        if self.discord_row is not None:
+            status = self._ctx.settings.store.state.runtime.statuses.get("discord")
+            if not speakers.discord_app_id:
+                text = "Show people's Discord names instead of Speaker 1, 2… (one-time setup)."
+            elif status is not None:
+                text = status.message
+            else:
+                text = "Set up. Names appear while you're in a voice channel."
+            self.discord_row.set_description(text)
         self.mode.set_choice(shown_mode(speakers.mode))
         silently(self.max_speakers, lambda: self.max_speakers.setValue(speakers.max_speakers))
         if not self.me_label.hasFocus():

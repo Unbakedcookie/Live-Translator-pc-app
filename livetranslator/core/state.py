@@ -136,6 +136,11 @@ class AudioConfig(Frozen):
 MAX_SPEAKERS_LIMIT = 12
 
 
+def is_discord_id(value: str) -> bool:
+    """A Discord application ID ("snowflake"): 15-21 digits."""
+    return re.fullmatch(r"\d{15,21}", value) is not None
+
+
 class SpeakerConfig(Frozen):
     mode: SpeakerMode = SpeakerMode.AUTO
     max_speakers: Annotated[int, Field(ge=1, le=MAX_SPEAKERS_LIMIT)] = 6
@@ -146,7 +151,7 @@ class SpeakerConfig(Frozen):
     @field_validator("discord_app_id")
     @classmethod
     def _snowflake(cls, value: str | None) -> str | None:
-        if value is not None and not re.fullmatch(r"\d{15,21}", value):
+        if value is not None and not is_discord_id(value):
             raise ValueError("a Discord application ID is 15-21 digits")
         return value
 

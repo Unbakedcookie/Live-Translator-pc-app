@@ -112,6 +112,12 @@ def settings_qss(p: Palette) -> str:
         _rule("#SettingsError", f"color: {p.danger}", f"font-size: {FONTS.ui_size_small}pt"),
         _rule("#SettingsWarning", f"color: {p.danger}"),
         _rule(
+            "QPushButton:disabled",
+            f"color: {p.text_secondary}",
+            f"background: {p.surface}",
+            f"border-color: {p.surface_alt}",
+        ),
+        _rule(
             "QPushButton#HotkeyBox",
             f"background: {p.bg}",
             "text-align: left",
