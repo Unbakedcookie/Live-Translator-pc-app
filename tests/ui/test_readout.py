@@ -55,3 +55,26 @@ def test_strip_follows_the_setting_and_metrics(qtbot):
     assert window.readout.text().startswith("Game mode")
     store.dispatch(a.UpdateConfigSection("performance", {"show_readout": False}))
     assert not window.readout.isVisible() and window.content.height() == 220
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="real overlay window")
+def test_problem_line_appears_above_the_readout(qtbot):
+    from livetranslator.core.state import StatusLevel
+    from livetranslator.ui.floating_window import FloatingWindow
+
+    store = Store(AppState(config=AppConfig(windows=(WindowConfig(id="w"),))))
+    window = FloatingWindow(WindowController(store), "w", lambda _id: [])
+    qtbot.addWidget(window)
+    window.resize(520, 220)
+    window.show()
+    assert not window.status_strip.isVisible() and window.content.height() == 220
+    store.dispatch(a.SetStatus("audio.me", StatusLevel.WARNING, "No microphone found."))
+    assert window.status_strip.isVisible()
+    assert window.status_strip.text.text() == "No microphone found."
+    status_h = window.status_strip.height()
+    assert window.content.height() == 220 - status_h
+    store.dispatch(a.UpdateConfigSection("performance", {"show_readout": True}))
+    assert window.status_strip.geometry().bottom() < window.readout.geometry().top()
+    store.dispatch(a.ClearStatus("audio.me"))
+    assert not window.status_strip.isVisible()
+    assert window.content.height() == 220 - window.readout.height()

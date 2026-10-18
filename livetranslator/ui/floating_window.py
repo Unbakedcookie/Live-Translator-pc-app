@@ -66,6 +66,7 @@ from livetranslator.ui.geometry import (
 )
 from livetranslator.ui.readout import ReadoutStrip
 from livetranslator.ui.screens import monitors, qrect_from_rect, rect_from_qrect
+from livetranslator.ui.status_strip import StatusStrip
 from livetranslator.ui.style_popover import StylePopover
 from livetranslator.ui.translation_view import TranslationView
 from livetranslator.ui.widgets.icon_button import IconButton
@@ -244,6 +245,10 @@ class FloatingWindow(QWidget):
 
         # Performance readout (T093): a small line under the chat, when turned on in Settings.
         self.readout = ReadoutStrip(controller.store, self)
+        # Problem line (T111; spec §9): e.g. "No microphone found…", hidden when all is well.
+        self.status_strip = StatusStrip(controller.store, self)
+        self.status_strip.hide()
+        self.status_strip.changed.connect(self._on_status)
         controller.store.config_changed.connect(self._on_config_section)
 
         controller.store.window_changed.connect(self._on_window_changed)
@@ -278,6 +283,7 @@ class FloatingWindow(QWidget):
         self.content.set_view(self.palette_value, cfg)
         self.new_lines.setStyleSheet(pill_qss(self.palette_value))
         self.readout.apply_palette(self.palette_value)
+        self.status_strip.apply_palette(self.palette_value)
         self.new_lines.setIcon(icon("arrow-down", self.palette_value, "on_accent"))
         self.setWindowOpacity(style.window_opacity)
         self.setToolTip(f"Live Translator: {language(cfg.target_lang).english}")
@@ -370,19 +376,34 @@ class FloatingWindow(QWidget):
             return 0
         return self.readout.fontMetrics().height() + 2 * SPACE.xs
 
+    def _status_height(self) -> int:
+        if not self.status_strip.isVisibleTo(self):
+            return 0
+        return max(self.status_strip.text.fontMetrics().height(), WINDOW.icon_size) + 2 * SPACE.xs
+
+    def _footer_height(self) -> int:
+        return self._readout_height() + self._status_height()
+
     def _place_pill(self) -> None:
         pill = self.new_lines
         pill.adjustSize()
-        bottom = self.height() - self._readout_height()
+        bottom = self.height() - self._footer_height()
         pill.move((self.width() - pill.width()) // 2, bottom - pill.height() - SPACE.sm)
 
+    def _on_status(self) -> None:
+        self.status_strip.setVisible(self.status_strip.shown is not None)
+        self._layout_children()
+
     def _layout_children(self) -> None:
-        strip = self._readout_height()
-        self.content.setGeometry(0, 0, self.width(), self.height() - strip)
-        if strip:
-            self.readout.setGeometry(
-                SPACE.md, self.height() - strip, self.width() - 2 * SPACE.md, strip
-            )
+        """Chat on top; at the bottom the problem line (T111), then the readout (T093)."""
+        readout, status = self._readout_height(), self._status_height()
+        self.content.setGeometry(0, 0, self.width(), self.height() - readout - status)
+        inner = self.width() - 2 * SPACE.md
+        if status:
+            top = self.height() - readout - status
+            self.status_strip.setGeometry(SPACE.md, top, inner, status)
+        if readout:
+            self.readout.setGeometry(SPACE.md, self.height() - readout, inner, readout)
         self._place_pill()
 
     def resizeEvent(self, event: QResizeEvent) -> None:

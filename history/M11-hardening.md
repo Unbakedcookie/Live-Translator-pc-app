@@ -14,3 +14,9 @@
   - **Translation worker:** an unexpected (non-engine) error ended its thread; now it's logged, reported for that line, and the worker carries on. (The speaker worker already did this.)
 - Tests: restart-once-then-error with a broken VAD step (exactly 2 attempts), failing decodes reported then cleared, ready-status wording for GPU / no GPU / failed GPU, translation keeps going after a buggy line. Suite 600.
 - Still to review: model missing/corrupt → offer re-download (needs the wizard/Language Manager UI), device unplugged (capture already retries with a status — to re-verify live), OCR language missing (RapidOCR fallback done), Discord not running / token revoked (client retries; AUTHENTICATE failure → refresh → new prompt).
+
+## 2026-10-18 — Problems are now visible in the windows (spec §9 "shown in the window footer")
+- Found during the T111 review: statuses ("No microphone found…", "The speech model couldn't be loaded…") reached only the tray tooltip, and only errors. A user watching an overlay never saw them.
+- `core/status_view.headline`: one line, the most serious current status (error > warning > loading; OK never shown; ties by key). Shortcut conflicts (`hotkey.*`) stay in Settings → Hotkeys — on the user's PC Ctrl+Alt+M is permanently taken and would sit in every window.
+- `ui/status_strip.StatusStrip`: icon (warning / warning-circle in the danger colour, hourglass for loading) + message in small text, above the readout line; the chat shrinks to make room; hidden when all is well; re-coloured with the window's palette.
+- Tests: headline order, OK hidden, stable ties, hotkey statuses excluded; overlay shows/hides the line, chat height, line sits above the readout. Rendered off-screen (user at the PC). Suite 604.
