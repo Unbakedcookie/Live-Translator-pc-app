@@ -35,6 +35,7 @@ from loguru import logger
 from livetranslator.core import actions as a
 from livetranslator.core.state import Source, StatusLevel, Utterance, VadConfig
 from livetranslator.services.asr.base import SAMPLE_RATE, ASREngine, Transcription, Word
+from livetranslator.services.asr.chinese import ChineseScript, is_chinese, to_script
 from livetranslator.services.asr.local_agreement import LocalAgreement
 from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_energy
 from livetranslator.services.audio.ring import Float, RingBuffer
@@ -86,6 +87,7 @@ class AsrSettings:
     my_language: str = "en"
     vad: VadConfig = field(default_factory=VadConfig)
     enabled: frozenset[Source] = frozenset({Source.ME, Source.OTHERS})
+    chinese_script: ChineseScript = "simplified"
 
 
 @dataclass
@@ -386,6 +388,12 @@ class ASRWorker:
     def _publish(self, u: OpenUtterance, fields: dict[str, object], language: str | None) -> None:
         if language is not None:
             fields["language"] = language
+        if is_chinese(language):  # one script, whatever Whisper wrote (Mandarin follow-up)
+            script = self._settings.chinese_script
+            for key in ("committed", "tentative"):
+                value = fields.get(key)
+                if isinstance(value, str):
+                    fields[key] = to_script(value, script)
         if u.added:
             self._emit(a.UpdateUtterance(u.id, fields))
             return

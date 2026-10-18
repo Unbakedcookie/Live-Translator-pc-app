@@ -304,3 +304,37 @@ def test_others_line_audio_is_handed_over_early_and_final():
     assert [h[0] for h in handed] == [others_id, others_id]
     assert [h[2] for h in handed] == [False, True]
     assert handed[0][1] >= 1.5 * SAMPLE_RATE
+
+
+class ChineseEngine(FakeEngine):
+    """Whisper writing Mandarin with Traditional characters mixed in."""
+
+    def __init__(self, chars: str) -> None:
+        super().__init__(language="zh", probability=0.95)
+        self._chars = chars
+
+    def transcribe(self, audio, *, language=None, prompt=None, final=False) -> Transcription:
+        self.calls.append((len(audio), language, final))
+        seconds = len(audio) / SAMPLE_RATE
+        n = min(int(seconds / 0.5), len(self._chars))
+        words = tuple(Word(self._chars[i], i * 0.5, i * 0.5 + 0.4, 0.9) for i in range(n))
+        segment = Segment("".join(w.text for w in words), 0.0, seconds, words, -0.2, 0.01)
+        return Transcription((segment,), "zh", self._probability)
+
+
+@pytest.mark.parametrize(
+    ("script", "heard", "shown", "absent"),
+    [("simplified", "門鍵這", "门键这", "門"), ("traditional", "门键这", "門鍵這", "门")],
+)
+def test_mandarin_is_written_in_one_script(script, heard, shown, absent):
+    worker, emitted = make_worker(ChineseEngine(heard), chinese_script=script)
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    feed(worker, ring, [(0.32, 0.0)] + [(0.25, SPEECH)] * 8 + [(0.25, 0.0)] * 4)
+    final = last_fields(emitted)
+    text = str(final["committed"]).replace(" ", "")
+    assert final["language"] == "zh" and text.startswith(shown[:2]) and absent not in text
+    texts = [
+        str(x.fields.get("committed", "")) for x in emitted if isinstance(x, a.UpdateUtterance)
+    ]
+    assert all(absent not in t for t in texts)  # partials too

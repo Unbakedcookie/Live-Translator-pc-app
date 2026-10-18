@@ -151,6 +151,10 @@ class SettingsController:
 
     # ------------------------------------------------------------ performance / advanced
 
+    def set_chinese_script(self, script: str) -> None:
+        """'simplified' or 'traditional': how recognised Mandarin is written."""
+        self._store.dispatch(a.UpdateConfigSection("engines", {"chinese_script": script}))
+
     def set_smart_language(self, code: str, on: bool) -> None:
         """Use (or stop using) the Qwen translator for lines from or into `code`."""
         current = self._store.state.config.engines.smart_languages

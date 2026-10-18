@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -160,6 +160,8 @@ class EngineConfig(Frozen):
     # Lines from or into these languages use the smarter Qwen translator when it's installed
     # (Mandarin follow-up 2026-10-18: Opus-MT garbles Chinese chat slang). Empty = off.
     smart_languages: tuple[str, ...] = ()
+    # Recognised Mandarin is written in one script (Whisper sometimes mixes them).
+    chinese_script: Literal["simplified", "traditional"] = "simplified"
 
 
 class PerformanceConfig(Frozen):

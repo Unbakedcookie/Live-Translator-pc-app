@@ -149,3 +149,8 @@ I did these while the GPU ran the M03 benchmarks and the desktop was in use by t
 - **Cause:** PortAudio's `Pa_Initialize`/`Pa_Terminate` aren't thread-safe. The device list and each capture stream create and terminate their own `PyAudio()`, and with both streams on, the two capture threads did it at the same moment. All my test runs had the mic muted (one capture), which is why it never showed. The code review the night before had flagged "overlapping PyAudio init/terminate" as a risk.
 - **Fix:** one `PORTAUDIO_LOCK` (RLock) around every PortAudio start/open and stop/close/terminate (`devices.list_devices`, `capture._PyAudioStream`). Audio callbacks don't take it.
 - **Verified:** 3 of 3 starts with the user's real settings stay up (window listed after 12 s, no assertion in the logs); full suite 536 passed.
+
+## 2026-10-18 — One Chinese script for Mandarin (Mandarin follow-up)
+- The T045 live check saw Whisper write some Mandarin lines in Traditional characters (mixed with Simplified). Offline, on 150 FLEURS clips, it never did — so it's an occasional live drift, but mixed scripts in one conversation look broken.
+- **Fix:** `services/asr/chinese.py` converts recognised Chinese (partials and finals) with OpenCC (Apache-2.0, D-036) to the script chosen in Settings → General → "Chinese characters": **Simplified (default)** or Traditional (Taiwan standard). Applied at publish time in the ASR worker, so the agreement logic still works on Whisper's raw words; non-Chinese text is untouched. The setting is pushed to the worker live.
+- Tests: conversion both ways + untouched ASCII; a fake Whisper emitting Traditional (or Simplified) characters → every partial and the final come out in the chosen script; Settings round trip. Suite 552 passed.

@@ -7,7 +7,13 @@ from PySide6.QtWidgets import QPushButton, QWidget
 from livetranslator.theme.tokens import SETTINGS
 from livetranslator.ui.settings.context import SettingsContext
 from livetranslator.ui.settings.rows import SettingsPage, silently
+from livetranslator.ui.widgets.choice_combo import ChoiceCombo
 from livetranslator.ui.widgets.language_picker import LanguagePicker
+
+CHINESE_SCRIPTS: list[tuple[str, object]] = [
+    ("Simplified (简体)", "simplified"),
+    ("Traditional (繁體)", "traditional"),
+]
 
 
 class GeneralPage(SettingsPage):
@@ -29,6 +35,16 @@ class GeneralPage(SettingsPage):
             "translate into it.",
             self.language,
         )
+        self.chinese = ChoiceCombo(CHINESE_SCRIPTS, store.state.config.engines.chinese_script)
+        self.chinese.setFixedWidth(SETTINGS.control_width)
+        self.chinese.apply_palette(ctx.palette)
+        self.chinese.choice_changed.connect(lambda s: ctx.settings.set_chinese_script(str(s)))
+        lang.row(
+            "Chinese characters",
+            "How spoken Mandarin is written in your windows. The recogniser sometimes mixes "
+            "both; this keeps every line in one.",
+            self.chinese,
+        )
 
         storage = self.section("Storage")
         models = QPushButton("Open folder")
@@ -44,5 +60,6 @@ class GeneralPage(SettingsPage):
         self.finish()
 
     def refresh(self) -> None:
-        code = self._ctx.settings.store.state.config.my_language
-        silently(self.language, lambda: self.language.set_language(code))
+        config = self._ctx.settings.store.state.config
+        silently(self.language, lambda: self.language.set_language(config.my_language))
+        self.chinese.set_choice(config.engines.chinese_script)

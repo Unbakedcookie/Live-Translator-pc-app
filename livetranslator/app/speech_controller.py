@@ -61,6 +61,7 @@ def asr_settings(config: AppConfig) -> AsrSettings:
         my_language=config.my_language,
         vad=config.vad,
         enabled=frozenset(enabled),
+        chinese_script=config.engines.chinese_script,
     )
 
 
@@ -156,7 +157,7 @@ class SpeechController(QObject):
     # ------------------------------------------------------------ config
 
     def _on_config_changed(self, section: str) -> None:
-        if section in ("audio", "my_language", "performance", "vad", "all"):
+        if section in ("audio", "my_language", "performance", "vad", "engines", "all"):
             self.worker.configure(asr_settings(self._store.state.config))
         if section in ("audio", "all"):
             self._apply_audio()

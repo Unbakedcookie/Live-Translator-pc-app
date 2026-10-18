@@ -369,3 +369,12 @@ def test_translation_page_chinese_switch_only_when_installed(qtbot, tmp_path: Pa
     env.store.dispatch(a.UpdateConfigSection("engines", {"smart_languages": ()}))
     page.refresh()
     assert not page.chinese.isChecked()
+
+
+def test_general_page_chinese_script(env: Env):
+    page = env.page(GeneralPage)
+    assert page.chinese.current_choice() == "simplified"
+    page.chinese.choice_changed.emit("traditional")
+    assert env.store.state.config.engines.chinese_script == "traditional"
+    env.store.dispatch(a.UpdateConfigSection("engines", {"chinese_script": "simplified"}))
+    assert page.chinese.current_choice() == "simplified"
