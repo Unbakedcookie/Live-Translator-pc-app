@@ -3,6 +3,8 @@
 Jobs are (utterance id, text, src, tgt). The worker translates with the router and hands the
 result to `on_result`; jobs whose text is outdated by the time they run (the speaker kept
 talking) are skipped through `is_current`, so a slow engine never paints stale text.
+`WarmJob`s pre-load a language pair's model through the same queue, so loading never races
+a translation (D-015: the first line of a pair otherwise waits ~0.9 s for its model).
 """
 
 from __future__ import annotations
@@ -26,6 +28,12 @@ class TranslationJob:
     tgt: str
 
 
+@dataclass(frozen=True)
+class WarmJob:
+    src: str
+    tgt: str
+
+
 ResultFn = Callable[[TranslationJob, str], None]
 CurrentFn = Callable[[TranslationJob], bool]
 
@@ -42,14 +50,15 @@ class TranslationWorker:
         self._on_result = on_result
         self._is_current = is_current
         self._on_error = on_error
-        self._jobs: queue.Queue[TranslationJob | None] = queue.Queue()
+        self._jobs: queue.Queue[TranslationJob | WarmJob | None] = queue.Queue()
         self._thread: threading.Thread | None = None
 
-    def submit(self, job: TranslationJob) -> None:
+    def submit(self, job: TranslationJob | WarmJob) -> None:
         self._jobs.put(job)
 
     def run_pending(self) -> int:
-        """Process queued jobs on the calling thread (tests, or a worker-less setup)."""
+        """Process queued jobs on the calling thread (tests, or a worker-less setup). Returns
+        the number of translation jobs (pre-loads run too but aren't counted)."""
         done = 0
         while True:
             try:
@@ -59,9 +68,12 @@ class TranslationWorker:
             if job is None:
                 return done
             self._handle(job)
-            done += 1
+            done += isinstance(job, TranslationJob)
 
-    def _handle(self, job: TranslationJob) -> None:
+    def _handle(self, job: TranslationJob | WarmJob) -> None:
+        if isinstance(job, WarmJob):
+            self._router.warm(job.src, job.tgt)
+            return
         if not self._is_current(job):
             return
         try:

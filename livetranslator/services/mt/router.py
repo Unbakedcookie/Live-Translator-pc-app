@@ -69,6 +69,18 @@ class TranslationRouter:
             return False
         return True
 
+    def warm(self, src: str, tgt: str) -> None:
+        """Pre-load the model(s) for src -> tgt, each pivot leg included. Engines without a
+        `warm` method, unsupported pairs and passthrough are skipped quietly."""
+        try:
+            steps = self.route(src, tgt)
+        except UnsupportedLanguage:
+            return
+        for step in steps:
+            warm = getattr(step.engine, "warm", None)
+            if callable(warm):
+                warm(step.src, step.tgt)
+
     def translate(self, text: str, src: str, tgt: str) -> str:
         start = time.perf_counter()
         engine_ran = False

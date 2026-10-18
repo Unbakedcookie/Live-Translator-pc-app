@@ -19,7 +19,7 @@ from livetranslator.core.state import AppConfig, Source, StatusLevel, Utterance
 from livetranslator.core.store import Store
 from livetranslator.services.errors import UnsupportedLanguage
 from livetranslator.services.mt.router import TranslationRouter
-from livetranslator.services.mt.worker import TranslationJob, TranslationWorker
+from livetranslator.services.mt.worker import TranslationJob, TranslationWorker, WarmJob
 
 PARTIAL_RATE_HZ = 2.0
 STATUS_KEY = "translation"
@@ -51,6 +51,7 @@ class TranslationController:
         # What was last sent per line. A translation result updates the utterance too, and
         # without this the update would re-submit the same text (found by test_fanout).
         self._submitted: dict[str, tuple[str, bool]] = {}
+        self._warmed: set[tuple[str, str]] = set()  # pairs already queued for pre-load
         self.worker = TranslationWorker(router, self.on_result, self.is_current, self.on_error)
         store.utterance_added.connect(self._on_utterance)
         store.utterance_updated.connect(self._on_utterance)
@@ -59,6 +60,21 @@ class TranslationController:
 
     def start(self) -> None:
         self.worker.start()
+        config = self._store.state.config
+        for tgt in target_languages(Source.ME, config):  # your own lines are predictable
+            self.warm(config.my_language, tgt)
+
+    def warm(self, src: str, tgt: str) -> None:
+        """Queue a model pre-load once per pair (skipped when src and tgt are the same)."""
+        if src == tgt or (src, tgt) in self._warmed:
+            return
+        self._warmed.add((src, tgt))
+        self.worker.submit(WarmJob(src, tgt))
+
+    def rewarm(self) -> None:
+        """After the engine moved device (game mode), reload the pairs in use there."""
+        for src, tgt in sorted(self._warmed):
+            self.worker.submit(WarmJob(src, tgt))
 
     def stop(self) -> None:
         self.worker.stop()
@@ -79,6 +95,12 @@ class TranslationController:
         snapshot = (utterance.text, utterance.is_final)
         if self._submitted.get(utterance_id) == snapshot:
             return  # e.g. our own SetTranslation result: nothing new to translate
+        src = source_language(utterance, state.config)
+        if src is not None:
+            # Load the models while the person is still talking (matters most in game mode,
+            # where nothing is translated before the final line).
+            for tgt in target_languages(utterance.source, state.config):
+                self.warm(src, tgt)
         if utterance.is_final:
             self._last_partial.pop(utterance_id, None)
         else:
@@ -89,7 +111,6 @@ class TranslationController:
             if last is not None and now - last < 1.0 / PARTIAL_RATE_HZ:
                 return
             self._last_partial[utterance_id] = now
-        src = source_language(utterance, state.config)
         if src is None:
             return
         self._submitted[utterance_id] = snapshot

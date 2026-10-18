@@ -84,3 +84,14 @@ def test_set_device_switches_and_drops_loaded_pairs(tmp_path: Path, monkeypatch)
     engine._models[("ja", "en")] = ("translator", "src", "tgt")
     engine.set_device("auto")  # no change: keeps what is loaded
     assert engine._models
+
+
+def test_warm_needs_an_installed_pair_and_a_loaded_engine(tmp_path: Path, monkeypatch):
+    fake_pair(tmp_path, "ja-en")
+    engine = OpusMtEngine(tmp_path, device="cpu")
+    loaded: list[str] = []
+    monkeypatch.setattr(engine, "_model", lambda pair: loaded.append(pair.src) or ())
+    assert not engine.warm("ja", "en")  # not loaded yet
+    engine.load()
+    assert engine.warm("ja", "en") and loaded == ["ja"]
+    assert not engine.warm("en", "ja")  # not installed

@@ -3,7 +3,7 @@
 ## Current state
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
 - **Next:** user G3 look review of Settings (+ transcript window, quit dialog); then T054 model manager, T073 wizard, T074 Language Manager, T104 rename.
-- **Tests:** 505 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Tests:** 509 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
 - **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).

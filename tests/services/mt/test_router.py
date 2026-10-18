@@ -117,3 +117,22 @@ def test_only_real_engine_work_is_timed():
     router.translate("hola", "es", "en")
     router.translate("hola", "es", "en")  # cached
     assert len(timings.snapshot("mt")) == 1
+
+
+def test_warm_loads_every_leg_and_skips_the_rest():
+    class Warmable(FakeEngine):
+        def __init__(self, name: str, pairs: set[tuple[str, str]]) -> None:
+            super().__init__(name, pairs)
+            self.warmed: list[tuple[str, str]] = []
+
+        def warm(self, src: str, tgt: str) -> bool:
+            self.warmed.append((src, tgt))
+            return True
+
+    engine = Warmable("opus", {("ja", "en"), ("en", "es")})
+    router = TranslationRouter([engine, FakeEngine("plain", {("de", "en")})])
+    router.warm("ja", "es")  # pivot: both legs
+    router.warm("en", "en")  # passthrough
+    router.warm("ko", "fr")  # unsupported: quietly nothing
+    router.warm("de", "en")  # engine without warm(): skipped
+    assert engine.warmed == [("ja", "en"), ("en", "es")]

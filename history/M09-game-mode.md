@@ -28,3 +28,13 @@
 - Game-mode description in Settings now also says translation runs on the processor (true since T092).
 - **Verification:** `readout_text` against hand-written strings (full, game mode, all n/a, half-known VRAM); overlay test (hidden by default, appears with the setting, chat height shrinks by the strip, follows metrics and game mode, hides again); Settings toggle both ways. **Tier B:** real app, speech on, Spanish clip through the speakers → screenshot shows live values under the translated line.
 - **Not done (needs the user):** the spec's "game mode meets the §8 budget with a game running" measurement. Without a game: lag 0.96 s (budget 1.5 s).
+
+## 2026-10-18 — Pre-loading translation models (follow-up to the T091 numbers)
+
+- **Problem (measured):** the first line of each language pair waited ~0.94 s for its model, and the first line after switching to game mode took 2.15 s (CPU load).
+- **Design:** loading everything would cost ~2 GB of graphics memory, so it's targeted:
+  - at start: my language → the languages of windows that show Me;
+  - as soon as a line's language is known (a partial, seconds before the final): that language → its targets — this runs even when partial translation is off, which is exactly game mode;
+  - after the engine moves device (game mode on/off): every pair that was in use, again.
+  - `WarmJob`s go through the translation worker's own queue, so a load never races a translation; `router.warm` loads each pivot leg and skips passthrough/unsupported/engines without `warm`; once per pair.
+- **Verification:** tests for router legs, controller (start, partial-off warm, once per pair, rewarm), engine (needs installed + loaded). Live: slowest translation 943 → ~320 ms; first line after switching to game mode 2.15 → 0.95 s; normal first line 0.97 s (now dominated by the final speech decode).

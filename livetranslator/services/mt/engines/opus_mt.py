@@ -82,19 +82,20 @@ class OpusMtEngine:
             add_cuda_dll_dirs()
         return "cuda" if use_gpu else "cpu"
 
-    def set_device(self, choice: Device) -> None:
-        """Move to the processor or back (game mode, T092). Loaded pairs are dropped and
-        reload on first use on the new device. Done under the translate lock, so a line being
-        translated finishes first and the next one never sees a half-switched engine."""
+    def set_device(self, choice: Device) -> bool:
+        """Move to the processor or back (game mode, T092). Loaded pairs are dropped (returns
+        True then) and reload on first use on the new device. Done under the translate lock, so
+        a line being translated finishes first and the next never sees a half-switched engine."""
         device = self._pick_device(choice)
         with self._lock:
             if choice == self._device_choice:
-                return
+                return False
             self._device_choice = choice
             if self.device is None:
-                return  # not loaded yet: load() will use the new choice
+                return False  # not loaded yet: load() will use the new choice
             self._models.clear()
             self.device = device
+            return True
 
     def unload(self) -> None:
         with self._lock:
@@ -118,6 +119,18 @@ class OpusMtEngine:
         loaded = (translator, source, target)
         self._models[key] = loaded
         return loaded
+
+    def warm(self, src: str, tgt: str) -> bool:
+        """Load a pair ahead of its first line (~0.9 s on the GPU, ~2 s on the processor).
+        Any thread; False if the pair isn't installed or the engine isn't loaded."""
+        pair = self._pairs.get((src, tgt))
+        if pair is None:
+            return False
+        with self._lock:
+            if self.device is None:
+                return False
+            self._model(pair)
+        return True
 
     def translate(self, texts: Sequence[str], src: str, tgt: str) -> list[str]:
         pair = self._pairs.get((src, tgt))

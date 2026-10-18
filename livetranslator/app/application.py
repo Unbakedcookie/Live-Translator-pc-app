@@ -267,7 +267,8 @@ class LiveTranslatorApp(QObject):
             self.translation.translate_partials = partials_allowed(self.store.state.config)
         if self.mt_engine is not None and section in ("performance", "all"):
             device = effective(self.store.state.config).mt_device
-            self.mt_engine.set_device(cast("Device", device))  # game mode → processor
+            if self.mt_engine.set_device(cast("Device", device)) and self.translation:
+                self.translation.rewarm()  # game mode moved it: reload what was in use
 
     def _register_hotkeys(self) -> None:
         if self._hotkeys_suspended:

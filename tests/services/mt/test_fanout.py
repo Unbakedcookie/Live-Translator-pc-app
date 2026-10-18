@@ -168,3 +168,42 @@ def test_result_does_not_retrigger_translation(env):
     store.dispatch(a.AddUtterance(utt("u1", Source.OTHERS, "hola", "es", True)))
     assert controller.worker.run_pending() == 2
     assert controller.worker.run_pending() == 0
+
+
+class WarmEngine(CountingEngine):
+    def __init__(self) -> None:
+        super().__init__()
+        self.warmed: list[tuple[str, str]] = []
+
+    def warm(self, src: str, tgt: str) -> bool:
+        self.warmed.append((src, tgt))
+        return True
+
+
+def test_models_are_preloaded_while_people_talk(qapp):
+    """D-015 follow-up: the first line of a pair waited ~0.9 s for its model to load."""
+    store = Store(AppState(config=AppConfig(my_language="en", windows=WINDOWS)))
+    engine = WarmEngine()
+    controller = TranslationController(store, TranslationRouter([engine]))
+    controller.warm("en", "ja")
+    controller.worker.run_pending()
+    assert engine.warmed == [("en", "ja")]
+    # partials off (game mode): a line's language is known long before its final
+    store.dispatch(a.AddUtterance(utt("u1", Source.OTHERS, "hola", "es", False)))
+    assert controller.worker.run_pending() == 0  # nothing translated yet...
+    assert sorted(engine.warmed[1:]) == [("es", "en"), ("es", "ja")]  # ...but both loaded
+    store.dispatch(a.UpdateUtterance("u1", {"committed": "hola amigos"}))
+    controller.worker.run_pending()
+    assert len(engine.warmed) == 3  # once per pair
+    controller.rewarm()  # e.g. game mode moved the engine to the processor
+    controller.worker.run_pending()
+    assert sorted(engine.warmed[3:]) == [("en", "ja"), ("es", "en"), ("es", "ja")]
+
+
+def test_start_warms_my_language_into_my_windows(qapp):
+    store = Store(AppState(config=AppConfig(my_language="en", windows=WINDOWS)))
+    engine = WarmEngine()
+    controller = TranslationController(store, TranslationRouter([engine]))
+    controller.start()
+    controller.stop()
+    assert engine.warmed == [("en", "ja")]  # w2 shows Me in Japanese; en->en needs nothing
