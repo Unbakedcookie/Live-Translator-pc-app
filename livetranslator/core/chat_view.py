@@ -40,6 +40,16 @@ class ChatLineData:
     stable: str  # drawn in the primary text colour
     changing: str  # drawn in the secondary colour after `stable`
     original: str | None  # shown under the line in "original + translation" mode
+    tag: str = ""  # "ZH→EN" when the line is being translated (user request 2026-10-18)
+
+
+def language_tag(source: str | None, target: str) -> str:
+    """'ZH→EN' for a line spoken in `source` shown in a `target` window; "" when there's
+    nothing to translate (same language) or the language isn't known yet."""
+    if not source:
+        return ""
+    src, tgt = source.split("-", 1)[0].upper(), target.split("-", 1)[0].upper()
+    return "" if src == tgt else f"{src}→{tgt}"
 
 
 def speaker_ramp_indexes(session: SessionState) -> dict[str, int]:
@@ -92,20 +102,22 @@ def chat_line(
     )
     label = speaker_label(state, utterance.speaker_id)
     original_text = utterance.text
-    if text_language(utterance, state) == target:
+    source = text_language(utterance, state)
+    tag = language_tag(source, target) if window.style.show_languages else ""
+    if source == target:
         if utterance.is_final:
             stable, changing = original_text, ""
         else:
             stable, changing = utterance.committed, utterance.tentative
-        return ChatLineData(utterance.id, label, speaker, stable, changing, None)
+        return ChatLineData(utterance.id, label, speaker, stable, changing, None, tag)
     original = original_text if window.display is DisplayMode.BOTH else None
     translation = utterance.translations.get(target)
     if translation is None:
-        return ChatLineData(utterance.id, label, speaker, "", original_text, None)
+        return ChatLineData(utterance.id, label, speaker, "", original_text, None, tag)
     current = utterance.translated_from.get(target) == original_text
     if utterance.is_final and current:
-        return ChatLineData(utterance.id, label, speaker, translation, "", original)
-    return ChatLineData(utterance.id, label, speaker, "", translation, original)
+        return ChatLineData(utterance.id, label, speaker, translation, "", original, tag)
+    return ChatLineData(utterance.id, label, speaker, "", translation, original, tag)
 
 
 def visible_lines(state: AppState, window: WindowConfig, limit: int) -> list[ChatLineData]:

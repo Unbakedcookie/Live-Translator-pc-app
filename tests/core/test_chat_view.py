@@ -3,6 +3,7 @@
 from livetranslator.core.chat_view import (
     ChatLineData,
     chat_line,
+    language_tag,
     speaker_label,
     speaker_ramp_indexes,
     visible_lines,
@@ -16,6 +17,7 @@ from livetranslator.core.state import (
     SpeakerConfig,
     Utterance,
     WindowConfig,
+    WindowStyle,
 )
 
 EN = WindowConfig(id="w", target_lang="en", sources=(Source.ME, Source.OTHERS))
@@ -52,12 +54,12 @@ def test_mic_without_detected_language_uses_my_language():
     u = utt("u", "me", Source.ME, committed="hello", is_final=True)
     assert line(u).stable == "hello"  # my_language "en" == target: no translation needed
     de = state_with(u, my_language="de")
-    assert line(u, state=de) == ChatLineData("u", "Me", "me", "", "hello", None)  # pending
+    assert line(u, state=de) == ChatLineData("u", "Me", "me", "", "hello", None, "DE→EN")  # pending
 
 
 def test_pending_translation_shows_the_original_as_changing():
     u = utt("u", committed="hola amigos", language="es", is_final=True)
-    assert line(u, EN_BOTH) == ChatLineData("u", "Speaker 1", 0, "", "hola amigos", None)
+    assert line(u, EN_BOTH) == ChatLineData("u", "Speaker 1", 0, "", "hola amigos", None, "ES→EN")
 
 
 def test_current_translation_of_a_final_line_is_stable():
@@ -69,7 +71,7 @@ def test_current_translation_of_a_final_line_is_stable():
         translations={"en": "hi friends"},
         translated_from={"en": "hola amigos"},
     )
-    assert line(u) == ChatLineData("u", "Speaker 1", 0, "hi friends", "", None)
+    assert line(u) == ChatLineData("u", "Speaker 1", 0, "hi friends", "", None, "ES→EN")
     assert line(u, EN_BOTH).original == "hola amigos"
 
 
@@ -82,7 +84,7 @@ def test_stale_or_partial_translation_is_shown_as_changing():
         translations={"en": "hi"},
         translated_from={"en": "hola"},  # made from an earlier partial
     )
-    assert line(stale) == ChatLineData("u", "Speaker 1", 0, "", "hi", None)
+    assert line(stale) == ChatLineData("u", "Speaker 1", 0, "", "hi", None, "ES→EN")
     partial = utt(
         "u",
         committed="hola",
@@ -90,7 +92,7 @@ def test_stale_or_partial_translation_is_shown_as_changing():
         translations={"en": "hi"},
         translated_from={"en": "hola"},
     )
-    assert line(partial, EN_BOTH) == ChatLineData("u", "Speaker 1", 0, "", "hi", "hola")
+    assert line(partial, EN_BOTH) == ChatLineData("u", "Speaker 1", 0, "", "hi", "hola", "ES→EN")
 
 
 def test_speaker_labels():
@@ -127,3 +129,21 @@ def test_visible_lines_filters_sources_and_keeps_the_newest():
     state = state_with(*lines[:3], screen, blank, *lines[3:])
     shown = visible_lines(state, EN, limit=3)
     assert [x.utterance_id for x in shown] == ["o2", "o3", "o4"]  # no screen, no blank
+
+
+def test_language_tag():
+    """User request 2026-10-18: show which languages a line is translated between."""
+    assert language_tag("zh", "en") == "ZH→EN"
+    assert language_tag("zh-TW", "en") == "ZH→EN"
+    assert language_tag("en", "en") == ""  # nothing to translate
+    assert language_tag(None, "en") == ""  # language not known yet
+    same = utt("u", committed="hello", language="en", is_final=True)
+    assert line(same).tag == ""
+    unknown = utt("u", committed="hola")  # Others, language not detected yet
+    assert line(unknown).tag == ""
+
+
+def test_language_tag_can_be_turned_off_per_window():
+    u = utt("u", committed="hola", language="es", is_final=True)
+    quiet = WindowConfig(id="w", target_lang="en", style=WindowStyle(show_languages=False))
+    assert line(u, quiet).tag == ""

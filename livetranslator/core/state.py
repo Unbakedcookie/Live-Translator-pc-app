@@ -85,6 +85,7 @@ class WindowStyle(Frozen):
     outline: bool = True
     outline_width: Annotated[int, Field(ge=1, le=OVERLAY.outline_width_max)] | None = None
     shadow: bool = False
+    show_languages: bool = True  # "ZH→EN" tag after the speaker on translated lines
 
     @field_validator("custom_seed")
     @classmethod

@@ -31,6 +31,7 @@ class Role(StrEnum):
     STABLE = "stable"
     CHANGING = "changing"
     ORIGINAL = "original"
+    TAG = "tag"  # "ZH→EN" after the label, small and dim
 
 
 @dataclass(frozen=True)
@@ -68,7 +69,9 @@ def layout_rows(
     """Rows for `line` in a column `width` px wide. Text after the label wraps with a
     hanging indent at the label's width; stable and changing words share rows."""
     label = f"{line.label}  "
-    indent = measure_label(label)
+    label_width = measure_label(label)
+    tag = f"{line.tag}  " if line.tag else ""
+    indent = label_width + (measure_original(tag) if tag else 0.0)
     avail = max(width - indent, measure_text("M"))
     stable_words, changing_words = line.stable.split(), line.changing.split()
     joined = " ".join(stable_words + changing_words)
@@ -78,7 +81,11 @@ def layout_rows(
     for i, text in enumerate(wrap_text(joined, measure_text, avail) or [""]):
         start = joined.find(text, cursor) if text else cursor
         cursor = start + len(text)
-        runs: list[Run] = [Run(0.0, label, Role.LABEL)] if i == 0 else []
+        runs: list[Run] = []
+        if i == 0:
+            runs.append(Run(0.0, label, Role.LABEL))
+            if tag:
+                runs.append(Run(label_width, tag, Role.TAG))
         for offset, piece, role in _split_at(text, start, boundary):
             if piece:
                 runs.append(Run(indent + measure_text(text[:offset]), piece, role))
@@ -164,12 +171,14 @@ def paint_rows(
         Role.STABLE: QColor(palette.text_primary),
         Role.CHANGING: QColor(palette.text_secondary),
         Role.ORIGINAL: QColor(palette.text_secondary),
+        Role.TAG: QColor(palette.text_secondary),
     }
     role_fonts = {
         Role.LABEL: fonts.label,
         Role.STABLE: fonts.text,
         Role.CHANGING: fonts.text,
         Role.ORIGINAL: fonts.original,
+        Role.TAG: fonts.original,
     }
     outline = QColor(palette.outline) if style.outline else None
     outline_px = style.outline_width or default_outline_width(palette)

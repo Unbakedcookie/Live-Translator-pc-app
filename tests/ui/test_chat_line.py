@@ -19,6 +19,10 @@ from livetranslator.ui.widgets.chat_line import (
 )
 
 
+def five(text: str) -> float:
+    return 5.0 * len(text)
+
+
 def ten(text: str) -> float:
     return 10.0 * len(text)
 
@@ -97,3 +101,17 @@ def test_real_fonts_layout_and_paint(qtbot):
         1 for x in range(0, 200, 4) for y in range(0, 200, 4) if image.pixelColor(x, y).alpha()
     )
     assert painted > 20
+
+
+def test_language_tag_sits_between_label_and_text():
+    """'Mika  ZH→EN  text…': the tag uses the small font; wrapped text hangs after it."""
+    line = ChatLineData("u", "Mika", 0, "aaa bbb ccc", "", None, "ZH→EN")
+    # measures: label/text 10 px per char, original (tag) 5 px per char
+    rows = layout_rows(line, 200, ten, ten, five)
+    first = rows[0].runs
+    assert first[0] == Run(0.0, "Mika  ", Role.LABEL)
+    assert first[1] == Run(60.0, "ZH→EN  ", Role.TAG)  # after 6 chars at 10 px
+    assert first[2].x == 95.0  # 60 + 7 chars at 5 px
+    narrow = layout_rows(line, 175, ten, ten, five)  # 80 px left: "aaa bbb" fits, "ccc" wraps
+    assert [r.runs[-1].text for r in narrow] == ["aaa bbb", "ccc"]
+    assert narrow[1].runs[0].x == 95.0  # hanging indent includes the tag

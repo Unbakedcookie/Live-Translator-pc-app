@@ -120,6 +120,11 @@ class StylePopover(QFrame):
             )
         )
         text_grid.addWidget(self.both, 3, 0, 1, 2)
+        self.languages = QCheckBox("Show languages (e.g. ZH→EN)", self)
+        self.languages.toggled.connect(
+            lambda on: controller.set_style(window_id, show_languages=on)
+        )
+        text_grid.addWidget(self.languages, 4, 0, 1, 2)
         root.addLayout(text_grid)
 
         root.addWidget(self._heading("Show lines from"))
@@ -181,6 +186,7 @@ class StylePopover(QFrame):
             self.outline_width,
             self.shadow,
             self.both,
+            self.languages,
             self.locked,
             self.click_through,
             *self.sources.values(),
@@ -201,6 +207,7 @@ class StylePopover(QFrame):
         self.outline_width.setEnabled(style.outline)
         self.shadow.setChecked(style.shadow)
         self.both.setChecked(cfg.display is DisplayMode.BOTH)
+        self.languages.setChecked(style.show_languages)
         for source, box in self.sources.items():
             box.setChecked(source in cfg.sources)
         self.locked.setChecked(cfg.locked)
