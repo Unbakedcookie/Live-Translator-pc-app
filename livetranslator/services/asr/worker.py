@@ -76,6 +76,8 @@ LANGUAGE_LOCK_P = 0.7  # "Others": keep the detected language once this sure
 NO_SPEECH_P = 0.6  # drop a segment Whisper itself thinks is not speech...
 LOW_LOGPROB = -1.0  # ...and decoded with low confidence (faster-whisper's own thresholds)
 IDLE_S = 0.03
+MAX_RESTARTS = 1  # spec §9: a crashed worker restarts once, then reports an error
+FAILURES_BEFORE_ERROR = 5  # decodes failing in a row before the user is told
 STATUS_KEY = "asr"
 SOURCE_ORDER = {Source.OTHERS: 0, Source.ME: 1, Source.SCREEN: 2}
 SPEAKER_IDS = {Source.ME: "me", Source.OTHERS: "others"}
@@ -181,6 +183,7 @@ class ASRWorker:
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()  # streams/settings vs. the worker thread
         self.load_error: str | None = None
+        self._decode_failures = 0
 
     # ------------------------------------------------------------ setup (any thread)
 
@@ -243,6 +246,20 @@ class ASRWorker:
             logger.warning("ASR decode failed ({})", type(exc).__name__)
             if job.final and job.utterance.added:
                 self._emit(a.RemoveUtterance(job.utterance.id))
+            if not job.final:
+                # Count this audio as tried: otherwise the same job is picked again at once,
+                # forever (a 100 % CPU loop while e.g. the GPU driver is down).
+                job.utterance.decoded_to = job.stream.cursor
+            self._decode_failures += 1
+            if self._decode_failures == FAILURES_BEFORE_ERROR:  # e.g. the GPU driver crashed
+                self._status(
+                    StatusLevel.ERROR,
+                    "Speech recognition keeps failing. Restart the app; details are in the log.",
+                )
+            return True
+        if self._decode_failures >= FAILURES_BEFORE_ERROR:
+            self._status(*ready_status(self._engine))  # working again
+        self._decode_failures = 0
         return True
 
     # ------------------------------------------------------------ VAD
@@ -430,15 +447,37 @@ class ASRWorker:
                 "Details are in the log.",
             )
             return False
-        self._status(StatusLevel.OK, "Speech recognition is ready.")
+        self._status(*ready_status(self._engine))
         return True
 
     def _run(self) -> None:
         if not self._load():
             return
+        restarts = 0
         while not self._stop.is_set():
-            if not self.step():
-                self._stop.wait(IDLE_S)
+            try:
+                if not self.step():
+                    self._stop.wait(IDLE_S)
+            except Exception as exc:  # spec §9: restart once, then stop with an error status
+                logger.error("speech worker crashed ({})", type(exc).__name__)
+                if restarts >= MAX_RESTARTS:
+                    self._status(
+                        StatusLevel.ERROR,
+                        "Speech recognition stopped after an error. Restart the app; "
+                        "details are in the log.",
+                    )
+                    return
+                restarts += 1
+                self._reset_streams()
+                self._status(StatusLevel.WARNING, "Speech recognition hit an error and restarted.")
+
+    def _reset_streams(self) -> None:
+        """Drop half-finished lines after a crash; capture continues from 'now'."""
+        with self._lock:
+            sources = [(s.source, s.ring) for s in self.streams.values()]
+        for source, ring in sources:
+            self.remove_stream(source)  # also removes a shown half-finished line
+            self.add_stream(source, ring)  # fresh VAD + segmenter from "now"
 
     def start(self) -> None:
         if self._thread is not None:
@@ -458,3 +497,21 @@ def _silero() -> VadFn:
     from livetranslator.services.asr.vad import SileroVad
 
     return SileroVad()
+
+
+def ready_status(engine: object) -> tuple[StatusLevel, str]:
+    """What to say once the model is loaded (spec §5.4, §9: CPU fallback gets a notice)."""
+    device = getattr(engine, "device_used", None)
+    if getattr(engine, "gpu_error", None):
+        return (
+            StatusLevel.WARNING,
+            "Your graphics card couldn't run speech recognition, so it runs on the processor "
+            "with a smaller model (slower, a little less accurate). Details are in the log.",
+        )
+    if device == "cpu":
+        return (
+            StatusLevel.WARNING,
+            "No NVIDIA graphics card found: speech runs on the processor with a smaller model "
+            "(slower, a little less accurate).",
+        )
+    return StatusLevel.OK, "Speech recognition is ready."

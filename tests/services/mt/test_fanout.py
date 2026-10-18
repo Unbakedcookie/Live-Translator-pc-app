@@ -207,3 +207,35 @@ def test_start_warms_my_language_into_my_windows(qapp):
     controller.start()
     controller.stop()
     assert engine.warmed == [("en", "ja")]  # w2 shows Me in Japanese; en->en needs nothing
+
+
+def test_an_unexpected_engine_error_does_not_stop_the_worker(qapp):
+    class Broken(CountingEngine):
+        def translate(self, texts, src, tgt):
+            if texts[0] == "boom":
+                raise KeyError("bug")
+            return super().translate(texts, src, tgt)
+
+    store = Store(AppState(config=AppConfig(my_language="en", windows=WINDOWS)))
+    controller = TranslationController(store, TranslationRouter([Broken()]))
+    controller.start()
+    try:
+        store.dispatch(a.AddUtterance(utt("u1", Source.OTHERS, "boom", "es", True)))
+        store.dispatch(a.AddUtterance(utt("u2", Source.OTHERS, "hola", "es", True)))
+        deadline = 200
+
+        def done() -> bool:
+            u2 = store.state.session.utterance("u2")
+            return u2 is not None and "en" in u2.translations
+
+        while not done() and deadline:
+            qapp.processEvents()
+            import time
+
+            time.sleep(0.01)
+            deadline -= 1
+    finally:
+        controller.stop()
+    u2 = store.state.session.utterance("u2")
+    assert u2 is not None and u2.translations["en"] == "en:hola"
+    assert "translation" in store.state.runtime.statuses  # the bad line was reported

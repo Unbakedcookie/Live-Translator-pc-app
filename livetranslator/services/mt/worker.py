@@ -91,7 +91,12 @@ class TranslationWorker:
             job = self._jobs.get()
             if job is None:
                 return
-            self._handle(job)
+            try:
+                self._handle(job)
+            except Exception as exc:  # spec §9: one bad line must not stop translation
+                logger.error("translation worker error ({})", type(exc).__name__)
+                if isinstance(job, TranslationJob) and self._on_error is not None:
+                    self._on_error(job, exc)
 
     def start(self) -> None:
         if self._thread is not None:

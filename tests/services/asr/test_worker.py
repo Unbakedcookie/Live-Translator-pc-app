@@ -338,3 +338,63 @@ def test_mandarin_is_written_in_one_script(script, heard, shown, absent):
         str(x.fields.get("committed", "")) for x in emitted if isinstance(x, a.UpdateUtterance)
     ]
     assert all(absent not in t for t in texts)  # partials too
+
+
+def test_a_crash_restarts_once_then_reports_an_error(qtbot):
+    """Spec §9: worker threads restart once, then show an error status."""
+    worker, emitted = make_worker()
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    crashes: list[int] = []
+
+    def broken_vad(stream, now) -> None:
+        crashes.append(1)
+        raise RuntimeError("bug outside a decode")
+
+    worker._advance_vad = broken_vad  # type: ignore[method-assign]
+    worker.start()
+    try:
+        qtbot.waitUntil(lambda: len(crashes) >= 2, timeout=3000)
+        qtbot.wait(100)
+    finally:
+        worker.stop()
+    messages = [(x.level, x.message) for x in emitted if isinstance(x, a.SetStatus)]
+    assert (StatusLevel.WARNING, "Speech recognition hit an error and restarted.") in messages
+    assert messages[-1][0] is StatusLevel.ERROR and "stopped" in messages[-1][1]
+    assert len(crashes) == 2  # restarted once, then gave up
+
+
+def test_decodes_failing_in_a_row_are_reported_and_cleared():
+    class Flaky(FakeEngine):
+        broken = True
+
+        def transcribe(self, audio, *, language=None, prompt=None, final=False):
+            if self.broken:
+                raise RuntimeError("CUDA went away")
+            return super().transcribe(audio, language=language, prompt=prompt, final=final)
+
+    engine = Flaky()
+    worker, emitted = make_worker(engine, update_interval_s=0.25)
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    feed(worker, ring, [(0.32, 0.0)] + [(0.25, SPEECH)] * 12)
+    statuses = [x for x in emitted if isinstance(x, a.SetStatus)]
+    assert statuses and statuses[-1].level is StatusLevel.ERROR
+    engine.broken = False
+    feed(worker, ring, [(0.25, SPEECH)] * 4)
+    statuses = [x for x in emitted if isinstance(x, a.SetStatus)]
+    assert statuses[-1].level is StatusLevel.OK  # working again
+
+
+def test_ready_status_mentions_the_cpu_fallback():
+    from livetranslator.services.asr.worker import ready_status
+
+    class Engine:
+        device_used: str | None = "cuda"
+        gpu_error: str | None = None
+
+    assert ready_status(Engine()) == (StatusLevel.OK, "Speech recognition is ready.")
+    Engine.device_used = "cpu"
+    assert ready_status(Engine())[0] is StatusLevel.WARNING
+    Engine.gpu_error = "RuntimeError: cudnn missing"
+    assert "graphics card couldn't" in ready_status(Engine())[1]
