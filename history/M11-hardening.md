@@ -19,4 +19,4 @@
 - Found during the T111 review: statuses ("No microphone found…", "The speech model couldn't be loaded…") reached only the tray tooltip, and only errors. A user watching an overlay never saw them.
 - `core/status_view.headline`: one line, the most serious current status (error > warning > loading; OK never shown; ties by key). Shortcut conflicts (`hotkey.*`) stay in Settings → Hotkeys — on the user's PC Ctrl+Alt+M is permanently taken and would sit in every window.
 - `ui/status_strip.StatusStrip`: icon (warning / warning-circle in the danger colour, hourglass for loading) + message in small text, above the readout line; the chat shrinks to make room; hidden when all is well; re-coloured with the window's palette.
-- Tests: headline order, OK hidden, stable ties, hotkey statuses excluded; overlay shows/hides the line, chat height, line sits above the readout. Rendered off-screen (user at the PC). Suite 604.
+- Tests: headline order, OK hidden, stable ties, hotkey statuses excluded; overlay shows/hides the line, chat height, line sits above the readout. Rendered off-screen (user at the PC). Suite 603.
