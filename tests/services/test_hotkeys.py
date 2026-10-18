@@ -90,3 +90,16 @@ def test_invalid_text_is_rejected_without_raising(qapp):
         assert service.registered == {}
     finally:
         service.close()
+
+
+def test_combo_text_for_the_recorder():
+    from livetranslator.services.hotkeys import combo_text, key_name
+
+    assert combo_text(0x48, ctrl=True, alt=True, shift=False, win=False) == "Ctrl+Alt+H"
+    assert combo_text(0x31, ctrl=False, alt=False, shift=True, win=False) == "Shift+1"
+    assert combo_text(0x74, ctrl=False, alt=False, shift=False, win=False) == "F5"
+    assert combo_text(0x20, ctrl=True, alt=False, shift=False, win=True) == "Ctrl+Win+Space"
+    assert combo_text(0x10, ctrl=False, alt=False, shift=True, win=False) is None  # Shift alone
+    assert key_name(0x5A) == "Z" and key_name(0xFF) is None
+    # what the recorder produces parses back to the same text
+    assert str(parse_hotkey("Ctrl+Win+Space")) == "Ctrl+Win+Space"

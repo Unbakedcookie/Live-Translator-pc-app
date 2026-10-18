@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from livetranslator.theme.tokens import FONTS, RADIUS, SPACE, WINDOW, Palette
+from livetranslator.theme.tokens import FONTS, RADIUS, SETTINGS, SPACE, WINDOW, Palette
 
 
 def _rule(selector: str, *declarations: str) -> str:
@@ -63,6 +63,90 @@ def window_qss(p: Palette) -> str:
             check=icon_file("check-bold", p, "on_accent", size),
         ),
     )
+
+
+def settings_qss(p: Palette) -> str:
+    """Extra rules for the Settings window (T072), added after `window_qss`. Parts are
+    addressed by object name so nothing leaks into the overlays."""
+    border = f"{WINDOW.border_width}px solid {p.border}"
+    rules = [
+        _rule("#SettingsRoot", f"background: {p.bg}"),
+        _rule("#SettingsNav", "background: transparent", "border: none", "outline: none"),
+        _rule(
+            "#SettingsNav::item",
+            f"padding: {SPACE.sm}px {SPACE.md}px",
+            f"margin: {SPACE.xs // 2}px 0px",
+            f"border-radius: {RADIUS.sm}px",
+            f"color: {p.text_secondary}",
+        ),
+        _rule("#SettingsNav::item:hover", f"background: {p.surface}"),
+        _rule(
+            "#SettingsNav::item:selected",
+            f"background: {p.surface_alt}",
+            f"color: {p.text_primary}",
+        ),
+        _rule("QScrollArea#SettingsPage", "background: transparent", "border: none"),
+        _rule("#SettingsPageBody", "background: transparent"),
+        _rule(
+            "#SettingsPageTitle",
+            f"font-size: {SETTINGS.title_size}pt",
+            f"font-weight: {FONTS.weight_bold}",
+        ),
+        _rule(
+            "#SettingsSectionTitle",
+            f"color: {p.text_secondary}",
+            f"font-weight: {FONTS.weight_medium}",
+        ),
+        _rule(
+            "#SettingsCard",
+            f"background: {p.surface}",
+            f"border: {border}",
+            f"border-radius: {RADIUS.md}px",
+        ),
+        _rule("#SettingsDivider", f"background: {p.border}", "border: none"),
+        _rule(
+            "#SettingsRowDescription, #SettingsNote",
+            f"color: {p.text_secondary}",
+            f"font-size: {FONTS.ui_size_small}pt",
+        ),
+        _rule("#SettingsError", f"color: {p.danger}", f"font-size: {FONTS.ui_size_small}pt"),
+        _rule("#SettingsWarning", f"color: {p.danger}"),
+        _rule(
+            "QPushButton#HotkeyBox",
+            f"background: {p.bg}",
+            "text-align: left",
+            f"padding: {SPACE.xs}px {SPACE.sm}px",
+        ),
+        _rule(
+            "QPushButton#HotkeyBox:checked",
+            f"background: {p.bg}",
+            f"color: {p.accent}",
+            f"border-color: {p.accent}",
+        ),
+    ]
+    return "".join(r + "\n" for r in rules)
+
+
+def dialog_qss(p: Palette) -> str:
+    """Message boxes (T064): `window_qss` sets light text, so they need a matching background."""
+    return _rule("QMessageBox", f"background: {p.bg}") + "\n"
+
+
+def transcript_qss(p: Palette) -> str:
+    """The transcript window (T063), added after `window_qss` + `settings_qss`."""
+    rules = [
+        _rule("#TranscriptRoot", f"background: {p.bg}"),
+        _rule(
+            "QTextBrowser#TranscriptView",
+            f"background: {p.surface}",
+            f"border: {WINDOW.border_width}px solid {p.border}",
+            f"border-radius: {RADIUS.md}px",
+            f"padding: {SPACE.sm}px",
+            f"selection-background-color: {p.accent}",
+            f"selection-color: {p.on_accent}",
+        ),
+    ]
+    return "".join(r + "\n" for r in rules)
 
 
 def _image_rules(images: QssImages) -> str:

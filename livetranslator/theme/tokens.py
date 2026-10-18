@@ -266,12 +266,27 @@ class WindowMetrics:
     border_width: int = 1
 
 
+@dataclass(frozen=True)
+class SettingsMetrics:
+    """The Settings window (T072; a normal app window, not an overlay)."""
+
+    width: int = 880
+    height: int = 620
+    nav_width: int = 196
+    control_width: int = 240  # dropdowns, text boxes and shortcut boxes in a row
+    number_width: int = 110  # number boxes
+    meter_width: int = 160
+    meter_height: int = 6
+    title_size: int = 16  # page title, pt
+
+
 FONTS = Fonts()
 SPACE = Spacing()
 RADIUS = Radius()
 MOTION = Motion()
 OVERLAY = OverlayText()
 WINDOW = WindowMetrics()
+SETTINGS = SettingsMetrics()
 
 
 def default_outline_width(palette: Palette) -> int:

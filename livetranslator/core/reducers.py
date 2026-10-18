@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 
 from livetranslator.core import actions as a
 from livetranslator.core.state import (
-    DEFAULT_HOTKEYS,
+    HOTKEY_ACTION_NAMES,
     AppConfig,
     AppState,
     RuntimeStatus,
@@ -112,7 +112,7 @@ def _reduce_config(state: AppState, action: a.Action) -> Result | None:
                 Change(ChangeKind.CONFIG, section),
             )
         case a.SetHotkey(action=name, keys=keys):
-            if name not in DEFAULT_HOTKEYS:
+            if name not in HOTKEY_ACTION_NAMES:
                 raise ValueError(f"unknown hotkey action {name!r}")
             hotkeys = dict(config.hotkeys)
             if keys is None:

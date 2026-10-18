@@ -2,9 +2,9 @@
 
 ## Current state
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
-- **Next:** M07 (T071 tray, T072 Settings → G3 review), T063 transcript/export, T064 quit flow, T054 model manager.
-- **Tests:** ~380 passing
-- **Last commit:** see `git log -1` (0fe546a at this refresh)
+- **Next:** user G3 look review of Settings (+ transcript window, quit dialog); then T054 model manager, T073 wizard, T074 Language Manager, T104 rename.
+- **Tests:** 484 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
 
@@ -17,8 +17,8 @@
 | M03 Benchmarks + spikes | T031–T036 | `docs/tasks/M03-benchmarks.md` | `history/M03-benchmarks.md` | **G4** | Done except T036 (G4 approved 2026-10-17; T036 needs user's Discord app) |
 | M04 Audio + ASR | T041–T046 | `docs/tasks/M04-audio-asr.md` | `history/M04-audio-asr.md` | — | In progress (T041–T046 done; T045 live loopback verified; mic+loopback and CPU fallback not yet live-verified; T042 WAV listen-check deferred to user) |
 | M05 Translation | T051–T054 | `docs/tasks/M05-translation.md` | `history/M05-translation.md` | — | In progress (T051–T053 done, Opus-MT default per G4; T054 pending) |
-| M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | In progress (T061, T062 done; G2 approved 2026-10-17; T063–T064 pending) |
-| M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | In progress (T071 tray done) |
+| M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | Done (T061–T064; G2 approved 2026-10-17) |
+| M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | In progress (T071 tray, T072 Settings done; G3 review pending; T073–T074 next) |
 | M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | In progress (T081 done, pulled forward) |
 | M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Planned |
 | M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101, T102, T105 done; T103 needs T036; T104 pending) |
@@ -44,7 +44,8 @@ Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3
 - **M05 Translation** — translation live in app via Opus-MT (G4 default). T051–T053 done.
   Next: T054 model manager. Hosting of converted models for other users is open (D-031).
 - **M06 Translation view** — T061 ChatLine + T062 TranslationView done; live chat log in overlay; `--demo` feed.
-  G2 approved 2026-10-17. Next: T063–T064.
+  G2 approved 2026-10-17. T063 transcript window + txt/json export, T064 quit flow (asks to export; nothing saved otherwise) done 2026-10-18.
+- **M07** — T071 tray (last window close keeps the tray). T072 Settings: 8 pages, every function remappable, live meters; code-reviewed. Awaiting G3.
 - **M08** — T081 global hotkeys done early (click-through escape). Ctrl+Alt+M is taken on the user's PC.
 
 ## Conventions

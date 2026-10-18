@@ -1,0 +1,64 @@
+{
+  "app": "Live Translator",
+  "version": "0.1.0",
+  "exported_at": "2026-10-18T01:30:00",
+  "utterances": [
+    {
+      "id": "u1",
+      "source": "others",
+      "speaker_id": "voice:0",
+      "start": 100.0,
+      "end": 102.5,
+      "committed": "こんにちは、元気ですか",
+      "tentative": "",
+      "language": "ja",
+      "is_final": true,
+      "translations": {
+        "en": "Hello, how are you?"
+      },
+      "translated_from": {
+        "en": "こんにちは、元気ですか"
+      },
+      "speaker": "Speaker 1",
+      "offset_s": 0.0
+    },
+    {
+      "id": "u2",
+      "source": "me",
+      "speaker_id": "me",
+      "start": 104.2,
+      "end": 105.0,
+      "committed": "I'm good, thanks",
+      "tentative": "",
+      "language": "en",
+      "is_final": true,
+      "translations": {
+        "ja": "元気です、ありがとう",
+        "es": "Estoy bien, gracias",
+        "de": "Mir geht"
+      },
+      "translated_from": {
+        "ja": "I'm good, thanks",
+        "es": "I'm good, thanks",
+        "de": "I'm good"
+      },
+      "speaker": "Me",
+      "offset_s": 4.2
+    },
+    {
+      "id": "u3",
+      "source": "others",
+      "speaker_id": "voice:1",
+      "start": 3765.0,
+      "end": null,
+      "committed": "Vamos",
+      "tentative": "a jugar",
+      "language": "es",
+      "is_final": false,
+      "translations": {},
+      "translated_from": {},
+      "speaker": "Mika",
+      "offset_s": 3665.0
+    }
+  ]
+}

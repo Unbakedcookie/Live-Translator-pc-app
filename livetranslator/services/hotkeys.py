@@ -104,6 +104,31 @@ def parse_hotkey(text: str) -> Hotkey:
     return Hotkey(modifiers, vk)
 
 
+def valid_hotkey(text: str) -> bool:
+    try:
+        parse_hotkey(text)
+    except HotkeyError:
+        return False
+    return True
+
+
+def key_name(vk: int) -> str | None:
+    """Name of a bindable key from its Windows virtual-key code (None = not bindable)."""
+    return _VK_TO_NAME.get(vk)
+
+
+def combo_text(vk: int, ctrl: bool, alt: bool, shift: bool, win: bool) -> str | None:
+    """'Ctrl+Alt+H'-style text for a key press, in parse_hotkey's format (T072 recorder).
+    None when the key itself can't be bound (e.g. only a modifier is down so far)."""
+    name = key_name(vk)
+    if name is None:
+        return None
+    mods = [
+        label for on, label in ((ctrl, "Ctrl"), (alt, "Alt"), (shift, "Shift"), (win, "Win")) if on
+    ]
+    return "+".join([*mods, name])
+
+
 def format_hotkey(hotkey: Hotkey) -> str:
     names = [label for bit, label in _MODIFIER_ORDER if hotkey.modifiers & bit]
     names.append(_VK_TO_NAME.get(hotkey.vk, f"0x{hotkey.vk:02X}"))

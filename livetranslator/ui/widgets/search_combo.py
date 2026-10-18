@@ -4,7 +4,8 @@ The one dropdown style of the app: languages and fonts both use it. Clicking ope
 rounded popup with a search box over the list: typing filters by label (or by the item's
 data as a prefix, e.g. a language code), Up/Down move, Enter picks, Esc closes. The widget
 keeps the QComboBox interface (model, `activated`, `findData`) so callers and tests don't
-care that the popup is custom.
+care that the popup is custom. Short fixed lists (ChoiceCombo, T072) use the same popup
+without the search box.
 """
 
 from __future__ import annotations
@@ -75,6 +76,7 @@ class SearchPopup(QFrame):
         self.search = QLineEdit(self)
         self.search.setPlaceholderText(combo.search_placeholder)
         self.search.setClearButtonEnabled(True)
+        self.search.setVisible(combo.searchable)
         self.proxy = _SearchFilter(self)
         self.proxy.setSourceModel(combo.model())
         self.list = QListView(self)
@@ -87,6 +89,7 @@ class SearchPopup(QFrame):
         layout.addWidget(self.list)
         self.search.textChanged.connect(self._on_search)
         self.search.installEventFilter(self)
+        self.list.installEventFilter(self)
         self.list.clicked.connect(self._choose)
         self.list.activated.connect(self._choose)
 
@@ -104,7 +107,7 @@ class SearchPopup(QFrame):
         self.move(combo.mapToGlobal(QPoint(0, combo.height())))
         self.show()
         self.activateWindow()
-        self.search.setFocus()
+        (self.search if self._combo.searchable else self.list).setFocus()
 
     def _select_row(self, row: int) -> None:
         if 0 <= row < self.proxy.rowCount():
@@ -139,6 +142,11 @@ class SearchPopup(QFrame):
             if key == Qt.Key.Key_Escape:
                 self.hide()
                 return True
+        if watched is self.list and event.type() == QEvent.Type.KeyPress:
+            assert isinstance(event, QKeyEvent)  # nosec B101 - Qt guarantees the type
+            if event.key() == Qt.Key.Key_Escape:
+                self.hide()
+                return True
         return super().eventFilter(watched, event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -155,6 +163,7 @@ class SearchCombo(QComboBox):
     """A QComboBox whose popup is the SearchPopup. Subclasses fill the items."""
 
     search_placeholder = "Search"
+    searchable = True
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

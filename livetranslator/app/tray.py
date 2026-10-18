@@ -2,7 +2,7 @@
 
 Presentational: every item acts through the WindowController (the same paths as the global
 hotkeys), and checkmarks/icon colour are re-read from the store whenever it changes.
-Items for features that don't exist yet (Transcript, Language Manager, OCR, Discord) are
+Items for features that don't exist yet (Language Manager, OCR, Discord) are
 added by their own tasks, so the menu never shows a dead entry.
 
 Icon colour: accent = listening, secondary = paused (both streams muted), danger = an
@@ -44,9 +44,10 @@ class Tray(QObject):
     def __init__(
         self,
         controller: WindowController,
-        quit_app: Callable[[], None],
+        quit_app: Callable[[], object],
         open_settings: Callable[[], None] | None = None,
         parent: QObject | None = None,
+        open_transcript: Callable[[], None] | None = None,
     ) -> None:
         super().__init__(parent)
         self._controller = controller
@@ -73,9 +74,12 @@ class Tray(QObject):
         add("game_mode", "Game mode", hotkey("game_mode"), checkable=True)
         add("click_through_all", "Click-through", hotkey("click_through_all"), checkable=True)
         self.menu.addSeparator()
+        # Wrapped so Qt's `checked` argument never reaches the callbacks.
+        if open_transcript is not None:
+            add("transcript", "Transcript…", lambda: open_transcript())
         if open_settings is not None:
-            add("settings", "Settings…", open_settings)
-        add("quit", "Quit", quit_app)
+            add("settings", "Settings…", lambda: open_settings())
+        add("quit", "Quit", lambda: quit_app())
 
         self.icon.setContextMenu(self.menu)
         self.icon.activated.connect(self._on_activated)

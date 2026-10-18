@@ -26,10 +26,12 @@ from livetranslator.services.asr.base import SAMPLE_RATE
 from livetranslator.services.asr.worker import AsrSettings, ASRWorker, LineAudio, LineAudioFn
 from livetranslator.services.audio.capture import AudioCapture
 from livetranslator.services.audio.devices import AudioDevice, DeviceList, match
+from livetranslator.services.audio.level import SILENCE_DB, rms_dbfs
 from livetranslator.services.audio.ring import RingBuffer
 from livetranslator.services.speakers.worker import LabelJob, SpeakerSettings, SpeakerWorker
 
 RING_SECONDS = 60.0  # spec §5.3
+LEVEL_WINDOW_S = 0.1  # Settings meters read the last 100 ms (T072)
 STREAM_NAMES = {Source.ME: "microphone", Source.OTHERS: "speakers"}
 
 
@@ -133,6 +135,21 @@ class SpeechController(QObject):
         self.worker.stop()
         if self.speakers is not None:
             self.speakers.stop()
+
+    def available_devices(self) -> DeviceList:
+        """The device lists for Settings → Audio (T072). May raise if Windows audio is down."""
+        return self._list_devices()
+
+    def level_db(self, source: Source) -> float | None:
+        """Loudness of the last 100 ms of a running stream; None when it isn't capturing."""
+        ring = self._rings.get(source)
+        if ring is None or source not in self.captures:
+            return None
+        end = ring.total_written
+        start = max(ring.oldest_available, end - int(LEVEL_WINDOW_S * SAMPLE_RATE))
+        if end <= start:
+            return SILENCE_DB
+        return rms_dbfs(ring.read(start, end))
 
     def _on_session_cleared(self) -> None:
         if self.speakers is not None:

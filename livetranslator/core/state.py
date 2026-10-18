@@ -132,9 +132,12 @@ class AudioConfig(Frozen):
     others_enabled: bool = True
 
 
+MAX_SPEAKERS_LIMIT = 12
+
+
 class SpeakerConfig(Frozen):
     mode: SpeakerMode = SpeakerMode.AUTO
-    max_speakers: Annotated[int, Field(ge=1, le=12)] = 6
+    max_speakers: Annotated[int, Field(ge=1, le=MAX_SPEAKERS_LIMIT)] = 6
     me_label: str = Field(default="Me", min_length=1)
     use_discord_name_for_me: bool = False
     discord_app_id: str | None = None  # own-app mode (spec §5.13)
@@ -186,6 +189,9 @@ DEFAULT_HOTKEYS: dict[str, str] = {
     "mute_others": "Ctrl+Alt+N",
     "game_mode": "Ctrl+Alt+G",
 }
+# T072: any function can get a shortcut; these start without one.
+UNBOUND_HOTKEY_ACTIONS: tuple[str, ...] = ("new_window", "lock_all", "open_settings")
+HOTKEY_ACTION_NAMES: tuple[str, ...] = (*DEFAULT_HOTKEYS, *UNBOUND_HOTKEY_ACTIONS)
 
 
 class AppConfig(Frozen):

@@ -22,6 +22,8 @@ HOTKEY_ACTIONS = (
     "mute_me",
     "mute_others",
     "game_mode",
+    "new_window",
+    "lock_all",
 )
 
 
@@ -110,5 +112,10 @@ class WindowController:
                 self._store.dispatch(
                     a.UpdateConfigSection("performance", {"game_mode": not perf.game_mode})
                 )
+            case "new_window":
+                self.add_window()
+            case "lock_all":
+                lock = not all(w.locked for w in windows)
+                self._store.dispatch(a.UpdateAllWindows({"locked": lock}))
             case _:
                 raise ValueError(f"unknown hotkey action {action!r}")

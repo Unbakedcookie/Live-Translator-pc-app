@@ -41,3 +41,21 @@
 
 ## 2026-10-17 — Gate G2 approved
 - The user watched the `--demo` conversation in their overlay and replied "everything looks good" (same message as the G4 answer). ChatLine/TranslationView look is locked; T063/T064 can build on it.
+
+## 2026-10-18 — T063 transcript + export, T064 quit flow (user asleep)
+
+### Design
+- `core/export.py` (pure): `transcript_lines` (offset from first line, speaker label, language, text, **only translations made from the final text**, unfinished marked "still talking"), `transcript_txt`, `transcript_json` (full Utterance dump + speaker + offset). Nothing touches the disk.
+- `ui/transcript_window.py`: search (speaker/text/any translation), count ("2 of 10 lines"), Copy (what's shown), Export…; rich-text view with speaker colours from the palette; redraws 200 ms after store bursts, keeps the bottom pinned. Opened from tray "Transcript…" and each overlay's right-click menu.
+- `app/lifecycle.py`: `Exporter` (save dialog → format by extension → atomic UTF-8 write; failure → plain message, logged without the path) and `QuitFlow` (empty → quit; else Export… / Close without saving / Cancel; a cancelled or failed save keeps the app open; a second Quit while asking is ignored). Every Quit (tray, overlay menu, last window without tray) goes through it.
+- `ui/dialogs.py`: native save dialog (Documents, "Live Translator 2026-10-18 0130.txt", txt/json) and the themed question box (`dialog_qss` gives it the dark background — `window_qss` alone would put light text on a white box).
+
+### Bugs found
+- **Qt rich text ignored nested `<div>` margins** (no gap between lines, odd gap above translations). Switched to paragraph margins. Seen on the first Tier B screenshot.
+- **Quit did nothing after a successful export.** Tier B: dialog → Export → saved → process still alive. Cause: Qt 6 quits by asking every *visible* top-level window to close and cancels if one refuses; the Transcript (and Settings) window refuses because closing only hides it. Fix: `_quit_now` hides both first. Regression test added. This would also have hit any user quitting with Settings open.
+- Dialog title bars had no icon: the app icon is now set on the QApplication.
+
+### Verification
+- **Tier A:** txt and json for a fixed 3-line session (+ an empty line, a renamed speaker, a stale translation, an unfinished line past one hour) equal hand-written files `tests/core/data/transcript_expected.*`; offsets; search; empty session.
+- **pytest-qt / app:** quit flow (empty, cancel, discard writes nothing, export then quit with no temp file left, save cancelled, write failure reported, json by extension, re-entrant quit ignored); transcript window (empty → lines, search + copy text, export status, HTML escaping + colours, hide/clear); app: every quit path asks when non-empty; quit hides Settings/Transcript first.
+- **Tier B (real app, scratch profile, demo feed):** transcript screenshot (colours, translations indented); search "potion" → "2 of 10 lines"; overlay menu shows Transcript…/Settings…/Quit; Quit → themed question; Export… → Windows save dialog (Documents, dated name) → typed a scratchpad `.json` path → file written, **app exited**. Searched the scratch profile, `%APPDATA%\LiveTranslator` and `%LOCALAPPDATA%\LiveTranslator` (models excluded) for demo sentences: **no matches**; only the exported file has them.

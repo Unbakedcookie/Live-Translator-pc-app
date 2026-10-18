@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core.store import Store
@@ -20,13 +20,16 @@ from livetranslator.ui.screens import monitors, rect_from_qrect
 
 
 class WindowManager(QObject):
+    settings_requested = Signal()  # a window's menu asked for Settings (T072)
+    transcript_requested = Signal()  # ... or for the transcript (T063)
+
     def __init__(
         self,
         store: Store,
         controller: WindowController,
-        quit_app: Callable[[], None],
+        quit_app: Callable[[], object],
         parent: QObject | None = None,
-        on_last_closed: Callable[[], None] | None = None,
+        on_last_closed: Callable[[], object] | None = None,
     ) -> None:
         super().__init__(parent)
         self._store = store
@@ -59,6 +62,8 @@ class WindowManager(QObject):
         window.hide_requested.connect(self.hide_window)
         window.new_window_requested.connect(self._controller.add_window)
         window.quit_requested.connect(self._quit_app)
+        window.settings_requested.connect(self.settings_requested)
+        window.transcript_requested.connect(self.transcript_requested)
         self.windows[window_id] = window
         self._place(window_id, index=len(self.windows) - 1)
         if not self._store.state.runtime.all_hidden:

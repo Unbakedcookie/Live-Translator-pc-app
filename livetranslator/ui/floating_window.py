@@ -162,6 +162,8 @@ class ChromeBar(QWidget):
 class FloatingWindow(QWidget):
     hide_requested = Signal(str)
     new_window_requested = Signal()
+    settings_requested = Signal()
+    transcript_requested = Signal()
     quit_requested = Signal()
 
     def __init__(
@@ -502,5 +504,7 @@ class FloatingWindow(QWidget):
         menu.addAction("Hide this window", lambda: self.hide_requested.emit(self.window_id))
         menu.addAction("Close this window", lambda: self._controller.remove_window(self.window_id))
         menu.addSeparator()
+        menu.addAction("Transcript…", self.transcript_requested.emit)
+        menu.addAction("Settings…", self.settings_requested.emit)
         menu.addAction("Quit Live Translator", self.quit_requested.emit)
         menu.exec(event.globalPos())

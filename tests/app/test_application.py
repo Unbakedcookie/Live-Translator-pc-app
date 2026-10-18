@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from livetranslator.app.application import LiveTranslatorApp
+from livetranslator.app.application import ALL_HOTKEY_ACTIONS, LiveTranslatorApp
 from livetranslator.app.paths import app_paths
 from livetranslator.app.window_controller import HOTKEY_ACTIONS
 
@@ -27,7 +27,9 @@ def test_first_start_creates_one_window_and_saves(qtbot, tmp_path: Path):
         assert live.windows.windows[windows[0].id].isVisible()
         registered = set(live.hotkeys.registered)
         warned = {k.removeprefix("hotkey.") for k in live.store.state.runtime.statuses}
-        assert registered | warned == set(HOTKEY_ACTIONS)  # each one bound, or reported
+        bound = {x for x in ALL_HOTKEY_ACTIONS if x in live.store.state.config.hotkeys}
+        assert bound == set(HOTKEY_ACTIONS) - {"new_window", "lock_all"}  # T072: start unbound
+        assert registered | warned == bound  # each one bound, or reported
     finally:
         live.shutdown()
     saved = json.loads((tmp_path / "config" / "settings.json").read_text(encoding="utf-8"))
@@ -84,3 +86,74 @@ def test_closing_the_last_window_keeps_the_app_in_the_tray(qtbot, tmp_path: Path
     finally:
         live.shutdown()
     assert not live.tray.icon.isVisible()
+
+
+def test_settings_change_persists_after_restart(qtbot, tmp_path: Path):
+    first, _ = start(tmp_path)
+    try:
+        first.open_settings("Performance")
+        window = first.settings_window
+        assert window is not None and window.isVisible()
+        assert window.stack.currentWidget() is window.pages["Performance"]
+        window.pages["General"].language.language_changed.emit("ko")  # type: ignore[attr-defined]
+        window.hide()
+        first._on_hotkey("open_settings")
+        assert window.isVisible()
+        assert first.tray is not None and "settings" in first.tray.actions
+    finally:
+        first.shutdown()
+    second, _ = start(tmp_path)
+    try:
+        assert second.store.state.config.my_language == "ko"
+    finally:
+        second.shutdown()
+
+
+def test_every_quit_path_asks_about_a_non_empty_conversation(qtbot, tmp_path: Path, monkeypatch):
+    from livetranslator.core import actions as a
+    from livetranslator.core.state import Source, Utterance
+    from livetranslator.ui.dialogs import QuitChoice
+
+    live, quits = start(tmp_path)
+    try:
+        answers = [QuitChoice.CANCEL, QuitChoice.DISCARD]
+        asked: list[int] = []
+
+        def ask(_parent: object) -> QuitChoice:
+            asked.append(1)
+            return answers.pop(0)
+
+        monkeypatch.setattr(live.quit_flow, "_ask_quit", ask)
+        assert live.tray is not None
+        live.tray.actions["quit"].trigger()  # empty log: quits at once, no question
+        assert quits == [1] and asked == []
+        live.store.dispatch(
+            a.AddUtterance(
+                Utterance(id="u1", source=Source.ME, speaker_id="me", start=0.0, committed="hi")
+            )
+        )
+        live.tray.actions["quit"].trigger()  # Cancel
+        assert quits == [1] and asked == [1]
+        window = next(iter(live.windows.windows.values()))
+        window.quit_requested.emit()  # overlay menu "Quit": Close without saving
+        assert quits == [1, 1] and asked == [1, 1]
+        assert "transcript" in live.tray.actions
+    finally:
+        live.shutdown()
+
+
+def test_quit_hides_settings_and_transcript_first(qtbot, tmp_path: Path):
+    """Tier B found Quit doing nothing while the transcript was open: Qt 6 cancels a quit
+    when a visible window refuses to close, and these two only hide."""
+    seen: list[tuple[bool, bool]] = []
+    live = LiveTranslatorApp(app_paths(tmp_path), lambda: None)
+    live._quit_app = lambda: seen.append(
+        (live.settings_window.isVisible(), live.transcript_window.isVisible())  # type: ignore[union-attr]
+    )
+    try:
+        live.open_settings()
+        live.open_transcript()
+        assert live.request_quit()  # empty conversation: straight to quit
+        assert seen == [(False, False)]
+    finally:
+        live.shutdown()
