@@ -57,6 +57,11 @@ def speaker_label(state: AppState, speaker_id: str) -> str:
     renamed = state.session.speaker_names.get(speaker_id)
     if renamed:
         return renamed
+    return automatic_label(state, speaker_id)
+
+
+def automatic_label(state: AppState, speaker_id: str) -> str:
+    """The label without any session rename (T104: what an emptied rename box goes back to)."""
     if speaker_id == "me":
         return state.config.speakers.me_label
     if speaker_id == "screen":

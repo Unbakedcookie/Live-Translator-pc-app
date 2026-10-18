@@ -74,6 +74,10 @@ class WindowController:
         geometry = Geometry(x=rect.x, y=rect.y, width=rect.width, height=rect.height, screen=screen)
         self._store.dispatch(a.UpdateWindow(window_id, {"geometry": geometry}))
 
+    def rename_speaker(self, speaker_id: str, name: str) -> None:
+        """T104: session-only rename; "" goes back to the automatic label."""
+        self._store.dispatch(a.RenameSpeaker(speaker_id, name.strip() or None))
+
     def set_style(self, window_id: str, **fields: object) -> None:
         self._store.dispatch(a.UpdateWindowStyle(window_id, fields))
 

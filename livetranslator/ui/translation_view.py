@@ -13,8 +13,8 @@ that jumps back to the bottom.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPaintEvent, QResizeEvent
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
+from PySide6.QtGui import QColor, QFontMetricsF, QPainter, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
 from livetranslator.core.chat_view import ChatLineData, visible_lines
@@ -52,6 +52,7 @@ class TranslationView(QWidget):
         self._layouts: dict[str, tuple[ChatLineData, float, list[Row]]] = {}
         self._offset = 0.0  # px scrolled up from the bottom
         self.unread = False
+        self.label_hits: list[tuple[QRectF, str]] = []  # (label rect, utterance id), T104
         self._shadow = QGraphicsDropShadowEffect(self)
         self._shadow.setBlurRadius(OVERLAY.shadow_blur)
         self._shadow.setOffset(OVERLAY.shadow_offset, OVERLAY.shadow_offset)
@@ -177,6 +178,8 @@ class TranslationView(QWidget):
             return
         painter.setClipRect(self.rect())
         bottom = self.height() - SPACE.sm + self._offset
+        hits: list[tuple[QRectF, str]] = []
+        label_metrics = QFontMetricsF(fonts.label)
         for line in reversed(self.lines):
             if bottom < 0:
                 break
@@ -184,5 +187,15 @@ class TranslationView(QWidget):
             top = bottom - rows_height(rows, fonts)
             if top < self.height():
                 paint_rows(painter, rows, SPACE.md, top, fonts, palette, self._style, line.speaker)
+                if rows:  # T104: remember where the speaker label is, for click-to-rename
+                    width = label_metrics.horizontalAdvance(line.label)
+                    hits.append(
+                        (QRectF(SPACE.md, top, width, fonts.row_height(rows[0])), line.utterance_id)
+                    )
             bottom = top - OVERLAY.line_gap
         painter.end()
+        self.label_hits = hits
+
+    def label_at(self, point: QPointF) -> str | None:
+        """The utterance whose speaker label was painted at `point` (view coordinates)."""
+        return next((uid for rect, uid in self.label_hits if rect.contains(point)), None)

@@ -82,3 +82,10 @@
 - **Open:**
   - The 400 ms case misses spec §8's 300 ms on real audio, though the synthetic acceptance passes. A finer local search around the estimate could tighten it later.
   - Live test with a real multi-person call.
+
+## 2026-10-18 — T104 click-to-rename (Discord parts still blocked on T036; user asleep)
+- **Design:** the chat view records where it painted each line's speaker label (`label_hits`, rebuilt every paint, so hit-testing always matches what's on screen, scrolled or not). In the overlay, a left press + release that moved less than the system drag distance on a label opens `RenamePopup` over it; anything more is a normal window drag. A pointing-hand cursor shows over renamable labels.
+- The popup is its own `Qt.Popup` window because overlays are `WindowDoesNotAcceptFocus` (they must never steal focus from a game). It is pre-filled and selected; Enter saves, Esc/click-away cancels, an empty box returns to the automatic name (shown as the placeholder via new `automatic_label`).
+- The rename is the existing session-only `RenameSpeaker` (D-028: nothing about voices is saved), so it applies to past and future lines of that speaker and to the transcript. The catch-all "Others" label isn't renamable (it isn't one person).
+- **Verification:** 5 pytest-qt tests (hit-testing, click → popup → Enter renames lines 1 and 3 and a later line 4, Esc cancels, empty reverts, a 40 px drag from a label doesn't open it, automatic labels). **Tier B** (real app, demo feed): scrolled up to freeze the view, clicked "Speaker 2" → box over the label with the name selected → typed "Kenji" + Enter → the line now reads "Kenji" in the same colour, re-wrapped.
+- **Still open in T104:** Discord connect/disconnect and the own-app setup guide with "Test connection" (need T036 / the user's Discord app). The Speakers settings page already covers mode, max voices and the "Me" label (T072).

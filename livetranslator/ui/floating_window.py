@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
     QPoint,
+    QPointF,
     QPropertyAnimation,
     Qt,
     QTimer,
@@ -33,6 +34,7 @@ from PySide6.QtGui import (
     QWheelEvent,
 )
 from PySide6.QtWidgets import (
+    QApplication,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
@@ -42,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from livetranslator.app.window_controller import WindowController
+from livetranslator.core.chat_view import automatic_label, speaker_label
 from livetranslator.core.languages import language
 from livetranslator.core.state import Source, WindowConfig
 from livetranslator.platform import win32
@@ -68,9 +71,11 @@ from livetranslator.ui.translation_view import TranslationView
 from livetranslator.ui.widgets.icon_button import IconButton
 from livetranslator.ui.widgets.language_picker import LanguagePicker
 from livetranslator.ui.widgets.pin_button import PinButton
+from livetranslator.ui.widgets.speaker_label import RenamePopup
 from livetranslator.ui.widgets.toast import Toast
 
 CURSOR_POLL_MS = 200
+OTHERS_ID = "others"  # the catch-all speaker (no single person to rename)
 
 MIN_HIT_ALPHA = 1 / 255  # fully transparent pixels let clicks through on Windows; keep 1/255
 
@@ -183,6 +188,8 @@ class FloatingWindow(QWidget):
         self._controller = controller
         self._snap_targets = snap_targets
         self._drag: _Drag | None = None
+        self._press_global: QPoint | None = None  # left press, to tell a click from a drag
+        self.rename_popup: RenamePopup | None = None
         self._hovered = False
         self._native: tuple[bool, bool] | None = None  # (pinned, click-through) applied
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -446,6 +453,8 @@ class FloatingWindow(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         cfg = self.config
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._press_global = event.globalPosition().toPoint()  # T104 click vs. drag
         if event.button() != Qt.MouseButton.LeftButton or cfg is None or cfg.locked:
             super().mousePressEvent(event)
             return
@@ -468,6 +477,8 @@ class FloatingWindow(QWidget):
             )
             if edges:
                 self.setCursor(_CURSORS[edges])
+            elif self.renamable_label_at(pos) is not None:
+                self.setCursor(Qt.CursorShape.PointingHandCursor)  # T104: click to rename
             else:
                 self.unsetCursor()
             return
@@ -482,6 +493,13 @@ class FloatingWindow(QWidget):
         event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._is_click(event):
+            uid = self.renamable_label_at(event.position().toPoint())
+            if uid is not None:
+                self._drag = None  # nothing moved: no geometry to save
+                self.open_rename(uid)
+                event.accept()
+                return
         if self._drag is None or event.button() != Qt.MouseButton.LeftButton:
             super().mouseReleaseEvent(event)
             return
@@ -491,6 +509,40 @@ class FloatingWindow(QWidget):
         screen = monitor_for(rect, screens).name if screens else ""
         self._controller.set_geometry(self.window_id, rect, screen)
         event.accept()
+
+    # ------------------------------------------------------------ speaker rename (T104)
+
+    def _is_click(self, event: QMouseEvent) -> bool:
+        if self._press_global is None:
+            return False
+        moved = event.globalPosition().toPoint() - self._press_global
+        self._press_global = None
+        return moved.manhattanLength() < QApplication.startDragDistance()
+
+    def renamable_label_at(self, pos: QPoint) -> str | None:
+        """Utterance id under `pos` (window coordinates) if its speaker can be renamed (the
+        catch-all "Others" label can't: it isn't one person)."""
+        uid = self.content.label_at(QPointF(self.content.mapFrom(self, pos)))
+        if uid is None:
+            return None
+        utterance = self._controller.store.state.session.utterance(uid)
+        if utterance is None or utterance.speaker_id == OTHERS_ID:
+            return None
+        return uid
+
+    def open_rename(self, utterance_id: str) -> None:
+        state = self._controller.store.state
+        utterance = state.session.utterance(utterance_id)
+        rect = next((r for r, uid in self.content.label_hits if uid == utterance_id), None)
+        if utterance is None or rect is None:
+            return
+        speaker = utterance.speaker_id
+        popup = RenamePopup(
+            speaker_label(state, speaker), automatic_label(state, speaker), self.palette_value
+        )
+        popup.renamed.connect(lambda name: self._controller.rename_speaker(speaker, name))
+        self.rename_popup = popup
+        popup.open_at(self.content.mapToGlobal(rect.topLeft().toPoint()))
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         cfg = self.config
