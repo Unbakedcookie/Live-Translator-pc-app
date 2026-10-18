@@ -151,6 +151,9 @@ class SettingsController:
 
     # ------------------------------------------------------------ performance / advanced
 
+    def set_show_readout(self, on: bool) -> None:
+        self._store.dispatch(a.UpdateConfigSection("performance", {"show_readout": on}))
+
     def set_game_mode(self, on: bool) -> None:
         self._store.dispatch(a.UpdateConfigSection("performance", {"game_mode": on}))
 

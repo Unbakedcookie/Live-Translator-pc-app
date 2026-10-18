@@ -20,3 +20,11 @@
 ### Open
 - T093 readout UI (footer strip / HUD) + measurement with a game running.
 - Pre-loading likely language pairs would remove the ~0.94 s first-line cost (and the 2 s after switching to game mode).
+
+## 2026-10-18 — T093 readout strip
+
+- Chose the **footer strip** (spec offers strip or standalone HUD): one small secondary-colour line under the chat of each overlay, e.g. `GPU 28 % · VRAM 3.3 / 12.0 GB · Speech 310 ms · Translate 77 ms · Lag 0.96 s`, prefixed "Game mode" when on. Missing values say "n/a". The chat area shrinks to make room; the "New lines" pill sits above the strip; the strip ignores the mouse so dragging still works.
+- Toggle: Settings → Performance → "Show performance readout" (`PerformanceConfig.show_readout`, already in the saved config).
+- Game-mode description in Settings now also says translation runs on the processor (true since T092).
+- **Verification:** `readout_text` against hand-written strings (full, game mode, all n/a, half-known VRAM); overlay test (hidden by default, appears with the setting, chat height shrinks by the strip, follows metrics and game mode, hides again); Settings toggle both ways. **Tier B:** real app, speech on, Spanish clip through the speakers → screenshot shows live values under the translated line.
+- **Not done (needs the user):** the spec's "game mode meets the §8 budget with a game running" measurement. Without a game: lag 0.96 s (budget 1.5 s).

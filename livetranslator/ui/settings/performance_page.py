@@ -26,9 +26,17 @@ class PerformancePage(SettingsPage):
         self.game_mode.toggled.connect(ctx.settings.set_game_mode)
         section.row(
             "Game mode",
-            "Lighter on your graphics card: live text refreshes at most once a second and "
-            "only finished lines are translated.",
+            "Lighter on your graphics card: live text refreshes at most once a second, only "
+            "finished lines are translated, and translation runs on the processor.",
             self.game_mode,
+        )
+        self.readout = QCheckBox()
+        self.readout.toggled.connect(ctx.settings.set_show_readout)
+        section.row(
+            "Show performance readout",
+            "A small line under each window: graphics card use, speed of speech and "
+            "translation, and how long a line takes to appear.",
+            self.readout,
         )
         self.interval = number_box(INTERVAL_MIN_MS, INTERVAL_MAX_MS, INTERVAL_STEP_MS, " ms")
         self.interval.valueChanged.connect(lambda ms: ctx.settings.set_asr_interval(ms / MS))
@@ -39,6 +47,7 @@ class PerformancePage(SettingsPage):
     def refresh(self) -> None:
         perf = self._ctx.settings.store.state.config.performance
         silently(self.game_mode, lambda: self.game_mode.setChecked(perf.game_mode))
+        silently(self.readout, lambda: self.readout.setChecked(perf.show_readout))
         ms = round(perf.asr_update_interval_s * MS)
         silently(self.interval, lambda: self.interval.setValue(ms))
         text = "How often words still being spoken update. Lower feels snappier; higher is lighter."

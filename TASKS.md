@@ -3,7 +3,7 @@
 ## Current state
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
 - **Next:** user G3 look review of Settings (+ transcript window, quit dialog); then T054 model manager, T073 wizard, T074 Language Manager, T104 rename.
-- **Tests:** 501 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Tests:** 505 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
 - **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -20,7 +20,7 @@
 | M06 Translation view | T061–T064 | `docs/tasks/M06-translation-view.md` | `history/M06-translation-view.md` | **G2** | Done (T061–T064; G2 approved 2026-10-17) |
 | M07 Settings + first run | T071–T074 | `docs/tasks/M07-settings-firstrun.md` | `history/M07-settings-firstrun.md` | **G3** | In progress (T071 tray, T072 Settings done; G3 review pending; T073–T074 next) |
 | M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | In progress (T081 done, pulled forward) |
-| M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | In progress (T091 metrics, T092 preset done; T093 readout UI next) |
+| M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Done except the with-a-game measurement (T091–T093; look review with G3 batch) |
 | M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101, T102, T105 done; T103 needs T036; T104 pending) |
 | M11 Hardening | T111–T113 | `docs/tasks/M11-hardening.md` | `history/M11-hardening.md` | MVP sign-off | Planned |
 | Post-MVP | backlog | `project-spec.md` §4.2 | — | — | — |

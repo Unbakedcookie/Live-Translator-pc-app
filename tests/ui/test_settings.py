@@ -347,3 +347,11 @@ def test_hotkeys_page_flags_a_damaged_saved_shortcut(env: Env):
     env.window.show()
     page.refresh()
     assert "isn't valid" in page.rows["mute_me"].description.text()
+
+
+def test_performance_readout_toggle(env: Env):
+    page = env.page(PerformancePage)
+    page.readout.setChecked(True)
+    assert env.store.state.config.performance.show_readout
+    env.store.dispatch(a.UpdateConfigSection("performance", {"show_readout": False}))
+    assert not page.readout.isChecked()

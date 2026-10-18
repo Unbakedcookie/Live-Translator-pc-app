@@ -61,6 +61,7 @@ from livetranslator.ui.geometry import (
     resize_rect,
     snap,
 )
+from livetranslator.ui.readout import ReadoutStrip
 from livetranslator.ui.screens import monitors, qrect_from_rect, rect_from_qrect
 from livetranslator.ui.style_popover import StylePopover
 from livetranslator.ui.translation_view import TranslationView
@@ -233,14 +234,28 @@ class FloatingWindow(QWidget):
         self._was_click_through = False
         self._toast: Toast | None = None
 
+        # Performance readout (T093): a small line under the chat, when turned on in Settings.
+        self.readout = ReadoutStrip(controller.store, self)
+        controller.store.config_changed.connect(self._on_config_section)
+
         controller.store.window_changed.connect(self._on_window_changed)
         self.apply_config(cfg)
+        self._apply_readout()
 
     # ------------------------------------------------------------ store -> window
 
     @property
     def config(self) -> WindowConfig | None:
         return self._controller.store.state.config.window(self.window_id)
+
+    def _on_config_section(self, section: str) -> None:
+        if section in ("performance", "all"):
+            self._apply_readout()
+
+    def _apply_readout(self) -> None:
+        shown = self._controller.store.state.config.performance.show_readout
+        self.readout.setVisible(shown)
+        self._layout_children()
 
     def _on_window_changed(self, window_id: str) -> None:
         if window_id == self.window_id:
@@ -254,6 +269,7 @@ class FloatingWindow(QWidget):
         self.chrome.set_state(self.palette_value, cfg)
         self.content.set_view(self.palette_value, cfg)
         self.new_lines.setStyleSheet(pill_qss(self.palette_value))
+        self.readout.apply_palette(self.palette_value)
         self.new_lines.setIcon(icon("arrow-down", self.palette_value, "on_accent"))
         self.setWindowOpacity(style.window_opacity)
         self.setToolTip(f"Live Translator: {language(cfg.target_lang).english}")
@@ -341,16 +357,30 @@ class FloatingWindow(QWidget):
             self._place_pill()
             self.new_lines.raise_()
 
+    def _readout_height(self) -> int:
+        if not self.readout.isVisibleTo(self):
+            return 0
+        return self.readout.fontMetrics().height() + 2 * SPACE.xs
+
     def _place_pill(self) -> None:
         pill = self.new_lines
         pill.adjustSize()
-        pill.move((self.width() - pill.width()) // 2, self.height() - pill.height() - SPACE.sm)
+        bottom = self.height() - self._readout_height()
+        pill.move((self.width() - pill.width()) // 2, bottom - pill.height() - SPACE.sm)
+
+    def _layout_children(self) -> None:
+        strip = self._readout_height()
+        self.content.setGeometry(0, 0, self.width(), self.height() - strip)
+        if strip:
+            self.readout.setGeometry(
+                SPACE.md, self.height() - strip, self.width() - 2 * SPACE.md, strip
+            )
+        self._place_pill()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self._place_hint()
         self.chrome.setGeometry(0, 0, self.width(), WINDOW.chrome_height)
-        self.content.setGeometry(0, 0, self.width(), self.height())
-        self._place_pill()
+        self._layout_children()
         super().resizeEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
