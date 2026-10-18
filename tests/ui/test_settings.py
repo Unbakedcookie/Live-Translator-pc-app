@@ -355,3 +355,17 @@ def test_performance_readout_toggle(env: Env):
     assert env.store.state.config.performance.show_readout
     env.store.dispatch(a.UpdateConfigSection("performance", {"show_readout": False}))
     assert not page.readout.isChecked()
+
+
+def test_translation_page_chinese_switch_only_when_installed(qtbot, tmp_path: Path):
+    env = Env(qtbot, tmp_path)
+    assert env.page(TranslationPage).chinese is None  # Qwen not installed: no dead switch
+    env.window._ctx.smart_translation = True
+    page = TranslationPage(env.window._ctx)
+    qtbot.addWidget(page)
+    assert page.chinese is not None
+    page.chinese.setChecked(True)
+    assert env.store.state.config.engines.smart_languages == ("zh",)
+    env.store.dispatch(a.UpdateConfigSection("engines", {"smart_languages": ()}))
+    page.refresh()
+    assert not page.chinese.isChecked()

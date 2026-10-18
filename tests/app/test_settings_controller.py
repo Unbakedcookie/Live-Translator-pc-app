@@ -126,3 +126,13 @@ def test_only_active_actions_clash():
     store = Store(AppState())
     settings = SettingsController(store, active_hotkeys=active)
     assert settings.set_hotkey("new_window", "Ctrl+Alt+O").error == ""
+
+
+def test_smart_language_toggle():
+    store, settings, _ = make()
+    settings.set_smart_language("zh", True)
+    settings.set_smart_language("ja", True)
+    assert store.state.config.engines.smart_languages == ("ja", "zh")
+    settings.set_smart_language("ja", False)
+    settings.set_smart_language("ko", False)  # not on: no change
+    assert store.state.config.engines.smart_languages == ("zh",)

@@ -10,6 +10,7 @@ refresh interval survives any number of toggles).
 | Speech refresh interval | user's value (default 0.5 s) | at least 1.0 s |
 | Translate unfinished lines (twice a second) | yes | no (finished lines only) |
 | Translation runs on | graphics card if there is one | processor (0 graphics memory) |
+| Smarter Qwen translation (if turned on) | on | off (frees ~2.8 GB) |
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ class GameModePreset:
     min_asr_interval_s: float = 1.0
     translate_partials: bool = False
     mt_device: str = "cpu"
+    smart_translation: bool = False  # Qwen needs ~2.8 GB of graphics memory: off while gaming
 
 
 GAME_MODE = GameModePreset()
@@ -35,14 +37,17 @@ class Effective:
     asr_interval_s: float
     translate_partials: bool
     mt_device: str  # "auto" | "cpu"
+    smart_languages: frozenset[str] = frozenset()  # lines to/from these use Qwen
 
 
 def effective(config: AppConfig, preset: GameModePreset = GAME_MODE) -> Effective:
     interval = config.performance.asr_update_interval_s
+    smart = frozenset(config.engines.smart_languages)
     if not config.performance.game_mode:
-        return Effective(interval, True, NORMAL_MT_DEVICE)
+        return Effective(interval, True, NORMAL_MT_DEVICE, smart)
     return Effective(
         max(interval, preset.min_asr_interval_s),
         preset.translate_partials,
         preset.mt_device,
+        smart if preset.smart_translation else frozenset(),
     )

@@ -157,6 +157,9 @@ class EngineConfig(Frozen):
     asr_model: str | None = None
     mt_engine: str | None = None
     diarization_engine: str | None = None
+    # Lines from or into these languages use the smarter Qwen translator when it's installed
+    # (Mandarin follow-up 2026-10-18: Opus-MT garbles Chinese chat slang). Empty = off.
+    smart_languages: tuple[str, ...] = ()
 
 
 class PerformanceConfig(Frozen):

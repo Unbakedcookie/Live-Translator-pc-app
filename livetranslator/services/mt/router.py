@@ -8,15 +8,18 @@ through untouched. Each leg is cached, so a repeated line costs no engine call.
 from __future__ import annotations
 
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from livetranslator.services.errors import UnsupportedLanguage
+from loguru import logger
+
+from livetranslator.services.errors import EngineError, UnsupportedLanguage
 from livetranslator.services.mt.base import TranslationEngine
 from livetranslator.services.mt.cache import TranslationCache
 from livetranslator.services.timings import Timings
 
 PIVOT = "en"
+PreferFn = Callable[[str, str], TranslationEngine | None]  # (src, tgt) -> engine to try first
 
 
 def base_language(code: str) -> str:
@@ -38,8 +41,10 @@ class TranslationRouter:
         cache: TranslationCache | None = None,
         pivot: str = PIVOT,
         timings: Timings | None = None,
+        preferred: PreferFn | None = None,
     ) -> None:
         self._timings = timings
+        self._preferred = preferred  # per-pair override (e.g. Qwen for Chinese)
         self._engines = list(engines)
         self._cache = cache if cache is not None else TranslationCache()
         self._pivot = pivot
@@ -52,6 +57,12 @@ class TranslationRouter:
         src, tgt = base_language(src), base_language(tgt)
         if src == tgt:
             return ()
+        preferred = self._preferred(src, tgt) if self._preferred else None
+        if preferred is not None and preferred.supports(src, tgt):
+            return (Step(preferred, src, tgt),)
+        return self._standard_route(src, tgt)
+
+    def _standard_route(self, src: str, tgt: str) -> tuple[Step, ...]:
         direct = self._direct(src, tgt)
         if direct is not None:
             return (Step(direct, src, tgt),)
@@ -82,9 +93,22 @@ class TranslationRouter:
                 warm(step.src, step.tgt)
 
     def translate(self, text: str, src: str, tgt: str) -> str:
+        steps = self.route(src, tgt)
+        try:
+            return self._run(steps, text)
+        except EngineError as exc:
+            if not steps or steps[0].engine in self._engines:
+                raise
+            # The preferred engine (e.g. Qwen's server) failed: the line still gets translated.
+            logger.warning(
+                "{} failed ({}); using the standard route", steps[0].engine.name, type(exc).__name__
+            )
+            return self._run(self._standard_route(base_language(src), base_language(tgt)), text)
+
+    def _run(self, steps: tuple[Step, ...], text: str) -> str:
         start = time.perf_counter()
         engine_ran = False
-        for step in self.route(src, tgt):
+        for step in steps:
             key = (step.engine.name, step.src, step.tgt, text)
             cached = self._cache.get(key)
             if cached is None:

@@ -39,3 +39,4 @@ class SettingsContext:
     level_db: Callable[[Source], float | None] | None = None
     engines: Callable[[], EngineSummary] | None = None
     hotkey_actions: tuple[str, ...] = ()  # actions this build can perform (no dead rows)
+    smart_translation: bool = False  # the Qwen files are installed (Translation page switch)

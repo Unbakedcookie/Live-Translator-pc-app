@@ -5,6 +5,7 @@ spec §6.1, §6.2). `run()` is what `python -m livetranslator` starts.
 from __future__ import annotations
 
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
@@ -25,6 +26,7 @@ from livetranslator.app.tray import Tray
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
+from livetranslator.core.languages import language
 from livetranslator.core.persistence import Persistence, load_config
 from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, AppState, SpeakerMode, StatusLevel
@@ -33,6 +35,8 @@ from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
 from livetranslator.services.metrics import MetricsService, NvmlSampler
+from livetranslator.services.mt.engines.qwen_llama import QwenLlamaEngine
+from livetranslator.services.mt.engines.qwen_llama import installed as qwen_installed
 from livetranslator.services.mt.router import TranslationRouter
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
@@ -75,6 +79,7 @@ class LiveTranslatorApp(QObject):
         self.translation: TranslationController | None = None
         self.asr_engine: FasterWhisperEngine | None = None
         self.mt_engine: OpusMtEngine | None = None
+        self.smart_engine: QwenLlamaEngine | None = None  # optional Qwen (Mandarin follow-up)
         self.metrics: MetricsService | None = None
         self.settings_window: SettingsWindow | None = None
         self._pairs: tuple[tuple[str, str], ...] | None = None  # installed MT pairs, read once
@@ -123,7 +128,8 @@ class LiveTranslatorApp(QObject):
 
         timings = Timings()
         self.mt_engine = OpusMtEngine(models_dir)
-        self.translation = build_translation(self.store, self.mt_engine, timings)
+        self.smart_engine = QwenLlamaEngine(models_dir) if qwen_installed(models_dir) else None
+        self.translation = build_translation(self.store, self.mt_engine, timings, self.smart_engine)
         self.translation.start()
         self.asr_engine = FasterWhisperEngine(models_dir)
         self.speech = build_speech(self.store, models_dir, self.asr_engine, timings)
@@ -206,6 +212,7 @@ class LiveTranslatorApp(QObject):
             level_db=speech.level_db if speech is not None else None,
             engines=self.engine_summary,
             hotkey_actions=ALL_HOTKEY_ACTIONS,
+            smart_translation=qwen_installed(self.models_dir()),
         )
 
     def engine_summary(self) -> EngineSummary:
@@ -242,6 +249,16 @@ class LiveTranslatorApp(QObject):
                 WHERE["cpu"] if labels_on else "Off",
             ),
         )
+        smart = self.smart_engine
+        if smart is not None:
+            wanted = effective(self.store.state.config).smart_languages
+            where = (
+                WHERE["cuda"]
+                if smart.is_loaded
+                else ("Starts with the first line" if wanted else "Off")
+            )
+            names = ", ".join(sorted(language(c).english for c in wanted)) or "no languages"
+            rows = (*rows, EngineRow("Smarter translation", f"Qwen3-4B ({names})", where))
         return EngineSummary(rows, self._pairs)
 
     # ------------------------------------------------------------ hotkeys
@@ -269,6 +286,20 @@ class LiveTranslatorApp(QObject):
             device = effective(self.store.state.config).mt_device
             if self.mt_engine.set_device(cast("Device", device)) and self.translation:
                 self.translation.rewarm()  # game mode moved it: reload what was in use
+        if self.smart_engine is not None and section in ("performance", "engines", "all"):
+            self._apply_smart_translation()
+
+    def _apply_smart_translation(self) -> None:
+        """Start Qwen when it's wanted, stop it (freeing ~2.8 GB) when it isn't, e.g. in game
+        mode. Stopping runs off the UI thread: it waits for a line being translated."""
+        engine = self.smart_engine
+        if engine is None:
+            return
+        if effective(self.store.state.config).smart_languages:
+            if self.translation is not None:
+                self.translation.rewarm()  # pairs in use now route to Qwen: starts it
+        elif engine.is_loaded:
+            threading.Thread(target=engine.unload, name="qwen-stop", daemon=True).start()
 
     def _register_hotkeys(self) -> None:
         if self._hotkeys_suspended:
@@ -303,6 +334,8 @@ class LiveTranslatorApp(QObject):
             self.speech.stop()
         if self.translation is not None:
             self.translation.stop()
+        if self.smart_engine is not None:
+            self.smart_engine.unload()  # never leave a llama-server process behind
         self.persistence.flush()
         self.hotkeys.close()
         self.windows.close_all()
@@ -328,13 +361,22 @@ def partials_allowed(config: AppConfig) -> bool:
 
 
 def build_translation(
-    store: Store, engine: OpusMtEngine, timings: Timings | None = None
+    store: Store,
+    engine: OpusMtEngine,
+    timings: Timings | None = None,
+    smart: QwenLlamaEngine | None = None,
 ) -> TranslationController:
     """Opus-MT through the router (T051/T053; the G4 default). Game mode puts it on the
-    processor (T092)."""
+    processor (T092). With `smart` (Qwen, when installed), lines from or into the languages
+    in Settings → Translation go to it first, falling back to Opus-MT if it fails."""
     engine.set_device(cast("Device", effective(store.state.config).mt_device))
     engine.load()  # picks the device only; each language pair loads on first use
-    router = TranslationRouter([engine], timings=timings)
+
+    def preferred(src: str, tgt: str) -> QwenLlamaEngine | None:
+        languages = effective(store.state.config).smart_languages
+        return smart if smart is not None and (src in languages or tgt in languages) else None
+
+    router = TranslationRouter([engine], timings=timings, preferred=preferred)
     return TranslationController(store, router, partials_allowed(store.state.config))
 
 

@@ -151,6 +151,12 @@ class SettingsController:
 
     # ------------------------------------------------------------ performance / advanced
 
+    def set_smart_language(self, code: str, on: bool) -> None:
+        """Use (or stop using) the Qwen translator for lines from or into `code`."""
+        current = self._store.state.config.engines.smart_languages
+        wanted = tuple(sorted({*current, code} if on else set(current) - {code}))
+        self._store.dispatch(a.UpdateConfigSection("engines", {"smart_languages": wanted}))
+
     def set_show_readout(self, on: bool) -> None:
         self._store.dispatch(a.UpdateConfigSection("performance", {"show_readout": on}))
 

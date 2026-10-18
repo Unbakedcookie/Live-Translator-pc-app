@@ -51,3 +51,13 @@
 - **Bug caught by reading the code before running it:**
   - `_on_config_changed` read `self.translation`, but adding the first window emits config_changed before that attribute exists, so a first start would have raised AttributeError.
   - Fixed by declaring the attributes before any signal is connected.
+
+## 2026-10-18 — Optional "smarter translation" with Qwen for Chinese (Mandarin follow-up)
+- **Why:** the user wants Mandarin to work "VERY well"; on 16 casual/gaming Chinese lines Opus-MT garbled the slang (麦 → "wheat", 开黑 → "keep it dark", 副本 → "copy") while Qwen3-4B got them right (history/M03). G4 kept Opus-MT as the default, so this is an **option** the user decides on.
+- **Engine** (`services/mt/engines/qwen_llama.py`): llama.cpp's Vulkan llama-server (MIT, 88 MB, no NVIDIA DLLs) as a hidden child process on 127.0.0.1 with a free port, loading Qwen3-4B-Instruct Q4_K_M (Apache-2.0, 2.4 GB). One chat request per line, temperature 0, with a prompt that asks to keep slang and gaming terms natural. Starting the server is its "warm-up" (the existing pre-load jobs start it while the person is still talking).
+- **Never orphaned:** the server is put in a Windows job object with kill-on-close, so if the app crashes or is killed the server dies with it (it would otherwise keep 2.8 GB of graphics memory). Tested by hard-exiting a process that started it.
+- **Routing:** `TranslationRouter(preferred=…)` tries Qwen first for pairs touching `engines.smart_languages`; if Qwen fails (server gone), the line falls back to Opus-MT instead of being lost.
+- **Game mode turns it off** (preset `smart_translation=False`) and the app stops the server off the UI thread to free the memory; turning game mode off starts it again via re-warm.
+- **Settings → Translation:** "Smarter translation → Chinese (Mandarin)" switch, shown only when the Qwen files are installed; the engines list shows "Smarter translation · Qwen3-4B (Chinese) · Graphics card / Starts with the first line / Off". **Default off** until the user decides.
+- Installed on the user's PC: `%LOCALAPPDATA%\LiveTranslator\models\llama.cpp\vulkan` + `qwen3-4b\…gguf` (copied from the benchmark folder).
+- **Verified:** unit tests (reply cleaning incl. "翻译：" prefix, not-installed paths, game mode off, preference + fallback + both-fail error, Settings switch both ways and hidden when not installed); real server: "你的麦有点吵…" → contains "mic", "…开黑…" → "8 PM", no "dark"; end to end through the real TranslationController: 谁有空帮我刷一下副本？ → "Who's free to help me clear the raid?" (4.8 s incl. server start), a Spanish line still via Opus-MT; crash test leaves no llama-server. Full suite 547 passed.

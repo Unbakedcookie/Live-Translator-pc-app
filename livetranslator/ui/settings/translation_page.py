@@ -5,11 +5,11 @@ from __future__ import annotations
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QHideEvent, QShowEvent
-from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtWidgets import QCheckBox, QLabel, QWidget
 
 from livetranslator.core.languages import language
 from livetranslator.ui.settings.context import EngineSummary, SettingsContext
-from livetranslator.ui.settings.rows import Section, SettingsPage
+from livetranslator.ui.settings.rows import Section, SettingsPage, silently
 
 ENGINE_POLL_MS = 1000
 
@@ -38,6 +38,18 @@ class TranslationPage(SettingsPage):
             "Languages without a direct pair go through English, for example "
             "Japanese → English → Spanish. That takes a little longer.",
         )
+        self.chinese: QCheckBox | None = None
+        if ctx.smart_translation:
+            smart = self.section("Smarter translation")
+            self.chinese = QCheckBox()
+            self.chinese.toggled.connect(lambda on: ctx.settings.set_smart_language("zh", on))
+            smart.row(
+                "Chinese (Mandarin)",
+                "Uses the Qwen translator for lines from or into Chinese. Much better with "
+                "slang and gaming talk (麦 = mic, 开黑 = play together), about 0.3 s per line. "
+                "Needs about 2.8 GB of graphics memory, so it pauses in game mode.",
+                self.chinese,
+            )
         self.finish()
         self._shown: EngineSummary | None = None
         # Engines load in the background: re-read while the page is on screen ("Starting…"
@@ -47,6 +59,10 @@ class TranslationPage(SettingsPage):
         self._timer.timeout.connect(self.refresh)
 
     def refresh(self) -> None:
+        if self.chinese is not None:
+            on = "zh" in self._ctx.settings.store.state.config.engines.smart_languages
+            box = self.chinese
+            silently(box, lambda: box.setChecked(on))
         summary = self._ctx.engines() if self._ctx.engines else EngineSummary()
         if summary == self._shown:
             return
