@@ -17,3 +17,4 @@ Append with a shell append (`cat >> history/Mxx-name.md <<'EOF' ... EOF`); don't
 | M06 Translation view (gate G2) | `M06-translation-view.md` | 2026-10-17 → |
 | M09 Game mode + readout | `M09-game-mode.md` | 2026-10-18 → |
 | M10 Speakers (gate G6) | `M10-speakers.md` | 2026-10-17 → |
+| M11 Hardening | `M11-hardening.md` | 2026-10-18 → |
