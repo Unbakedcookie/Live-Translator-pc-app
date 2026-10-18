@@ -65,3 +65,22 @@ def test_real_models_translate_and_pivot():
     finally:
         engine.unload()
     assert not engine.is_loaded
+
+
+def test_set_device_switches_and_drops_loaded_pairs(tmp_path: Path, monkeypatch):
+    """T092: game mode moves translation to the processor and back."""
+    from livetranslator.services.mt.engines import opus_mt
+
+    monkeypatch.setattr(opus_mt, "cuda_device_count", lambda: 1)
+    monkeypatch.setattr(opus_mt, "add_cuda_dll_dirs", lambda: None)
+    fake_pair(tmp_path, "ja-en")
+    engine = OpusMtEngine(tmp_path)  # "auto"
+    engine.set_device("cpu")  # before load: just remembered
+    engine.load()
+    assert engine.device == "cpu"
+    engine._models[("ja", "en")] = ("translator", "src", "tgt")
+    engine.set_device("auto")
+    assert engine.device == "cuda" and engine._models == {}
+    engine._models[("ja", "en")] = ("translator", "src", "tgt")
+    engine.set_device("auto")  # no change: keeps what is loaded
+    assert engine._models

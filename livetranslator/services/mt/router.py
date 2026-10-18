@@ -7,12 +7,14 @@ through untouched. Each leg is cached, so a repeated line costs no engine call.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from livetranslator.services.errors import UnsupportedLanguage
 from livetranslator.services.mt.base import TranslationEngine
 from livetranslator.services.mt.cache import TranslationCache
+from livetranslator.services.timings import Timings
 
 PIVOT = "en"
 
@@ -35,7 +37,9 @@ class TranslationRouter:
         engines: Sequence[TranslationEngine],
         cache: TranslationCache | None = None,
         pivot: str = PIVOT,
+        timings: Timings | None = None,
     ) -> None:
+        self._timings = timings
         self._engines = list(engines)
         self._cache = cache if cache is not None else TranslationCache()
         self._pivot = pivot
@@ -66,11 +70,18 @@ class TranslationRouter:
         return True
 
     def translate(self, text: str, src: str, tgt: str) -> str:
+        start = time.perf_counter()
+        engine_ran = False
         for step in self.route(src, tgt):
             key = (step.engine.name, step.src, step.tgt, text)
             cached = self._cache.get(key)
             if cached is None:
+                engine_ran = True
                 cached = step.engine.translate([text], step.src, step.tgt)[0]
                 self._cache.put(key, cached)
             text = cached
+        if engine_ran and self._timings is not None:
+            # T091: only real engine work counts (same-language lines and cache hits are free
+            # and would drag the readout's p50 to 0 ms, as the first live run showed).
+            self._timings.record("mt", time.perf_counter() - start)
         return text

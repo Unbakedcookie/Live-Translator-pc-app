@@ -20,6 +20,7 @@ from PySide6.QtCore import QObject
 
 from livetranslator.core import actions as a
 from livetranslator.core.chatlog import is_echo
+from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, Source, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.base import SAMPLE_RATE
@@ -55,11 +56,8 @@ def asr_settings(config: AppConfig) -> AsrSettings:
         )
         if on
     }
-    interval = config.performance.asr_update_interval_s
-    if config.performance.game_mode:
-        interval = max(interval, 1.0)  # spec §5.4: game mode 1.0 s
     return AsrSettings(
-        update_interval_s=interval,
+        update_interval_s=effective(config).asr_interval_s,  # game mode: ≥ 1.0 s (T092)
         my_language=config.my_language,
         vad=config.vad,
         enabled=frozenset(enabled),

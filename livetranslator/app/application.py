@@ -7,7 +7,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from loguru import logger
 from PySide6.QtCore import QObject, QUrl
@@ -20,19 +20,22 @@ from livetranslator.app.log import setup_logging
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.settings_controller import HOTKEY_TITLES, SettingsController
 from livetranslator.app.speech_controller import SpeechController, line_audio_to
-from livetranslator.app.translation_controller import TranslationController
+from livetranslator.app.translation_controller import TranslationController, target_languages
 from livetranslator.app.tray import Tray
 from livetranslator.app.window_controller import HOTKEY_ACTIONS, WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
 from livetranslator.core.persistence import Persistence, load_config
+from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, AppState, SpeakerMode, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
+from livetranslator.services.metrics import MetricsService, NvmlSampler
 from livetranslator.services.mt.router import TranslationRouter
 from livetranslator.services.speakers.worker import SpeakerWorker
+from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.icons import icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
@@ -41,7 +44,7 @@ from livetranslator.ui.settings.context import EngineRow, EngineSummary, Setting
 
 if TYPE_CHECKING:
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
-    from livetranslator.services.mt.engines.opus_mt import OpusMtEngine
+    from livetranslator.services.mt.engines.opus_mt import Device, OpusMtEngine
     from livetranslator.ui.settings.settings_window import SettingsWindow
     from livetranslator.ui.transcript_window import TranscriptWindow
 
@@ -72,6 +75,7 @@ class LiveTranslatorApp(QObject):
         self.translation: TranslationController | None = None
         self.asr_engine: FasterWhisperEngine | None = None
         self.mt_engine: OpusMtEngine | None = None
+        self.metrics: MetricsService | None = None
         self.settings_window: SettingsWindow | None = None
         self._pairs: tuple[tuple[str, str], ...] | None = None  # installed MT pairs, read once
         self._hotkeys_suspended = False
@@ -117,12 +121,21 @@ class LiveTranslatorApp(QObject):
         from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
         from livetranslator.services.mt.engines.opus_mt import OpusMtEngine
 
+        timings = Timings()
         self.mt_engine = OpusMtEngine(models_dir)
-        self.translation = build_translation(self.store, self.mt_engine)
+        self.translation = build_translation(self.store, self.mt_engine, timings)
         self.translation.start()
         self.asr_engine = FasterWhisperEngine(models_dir)
-        self.speech = build_speech(self.store, models_dir, self.asr_engine)
+        self.speech = build_speech(self.store, models_dir, self.asr_engine, timings)
         self.speech.start()
+        self.metrics = MetricsService(
+            self.store,
+            timings,
+            NvmlSampler(),
+            lambda utterance, state: target_languages(utterance.source, state.config),
+            parent=self,
+        )
+        self.metrics.start()
 
     def _quit_now(self) -> None:
         """Qt 6 quits by asking every *visible* window to close and cancels the quit if one
@@ -252,6 +265,9 @@ class LiveTranslatorApp(QObject):
             self._register_hotkeys()
         if self.translation is not None and section in ("performance", "all"):
             self.translation.translate_partials = partials_allowed(self.store.state.config)
+        if self.mt_engine is not None and section in ("performance", "all"):
+            device = effective(self.store.state.config).mt_device
+            self.mt_engine.set_device(cast("Device", device))  # game mode → processor
 
     def _register_hotkeys(self) -> None:
         if self._hotkeys_suspended:
@@ -280,6 +296,8 @@ class LiveTranslatorApp(QObject):
             self.store.dispatch(a.SetStatus(key, StatusLevel.WARNING, message))
 
     def shutdown(self) -> None:
+        if self.metrics is not None:
+            self.metrics.stop()
         if self.speech is not None:
             self.speech.stop()
         if self.translation is not None:
@@ -305,23 +323,31 @@ def open_folder(path: Path) -> None:
 def partials_allowed(config: AppConfig) -> bool:
     """Spec §5.5: translate partial lines (2x/s) only with a fast engine, never in game mode.
     Opus-MT measured p50 116 ms on GPU / 166 ms on CPU (benchmarks/results/mt.md)."""
-    return not config.performance.game_mode
+    return effective(config).translate_partials
 
 
-def build_translation(store: Store, engine: OpusMtEngine) -> TranslationController:
-    """Opus-MT through the router (T051/T053; the G4 default)."""
+def build_translation(
+    store: Store, engine: OpusMtEngine, timings: Timings | None = None
+) -> TranslationController:
+    """Opus-MT through the router (T051/T053; the G4 default). Game mode puts it on the
+    processor (T092)."""
+    engine.set_device(cast("Device", effective(store.state.config).mt_device))
     engine.load()  # picks the device only; each language pair loads on first use
-    router = TranslationRouter([engine])
+    router = TranslationRouter([engine], timings=timings)
     return TranslationController(store, router, partials_allowed(store.state.config))
 
 
-def build_speech(store: Store, models_dir: Path, engine: FasterWhisperEngine) -> SpeechController:
+def build_speech(
+    store: Store, models_dir: Path, engine: FasterWhisperEngine, timings: Timings | None = None
+) -> SpeechController:
     """Mic + loopback capture feeding faster-whisper (T045). Heavy imports stay lazy."""
     from livetranslator.services.audio.devices import list_devices
     from livetranslator.services.speakers.sherpa_engine import SherpaEmbedder
 
     speakers = SpeakerWorker(SherpaEmbedder(models_dir), store.dispatch)
-    worker = ASRWorker(engine, store.dispatch, on_line_audio=line_audio_to(speakers))
+    worker = ASRWorker(
+        engine, store.dispatch, on_line_audio=line_audio_to(speakers), timings=timings
+    )
     return SpeechController(store, worker, list_devices, speakers=speakers)
 
 

@@ -38,6 +38,7 @@ from livetranslator.services.asr.base import SAMPLE_RATE, ASREngine, Transcripti
 from livetranslator.services.asr.local_agreement import LocalAgreement
 from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_energy
 from livetranslator.services.audio.ring import Float, RingBuffer
+from livetranslator.services.timings import Timings, timed
 
 Emit = Callable[[a.Action], None]
 
@@ -164,8 +165,10 @@ class ASRWorker:
         vad_factory: Callable[[], VadFn] | None = None,
         clock: Callable[[], float] = time.monotonic,
         on_line_audio: LineAudioFn | None = None,
+        timings: Timings | None = None,
     ) -> None:
         self._engine = engine
+        self._timings = timings  # T091 readout: decode durations
         self._on_line_audio = on_line_audio
         self._emit = emit
         self._settings = settings or AsrSettings()
@@ -316,7 +319,8 @@ class ASRWorker:
         u, stream = job.utterance, job.stream
         end = stream.cursor
         audio = stream.ring.read(u.start_sample, end)
-        result = self._engine.transcribe(audio, language=self._language(job, settings))
+        with timed(self._timings, "asr"):
+            result = self._engine.transcribe(audio, language=self._language(job, settings))
         u.decoded_to = end
         if (
             u.language is None
@@ -348,9 +352,10 @@ class ASRWorker:
             text = u.agreement.committed_text
             language = self._language(job, settings)
         else:
-            result = self._engine.transcribe(
-                audio, language=self._language(job, settings), final=True
-            )
+            with timed(self._timings, "asr"):
+                result = self._engine.transcribe(
+                    audio, language=self._language(job, settings), final=True
+                )
             text = u.agreement.finalize(speech_words(result)).committed
             language = self._language(job, settings) or result.language
         if not text.strip():

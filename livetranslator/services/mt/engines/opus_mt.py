@@ -55,7 +55,7 @@ class OpusMtEngine:
     def __init__(self, models_dir: Path, device: Device = "auto") -> None:
         self.name = "opus-mt"
         self._pairs = installed_pairs(models_dir)
-        self._device_choice = device
+        self._device_choice: Device = device
         self.device: str | None = None
         self._models: dict[tuple[str, str], tuple[Any, Any, Any]] = {}
         self._lock = threading.Lock()
@@ -73,12 +73,28 @@ class OpusMtEngine:
     def load(self) -> None:
         if self.device is not None:
             return
-        use_gpu = self._device_choice == "cuda" or (
-            self._device_choice == "auto" and cuda_device_count() > 0
-        )
+        self.device = self._pick_device(self._device_choice)
+
+    @staticmethod
+    def _pick_device(choice: Device) -> str:
+        use_gpu = choice == "cuda" or (choice == "auto" and cuda_device_count() > 0)
         if use_gpu:
             add_cuda_dll_dirs()
-        self.device = "cuda" if use_gpu else "cpu"
+        return "cuda" if use_gpu else "cpu"
+
+    def set_device(self, choice: Device) -> None:
+        """Move to the processor or back (game mode, T092). Loaded pairs are dropped and
+        reload on first use on the new device. Done under the translate lock, so a line being
+        translated finishes first and the next one never sees a half-switched engine."""
+        device = self._pick_device(choice)
+        with self._lock:
+            if choice == self._device_choice:
+                return
+            self._device_choice = choice
+            if self.device is None:
+                return  # not loaded yet: load() will use the new choice
+            self._models.clear()
+            self.device = device
 
     def unload(self) -> None:
         with self._lock:

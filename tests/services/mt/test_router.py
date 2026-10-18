@@ -103,3 +103,17 @@ def test_default_cache_holds_1000():
 def test_base_language():
     assert base_language("zh-TW") == "zh"
     assert base_language("EN") == "en"
+
+
+def test_only_real_engine_work_is_timed():
+    """T091: passthrough and cache hits are free and must not pull the readout to 0 ms."""
+    from livetranslator.services.timings import Timings
+
+    timings = Timings()
+    engine = FakeEngine("opus", {("es", "en")})
+    router = TranslationRouter([engine], timings=timings)
+    router.translate("hola", "en", "en")  # same language
+    assert timings.snapshot("mt") == []
+    router.translate("hola", "es", "en")
+    router.translate("hola", "es", "en")  # cached
+    assert len(timings.snapshot("mt")) == 1
