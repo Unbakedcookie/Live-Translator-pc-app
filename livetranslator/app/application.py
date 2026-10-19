@@ -13,15 +13,16 @@ from typing import TYPE_CHECKING, cast
 from loguru import logger
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.discord_controller import DiscordController
 from livetranslator.app.lifecycle import Exporter, QuitFlow
-from livetranslator.app.log import setup_logging
+from livetranslator.app.log import install_excepthook, setup_logging
 from livetranslator.app.ocr_controller import OcrController
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.settings_controller import HOTKEY_TITLES, SettingsController
+from livetranslator.app.single_instance import SingleInstance, ask_running_copy_to_show, server_name
 from livetranslator.app.speech_controller import SpeechController, line_audio_to
 from livetranslator.app.translation_controller import TranslationController, target_languages
 from livetranslator.app.tray import Tray
@@ -33,6 +34,8 @@ from livetranslator.core.persistence import Persistence, load_config
 from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, AppState, Source, SpeakerMode, StatusLevel
 from livetranslator.core.store import Store
+from livetranslator.platform.app_identity import register_app_identity, write_icon
+from livetranslator.platform.win32 import APP_USER_MODEL_ID, set_app_user_model_id
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
@@ -51,8 +54,9 @@ from livetranslator.theme.icons import icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
 from livetranslator.ui.geometry import Rect, beside, monitor_for
-from livetranslator.ui.screens import monitors
+from livetranslator.ui.screens import monitors, rect_from_qrect
 from livetranslator.ui.settings.context import EngineRow, EngineSummary, SettingsContext
+from livetranslator.ui.taskbar_button import TaskbarButton
 
 if TYPE_CHECKING:
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
@@ -100,6 +104,7 @@ class LiveTranslatorApp(QObject):
         if not self.store.state.config.windows:
             self.controller.add_window()
         self.tray: Tray | None = None
+        self.single_instance: SingleInstance | None = None
         self.region_selector: RegionSelector | None = None
         self.discord = DiscordController(self.store, paths.config_dir, parent=self)
         self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
@@ -119,7 +124,12 @@ class LiveTranslatorApp(QObject):
             self.request_quit,
             self,
             on_last_closed=self._on_last_closed,
+            taskbar=TaskbarButton(
+                APP_DISPLAY_NAME, icon("translate", PALETTES[DEFAULT_PALETTE_ID], "accent")
+            ),
         )
+        self._told_how_to_unhide = False
+        self.windows.window_hidden.connect(self._on_window_hidden)
         self.windows.settings_requested.connect(self.open_settings)
         self.windows.transcript_requested.connect(self.open_transcript)
         self.windows.screen_region_requested.connect(self.select_screen_region)
@@ -164,7 +174,7 @@ class LiveTranslatorApp(QObject):
         """Qt 6 quits by asking every *visible* window to close and cancels the quit if one
         refuses. Settings and Transcript refuse (closing them only hides them), so they are
         hidden first; otherwise Quit silently did nothing while one was open."""
-        for window in (self.settings_window, self.transcript_window):
+        for window in (self.settings_window, self.transcript_window, self.windows.taskbar):
             if window is not None:
                 window.hide()
         self._quit_app()
@@ -176,6 +186,24 @@ class LiveTranslatorApp(QObject):
             return
         self.tray.notify(
             f"{APP_DISPLAY_NAME} is still running. Use the tray icon to open a new window or quit."
+        )
+
+    def show_everything(self) -> None:
+        """The app was started again while running: bring every window back (or open one if
+        all were closed)."""
+        if not self.store.state.config.windows:
+            self.controller.add_window()
+        self.store.dispatch(a.SetAllHidden(False))
+
+    def _on_window_hidden(self) -> None:
+        """Once per run: say where a hidden window comes back from (it has no taskbar button)."""
+        if self._told_how_to_unhide:
+            return
+        self._told_how_to_unhide = True
+        shortcut = self.store.state.config.hotkeys.get("show_hide_all")
+        how = f" or press {shortcut}" if shortcut else ""
+        self._notify(
+            f"Window hidden. Click the {APP_DISPLAY_NAME} icon by the clock{how} to show it."
         )
 
     def _notify(self, message: str) -> None:
@@ -200,7 +228,21 @@ class LiveTranslatorApp(QObject):
                 self.exporter.export,
                 lambda: self.exporter.last_error,
             )
+            self._place_beside_overlay(self.transcript_window)
         self.transcript_window.bring_to_front()
+
+    def _place_beside_overlay(self, window: QWidget) -> None:
+        """First opening: next to the first visible overlay rather than centred over it, so
+        the translations stay readable while settings change."""
+        overlays = [w for w in self.windows.windows.values() if w.isVisible()]
+        screens = monitors()
+        if not overlays or not screens:
+            return
+        size = window.size()
+        rect = beside(
+            rect_from_qrect(overlays[0].frameGeometry()), screens, size.width(), size.height()
+        )
+        window.move(rect.x, rect.y)
 
     def models_dir(self) -> Path:
         configured = self.store.state.config.models_dir
@@ -213,6 +255,7 @@ class LiveTranslatorApp(QObject):
             from livetranslator.ui.settings.settings_window import SettingsWindow
 
             self.settings_window = SettingsWindow(self.settings_context())
+            self._place_beside_overlay(self.settings_window)
         if page:
             self.settings_window.show_page(page)
         self.settings_window.bring_to_front()
@@ -456,6 +499,7 @@ def build_speech(
 
 
 def run(demo: bool = False, speech: bool = True) -> int:
+    set_app_user_model_id()  # our own taskbar name/icon (before any window exists)
     app = QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_DISPLAY_NAME)
@@ -464,8 +508,19 @@ def run(demo: bool = False, speech: bool = True) -> int:
     paths = app_paths()
     paths.ensure()
     setup_logging(paths.log_dir)
+    install_excepthook()
+    if not register_app_identity(  # notifications say "Live Translator", not the raw id
+        APP_USER_MODEL_ID, APP_DISPLAY_NAME, write_icon(app.windowIcon(), paths.data_dir)
+    ):
+        logger.warning("registering the app's notification name failed")
+    instance_name = server_name(APP_NAME)
+    if not demo and ask_running_copy_to_show(instance_name):
+        logger.info("already running: asked that copy to show its windows")
+        return 0
     logger.info("{} {} starting", APP_DISPLAY_NAME, __version__)
     live = LiveTranslatorApp(paths, app.quit, speech=speech and not demo)
+    if not demo:
+        live.single_instance = SingleInstance(instance_name, live.show_everything, live)
     app.aboutToQuit.connect(live.shutdown)
     if demo:
         from livetranslator.app.demo import DemoFeed

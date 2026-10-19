@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Literal
 
-from livetranslator.core.state import AppConfig, StatusLevel, Utterance, WindowConfig
+from livetranslator.core.state import AppConfig, Away, StatusLevel, Utterance, WindowConfig
 
 ConfigSection = Literal["audio", "speakers", "engines", "performance", "echo_filter", "vad"]
 
@@ -148,7 +148,23 @@ class SetMetric:
 
 @dataclass(frozen=True)
 class SetAllHidden:
+    """True hides every overlay; False shows every overlay, including ones hidden or minimized
+    one at a time."""
+
     hidden: bool
+
+
+@dataclass(frozen=True)
+class SetWindowAway:
+    """Put one overlay away (`Away.HIDDEN` / `Away.MINIMIZED`) or bring it back (None)."""
+
+    window_id: str
+    away: Away | None
+
+
+@dataclass(frozen=True)
+class RestoreMinimized:
+    """The taskbar button was clicked: every minimized overlay comes back."""
 
 
 @dataclass(frozen=True)
@@ -181,5 +197,7 @@ Action = (
     | ClearStatus
     | SetMetric
     | SetAllHidden
+    | SetWindowAway
+    | RestoreMinimized
     | Batch
 )

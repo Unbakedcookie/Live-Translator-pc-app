@@ -2,9 +2,9 @@
 
 ## Current state
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
-- **Next:** user look reviews (Settings, transcript, quit dialog, readout, rename, language tag, region selector); user decisions: Qwen for Chinese on by default? lingua replaced OK?; then T054 model manager, T073 wizard, T074 Language Manager.
-- **Mandarin (user priority, 2026-10-18):** OCR excellent; speech ≈ best shippable (Whisper 5.8 % vs SenseVoice 5.4 %); one-script output (OpenCC); optional Qwen translation for Chinese (fixes slang) — off by default pending user.
-- **Tests:** 595 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Next:** user look reviews (Settings, transcript, quit dialog, readout, rename, language tag, region selector); T113 rest (THIRD_PARTY list, About page, user guide); T073 wizard; T074 Language Manager (needs HF repo). Decisions 2026-10-18: Qwen for Chinese ON by default, Simplified, own language detector kept.
+- **Mandarin (user priority, 2026-10-18):** OCR excellent; speech ≈ best shippable (Whisper 5.8 % vs SenseVoice 5.4 %); one-script output (OpenCC); Qwen translation for Chinese (fixes slang) — on by default (user 2026-10-18).
+- **Tests:** 616 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
 - **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
@@ -23,7 +23,7 @@
 | M08 Hotkeys + OCR | T081–T083 | `docs/tasks/M08-hotkeys-ocr.md` | `history/M08-hotkeys-ocr.md` | **G5** | In progress (T081–T083 done; G5 look review + in-game capture pending) |
 | M09 Game mode | T091–T093 | `docs/tasks/M09-game-mode.md` | `history/M09-game-mode.md` | — | Done except the with-a-game measurement (T091–T093; look review with G3 batch) |
 | M10 Speakers | T101–T105 | `docs/tasks/M10-speakers.md` | `history/M10-speakers.md` | **G6** | In progress (T101–T105 built; Discord needs the user's own app for the live test — guide is in Settings → Speakers) |
-| M11 Hardening | T111–T113 | `docs/tasks/M11-hardening.md` | `history/M11-hardening.md` | MVP sign-off | Planned |
+| M11 Hardening | T111–T113 | `docs/tasks/M11-hardening.md` | `history/M11-hardening.md` | MVP sign-off | In progress (T111 done; user-reported Settings-hidden + minimize fixes; T113 licence checker) |
 | Post-MVP | backlog | `project-spec.md` §4.2 | — | — | — |
 
 Gates: G1 tokens + widget kit + floating window shell · G2 chat line look · G3 settings/wizard/language manager · G4 engine defaults (ASR, MT, diarization) · G5 OCR selector · G6 speaker labels + Discord setup. UI after G1 waits for G1 approval; non-UI work (M03–M05 logic) continues meanwhile.

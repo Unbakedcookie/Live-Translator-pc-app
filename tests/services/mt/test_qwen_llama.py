@@ -50,7 +50,9 @@ def test_game_mode_turns_smart_translation_off():
     assert effective(on).smart_languages == {"zh"}
     gaming = on.model_copy(update={"performance": PerformanceConfig(game_mode=True)})
     assert effective(gaming).smart_languages == frozenset()
-    assert effective(AppConfig()).smart_languages == frozenset()
+    assert effective(AppConfig()).smart_languages == {"zh"}  # Chinese on by default
+    off = AppConfig(engines=EngineConfig(smart_languages=()))
+    assert effective(off).smart_languages == frozenset()
 
 
 class Fake:

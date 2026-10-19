@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from livetranslator import APP_DISPLAY_NAME
 from livetranslator.core.export import TranscriptLine, transcript_lines
 from livetranslator.core.languages import language
 from livetranslator.core.store import Store
@@ -85,14 +84,16 @@ class TranscriptWindow(QWidget):
         export_error: Callable[[], str] = lambda: "",
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent, Qt.WindowType.Window)
+        # Above pinned (always-on-top) overlays, which otherwise covered it (user report
+        # 2026-10-18: "Settings doesn't appear").
+        super().__init__(parent, Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         self._store = store
         self._palette = palette
         self._export = export
         self._export_error = export_error
         self.setObjectName("TranscriptRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-        self.setWindowTitle(f"{APP_DISPLAY_NAME} Transcript")
+        self.setWindowTitle("Transcript")  # Qt adds " - Live Translator"
         self.setWindowIcon(icon("translate", palette, "accent"))
         self.setStyleSheet(window_qss(palette) + settings_qss(palette) + transcript_qss(palette))
         self.resize(SETTINGS.width, SETTINGS.height)

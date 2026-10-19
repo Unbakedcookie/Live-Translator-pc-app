@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from livetranslator.app.log import no_transcript, setup_logging
+from livetranslator.app.log import log_uncaught, no_transcript, setup_logging
 
 
 def test_filter_cases():
@@ -50,3 +50,20 @@ def test_tracebacks_do_not_show_local_values(tmp_path: Path):
 
 def test_log_file_location(tmp_path: Path):
     assert setup_logging(tmp_path / "x") == tmp_path / "x" / "livetranslator.log"
+
+
+def test_uncaught_errors_log_where_but_not_what(tmp_path: Path):
+    """Under pythonw an error in a menu action vanished; now it's logged, minus its message."""
+    log_file = setup_logging(tmp_path)
+
+    def open_settings() -> None:
+        raise ValueError("the line said: my secret sentence")
+
+    try:
+        open_settings()
+    except ValueError as exc:
+        log_uncaught(type(exc), exc, exc.__traceback__)
+    text = _flush_and_read(log_file)
+    assert "unhandled ValueError at test_logging.py:" in text
+    assert "open_settings" in text
+    assert "secret" not in text

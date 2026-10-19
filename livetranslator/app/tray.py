@@ -35,7 +35,7 @@ def tray_status(state: AppState) -> tuple[IconRole, str]:
     audio = state.config.audio
     if not audio.mic_enabled and not audio.others_enabled:
         return "text_secondary", f"{APP_DISPLAY_NAME}: paused (both muted)"
-    if state.runtime.all_hidden:
+    if state.runtime.anything_away:
         return "accent", f"{APP_DISPLAY_NAME}: listening, windows hidden"
     return "accent", f"{APP_DISPLAY_NAME}: listening"
 
@@ -93,7 +93,9 @@ class Tray(QObject):
         self.refresh()
 
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
-        if reason is QSystemTrayIcon.ActivationReason.DoubleClick:
+        # One click shows everything that was put away (or hides all). People single-click
+        # the icon to get a lost window back (user report 2026-10-18).
+        if reason is QSystemTrayIcon.ActivationReason.Trigger:
             self._controller.handle_hotkey("show_hide_all")
 
     def refresh(self) -> None:

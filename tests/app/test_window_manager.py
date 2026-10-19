@@ -1,16 +1,18 @@
-"""T024 — window manager: create/destroy, placement, hide/show-all (pytest-qt)."""
+"""T024 — window manager: create/destroy, placement, hide/minimize/show-all (pytest-qt)."""
 
 import sys
 
 import pytest
+from PySide6.QtGui import QIcon
 
 from livetranslator.app.window_controller import WindowController
 from livetranslator.app.window_manager import WindowManager
 from livetranslator.core import actions as a
-from livetranslator.core.state import AppConfig, AppState, Geometry, WindowConfig
+from livetranslator.core.state import AppConfig, AppState, Away, Geometry, WindowConfig
 from livetranslator.core.store import Store
 from livetranslator.ui.geometry import default_placement
 from livetranslator.ui.screens import monitors
+from livetranslator.ui.taskbar_button import TaskbarButton
 
 
 def geom(store: Store, window_id: str) -> Geometry:
@@ -94,4 +96,37 @@ def test_hide_one_and_show_hide_all(env):
     assert not any(w.isVisible() for w in manager.windows.values())
     store.dispatch(a.SetAllHidden(False))  # showing all also brings back the single hidden one
     assert all(w.isVisible() for w in manager.windows.values())
-    assert manager.hidden == set()
+    assert store.state.runtime.away == {}
+
+
+def test_minimize_puts_a_button_on_the_taskbar(qtbot):
+    store = Store(AppState(config=AppConfig(windows=(WindowConfig(id="a"),))))
+    controller = WindowController(store)
+    taskbar = TaskbarButton("Live Translator", QIcon())
+    manager = WindowManager(store, controller, lambda: None, taskbar=taskbar)
+    b = controller.add_window()
+    manager.windows["a"].minimize_requested.emit("a")
+    assert not manager.windows["a"].isVisible() and manager.windows[b].isVisible()
+    assert taskbar.on_taskbar
+    manager.windows[b].minimize_requested.emit(b)
+    assert not manager.windows[b].isVisible()
+    taskbar.showNormal()  # what clicking the taskbar button does
+    qtbot.waitUntil(lambda: all(w.isVisible() for w in manager.windows.values()))
+    assert not taskbar.isVisible() and store.state.runtime.away == {}
+    manager.windows["a"].minimize_requested.emit("a")
+    controller.handle_hotkey("show_hide_all")  # Ctrl+Alt+H also brings it back
+    assert manager.windows["a"].isVisible() and not taskbar.isVisible()
+    manager.windows["a"].minimize_requested.emit("a")
+    taskbar.close()  # the taskbar's "Close window" restores rather than quitting
+    assert manager.windows["a"].isVisible() and not taskbar.isVisible()
+    manager.windows["a"].minimize_requested.emit("a")
+    manager.close_all()
+    assert not taskbar.isVisible()
+
+
+def test_hide_from_the_menu_says_how_to_get_it_back(env):
+    store, _, manager, _ = env
+    told: list[int] = []
+    manager.window_hidden.connect(lambda: told.append(1))
+    manager.windows["a"].hide_requested.emit("a")
+    assert store.state.runtime.away == {"a": Away.HIDDEN} and told == [1]

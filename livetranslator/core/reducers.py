@@ -21,6 +21,7 @@ from livetranslator.core.state import (
     HOTKEY_ACTION_NAMES,
     AppConfig,
     AppState,
+    Away,
     RuntimeStatus,
     Utterance,
     WindowConfig,
@@ -35,7 +36,7 @@ class ChangeKind(StrEnum):
     UTTERANCE_REMOVED = "utterance_removed"
     SESSION_CLEARED = "session_cleared"
     SPEAKER = "speaker"  # key = speaker id (rename)
-    RUNTIME = "runtime"  # key = "status:<key>", "metric:<name>", "all_hidden"
+    RUNTIME = "runtime"  # key = "status:<key>", "metric:<name>", "all_hidden", "away"
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,13 @@ def _with_config(state: AppState, config: AppConfig, *changes: Change) -> Result
     if config == state.config:
         return state, ()
     return state.model_copy(update={"config": config}), changes
+
+
+def _with_away(state: AppState, away: dict[str, Away]) -> Result:
+    if away == state.runtime.away:
+        return state, ()
+    runtime = state.runtime.model_copy(update={"away": away})
+    return state.model_copy(update={"runtime": runtime}), (Change(ChangeKind.RUNTIME, "away"),)
 
 
 def _replace_window(state: AppState, window: WindowConfig) -> Result:
@@ -155,12 +163,17 @@ def _reduce_config(state: AppState, action: a.Action) -> Result | None:
             if config.window(window_id) is None:
                 return state, ()
             windows = tuple(w for w in config.windows if w.id != window_id)
-            return _with_config(
+            removed, window_changes = _with_config(
                 state,
                 config.model_copy(update={"windows": windows}),
                 Change(ChangeKind.WINDOW, window_id),
                 Change(ChangeKind.CONFIG, "windows"),
             )
+            if window_id not in state.runtime.away:
+                return removed, window_changes
+            away = {k: v for k, v in state.runtime.away.items() if k != window_id}
+            gone, away_changes = _with_away(removed, away)
+            return gone, (*window_changes, *away_changes)
         case a.UpdateWindow(window_id=window_id, fields=fields):
             window = config.window(window_id)
             if window is None:
@@ -287,11 +300,21 @@ def _reduce_runtime(state: AppState, action: a.Action) -> Result | None:
                 Change(ChangeKind.RUNTIME, f"metric:{name}"),
             )
         case a.SetAllHidden(hidden=hidden):
-            if runtime.all_hidden == hidden:
+            away = runtime.away if hidden else {}  # "show all" also brings back single windows
+            if runtime.all_hidden == hidden and away == runtime.away:
                 return state, ()
-            new = runtime.model_copy(update={"all_hidden": hidden})
+            new = runtime.model_copy(update={"all_hidden": hidden, "away": away})
             return state.model_copy(update={"runtime": new}), (
                 Change(ChangeKind.RUNTIME, "all_hidden"),
+            )
+        case a.SetWindowAway(window_id=window_id, away=how):
+            away = {k: v for k, v in runtime.away.items() if k != window_id}
+            if how is not None and state.config.window(window_id) is not None:
+                away[window_id] = how
+            return _with_away(state, away)
+        case a.RestoreMinimized():
+            return _with_away(
+                state, {k: v for k, v in runtime.away.items() if v is not Away.MINIMIZED}
             )
         case _:
             return None

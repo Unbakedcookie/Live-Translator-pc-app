@@ -7,6 +7,7 @@ from livetranslator.core.reducers import Change, ChangeKind, reduce
 from livetranslator.core.state import (
     AppConfig,
     AppState,
+    Away,
     DisplayMode,
     Geometry,
     RuntimeStatus,
@@ -279,6 +280,32 @@ def test_runtime_status_metric_hidden():
     state, changes = reduce(state, a.SetAllHidden(True))
     assert state.runtime.all_hidden
     assert changes == (Change(ChangeKind.RUNTIME, "all_hidden"),)
+
+
+def test_windows_put_away_one_at_a_time():
+    state = state_with(EN, JA)  # windows "w-en", "w-ja"
+    assert not state.runtime.anything_away
+    state, changes = reduce(state, a.SetWindowAway("w-en", Away.MINIMIZED))
+    assert state.runtime.away == {"w-en": Away.MINIMIZED} and state.runtime.anything_away
+    assert changes == (Change(ChangeKind.RUNTIME, "away"),)
+    state, changes = reduce(state, a.SetWindowAway("w-en", Away.MINIMIZED))
+    assert changes == ()  # already minimized
+    state, _ = reduce(state, a.SetWindowAway("w-ja", Away.HIDDEN))
+    assert reduce(state, a.SetWindowAway("gone", Away.HIDDEN))[1] == ()  # unknown id ignored
+    restored, _ = reduce(state, a.RestoreMinimized())  # the taskbar button: minimized only
+    assert restored.runtime.away == {"w-ja": Away.HIDDEN}
+    hidden_all, _ = reduce(state, a.SetAllHidden(True))  # hiding all keeps who was away
+    assert hidden_all.runtime.away == state.runtime.away
+    shown, changes = reduce(hidden_all, a.SetAllHidden(False))  # showing all clears it
+    assert shown.runtime.away == {} and not shown.runtime.anything_away
+    assert changes == (Change(ChangeKind.RUNTIME, "all_hidden"),)
+    shown, changes = reduce(state, a.SetAllHidden(False))  # nothing hidden-all, still clears
+    assert shown.runtime.away == {} and changes == (Change(ChangeKind.RUNTIME, "all_hidden"),)
+    closed, changes = reduce(state, a.RemoveWindow("w-ja"))  # a closed window isn't away
+    assert closed.runtime.away == {"w-en": Away.MINIMIZED}
+    assert Change(ChangeKind.RUNTIME, "away") in changes
+    back, changes = reduce(state, a.SetWindowAway("w-en", None))
+    assert back.runtime.away == {"w-ja": Away.HIDDEN}
 
 
 def test_batch_merges_changes_and_is_atomic():

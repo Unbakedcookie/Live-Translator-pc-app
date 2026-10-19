@@ -17,8 +17,8 @@ def test_preset_values_match_the_g4_decision():
 
 
 def test_normal_mode_uses_the_users_values():
-    assert effective(config(0.5, False)) == Effective(0.5, True, "auto")
-    assert effective(config(0.7, False)) == Effective(0.7, True, "auto")
+    assert effective(config(0.5, False)) == Effective(0.5, True, "auto", frozenset({"zh"}))
+    assert effective(config(0.7, False)) == Effective(0.7, True, "auto", frozenset({"zh"}))
 
 
 def test_game_mode_applies_the_preset():
@@ -35,4 +35,4 @@ def test_round_trip_keeps_the_users_override():
         update={"performance": on.performance.model_copy(update={"game_mode": False})}
     )
     assert effective(on).asr_interval_s == 1.0
-    assert off == mine and effective(off) == Effective(0.7, True, "auto")
+    assert off == mine and effective(off) == Effective(0.7, True, "auto", frozenset({"zh"}))

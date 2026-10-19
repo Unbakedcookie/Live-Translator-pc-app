@@ -193,3 +193,17 @@ def kill_with_this_process(process_handle: int) -> bool:
             return False
         _job_handle = job
     return bool(kernel32.AssignProcessToJobObject(_job_handle, process_handle))
+
+
+APP_USER_MODEL_ID = "LiveTranslator.App"
+
+
+def set_app_user_model_id(app_id: str = APP_USER_MODEL_ID) -> bool:
+    """Give the process its own taskbar identity, so its taskbar button shows the app's name
+    and icon instead of grouping under python.exe. Call before any window exists."""
+    if sys.platform != "win32":
+        return False
+    shell32 = ctypes.WinDLL("shell32")
+    shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [wintypes.LPCWSTR]
+    shell32.SetCurrentProcessExplicitAppUserModelID.restype = ctypes.c_long
+    return shell32.SetCurrentProcessExplicitAppUserModelID(app_id) == 0

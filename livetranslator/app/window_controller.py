@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Iterable
 
 from livetranslator.core import actions as a
-from livetranslator.core.state import DisplayMode, Geometry, Source, WindowConfig
+from livetranslator.core.state import Away, DisplayMode, Geometry, Source, WindowConfig
 from livetranslator.core.store import Store
 from livetranslator.ui.geometry import Rect
 
@@ -74,6 +74,12 @@ class WindowController:
         geometry = Geometry(x=rect.x, y=rect.y, width=rect.width, height=rect.height, screen=screen)
         self._store.dispatch(a.UpdateWindow(window_id, {"geometry": geometry}))
 
+    def set_away(self, window_id: str, away: Away | None) -> None:
+        self._store.dispatch(a.SetWindowAway(window_id, away))
+
+    def restore_minimized(self) -> None:
+        self._store.dispatch(a.RestoreMinimized())
+
     def rename_speaker(self, speaker_id: str, name: str) -> None:
         """T104: session-only rename; "" goes back to the automatic label."""
         self._store.dispatch(a.RenameSpeaker(speaker_id, name.strip() or None))
@@ -94,7 +100,9 @@ class WindowController:
         windows = state.config.windows
         match action:
             case "show_hide_all":
-                self._store.dispatch(a.SetAllHidden(not state.runtime.all_hidden))
+                # Anything put away -> show everything (one press always brings a lost window
+                # back); otherwise hide everything.
+                self._store.dispatch(a.SetAllHidden(not state.runtime.anything_away))
             case "click_through_all":
                 enable = not all(w.click_through for w in windows)
                 self._store.dispatch(a.UpdateAllWindows({"click_through": enable}))

@@ -10,7 +10,9 @@ Privacy rule: logs never contain transcript text, speaker names or OCR text.
 from __future__ import annotations
 
 import sys
+import traceback
 from pathlib import Path
+from types import TracebackType
 from typing import Any
 
 from loguru import logger
@@ -44,3 +46,19 @@ def setup_logging(log_dir: Path, *, level: str = "INFO", console: bool = False) 
     if console and sys.stderr is not None:
         logger.add(sys.stderr, level=level, backtrace=False, diagnose=False, filter=no_transcript)
     return log_file
+
+
+def log_uncaught(
+    exc_type: type[BaseException], exc: BaseException, tb: TracebackType | None
+) -> None:
+    """sys.excepthook: an error inside a Qt slot (e.g. a menu action) is otherwise lost under
+    pythonw, which has no console (user report 2026-10-18: "Settings doesn't appear"). Logs
+    the error type and where it happened, never the message, which could quote a line."""
+    del exc
+    frames = traceback.extract_tb(tb)
+    where = " <- ".join(f"{Path(f.filename).name}:{f.lineno} {f.name}" for f in reversed(frames))
+    logger.error("unhandled {} at {}", exc_type.__name__, where or "?")
+
+
+def install_excepthook() -> None:
+    sys.excepthook = log_uncaught

@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QSystemTrayIcon
 from livetranslator.app.tray import Tray, tray_status
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core import actions as a
-from livetranslator.core.state import AppConfig, AppState, StatusLevel, WindowConfig
+from livetranslator.core.state import AppConfig, AppState, Away, StatusLevel, WindowConfig
 from livetranslator.core.store import Store
 
 
@@ -105,14 +105,25 @@ def test_icon_role_and_tooltip_follow_status(env):
     assert tray.icon_role == "accent"
 
 
-def test_double_click_toggles_show_hide(env):
+def test_one_click_toggles_show_hide(env):
     store, tray, _, _ = env
-    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.DoubleClick)
+    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.Trigger)
     assert store.state.runtime.all_hidden
-    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.Trigger)  # single click: nothing
+    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.DoubleClick)  # 2nd half: nothing
     assert store.state.runtime.all_hidden
-    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.DoubleClick)
+    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.Trigger)
     assert not store.state.runtime.all_hidden
+
+
+def test_one_click_brings_back_a_single_hidden_window(env):
+    """The trap the user hit: one window hidden, everything else visible. One click must show
+    it (it used to hide-all first, so nothing seemed to happen)."""
+    store, tray, _, _ = env
+    window_id = store.state.config.windows[0].id
+    store.dispatch(a.SetWindowAway(window_id, Away.HIDDEN))
+    assert tray.icon.toolTip() == "Live Translator: listening, windows hidden"
+    tray.icon.activated.emit(QSystemTrayIcon.ActivationReason.Trigger)
+    assert store.state.runtime.away == {} and not store.state.runtime.all_hidden
 
 
 def test_no_settings_item_without_a_settings_window(qtbot):

@@ -105,10 +105,10 @@ class _Drag:
 
 
 class ChromeBar(QWidget):
-    """Hover title strip: [pin] [language] sources ... [style] [hide] [close]."""
+    """Hover title strip: [pin] [language] sources ... [style] [minimize] [close]."""
 
     style_requested = Signal()
-    hide_requested = Signal()
+    minimize_requested = Signal()
     close_requested = Signal()
 
     def __init__(self, controller: WindowController, window_id: str, palette: Palette) -> None:
@@ -127,22 +127,27 @@ class ChromeBar(QWidget):
         self.sources = QLabel(self)
         self.style_button = IconButton("palette", "Style", palette, parent=self)
         self.style_button.clicked.connect(self.style_requested.emit)
-        self.hide_button = IconButton("minus", "Hide (Ctrl+Alt+H shows all)", palette, parent=self)
-        self.hide_button.clicked.connect(self.hide_requested.emit)
+        self.minimize_button = IconButton(
+            "minus",
+            "Minimize (click Live Translator on the taskbar to bring it back)",
+            palette,
+            parent=self,
+        )
+        self.minimize_button.clicked.connect(self.minimize_requested.emit)
         self.close_button = IconButton("x", "Close this window", palette, parent=self)
         self.close_button.clicked.connect(self.close_requested.emit)
         layout.addWidget(self.pin)
         layout.addWidget(self.language)
         layout.addWidget(self.sources)
         layout.addStretch(1)
-        for button in (self.style_button, self.hide_button, self.close_button):
+        for button in (self.style_button, self.minimize_button, self.close_button):
             layout.addWidget(button)
         self._apply_palette(palette)
 
     def _apply_palette(self, palette: Palette) -> None:
         self._palette = palette
         self.setStyleSheet(window_qss(palette))
-        for button in (self.pin, self.style_button, self.hide_button, self.close_button):
+        for button in (self.pin, self.style_button, self.minimize_button, self.close_button):
             button.apply_palette(palette)
         self.language.apply_palette(palette)
         self.sources.setStyleSheet(f"color: {palette.text_secondary};")
@@ -167,7 +172,8 @@ class ChromeBar(QWidget):
 
 
 class FloatingWindow(QWidget):
-    hide_requested = Signal(str)
+    hide_requested = Signal(str)  # "Hide this window" (menu)
+    minimize_requested = Signal(str)  # the minus button
     new_window_requested = Signal()
     settings_requested = Signal()
     transcript_requested = Signal()
@@ -216,7 +222,7 @@ class FloatingWindow(QWidget):
         self.chrome = ChromeBar(controller, window_id, self.palette_value)
         self.chrome.setParent(self)
         self.chrome.style_requested.connect(self.open_style_popover)
-        self.chrome.hide_requested.connect(lambda: self.hide_requested.emit(self.window_id))
+        self.chrome.minimize_requested.connect(lambda: self.minimize_requested.emit(self.window_id))
         self.chrome.close_requested.connect(lambda: controller.remove_window(self.window_id))
         self._chrome_effect = QGraphicsOpacityEffect(self.chrome)
         self._chrome_effect.setOpacity(0.0)

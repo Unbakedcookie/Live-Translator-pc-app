@@ -14,7 +14,6 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QCloseEvent, QShowEvent
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QListWidgetItem, QStackedWidget, QWidget
 
-from livetranslator import APP_DISPLAY_NAME
 from livetranslator.theme.icons import icon
 from livetranslator.theme.qss import settings_qss, window_qss
 from livetranslator.theme.tokens import SETTINGS, SPACE, WINDOW
@@ -44,11 +43,13 @@ PAGE_TYPES: tuple[Callable[[SettingsContext], SettingsPage], ...] = (
 
 class SettingsWindow(QWidget):
     def __init__(self, ctx: SettingsContext, parent: QWidget | None = None) -> None:
-        super().__init__(parent, Qt.WindowType.Window)
+        # Above pinned (always-on-top) overlays, which otherwise covered it (user report
+        # 2026-10-18: "Settings doesn't appear").
+        super().__init__(parent, Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         self._ctx = ctx
         self.setObjectName("SettingsRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-        self.setWindowTitle(f"{APP_DISPLAY_NAME} Settings")
+        self.setWindowTitle("Settings")  # Qt adds " - Live Translator"
         self.setWindowIcon(icon("translate", ctx.palette, "accent"))
         self.setStyleSheet(window_qss(ctx.palette) + settings_qss(ctx.palette))
         self.resize(SETTINGS.width, SETTINGS.height)

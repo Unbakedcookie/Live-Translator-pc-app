@@ -49,6 +49,15 @@ class SpeakerMode(StrEnum):
     OFF = "off"  # a single "Others" label
 
 
+class Away(StrEnum):
+    """How a single overlay was put away (runtime only; every window shows again on restart).
+    HIDDEN: the menu's "Hide this window" (back via the tray icon or Ctrl+Alt+H).
+    MINIMIZED: the minus button; a "Live Translator" button on the taskbar brings it back."""
+
+    HIDDEN = "hidden"
+    MINIMIZED = "minimized"
+
+
 class StatusLevel(StrEnum):
     OK = "ok"
     BUSY = "busy"
@@ -164,7 +173,8 @@ class EngineConfig(Frozen):
     diarization_engine: str | None = None
     # Lines from or into these languages use the smarter Qwen translator when it's installed
     # (Mandarin follow-up 2026-10-18: Opus-MT garbles Chinese chat slang). Empty = off.
-    smart_languages: tuple[str, ...] = ()
+    # Chinese on by default (user decision 2026-10-18); game mode still turns it off.
+    smart_languages: tuple[str, ...] = ("zh",)
     # Recognised Mandarin is written in one script (Whisper sometimes mixes them).
     chinese_script: Literal["simplified", "traditional"] = "simplified"
 
@@ -283,6 +293,12 @@ class RuntimeState(Frozen):
     statuses: dict[str, RuntimeStatus] = Field(default_factory=dict[str, RuntimeStatus])
     metrics: dict[str, float] = Field(default_factory=dict[str, float])
     all_hidden: bool = False
+    away: dict[str, Away] = Field(default_factory=dict[str, Away])  # window id -> how
+
+    @property
+    def anything_away(self) -> bool:
+        """True when "show all" would bring something back (tray / Ctrl+Alt+H)."""
+        return self.all_hidden or bool(self.away)
 
 
 class AppState(Frozen):
