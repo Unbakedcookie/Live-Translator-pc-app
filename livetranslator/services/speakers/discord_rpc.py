@@ -35,6 +35,7 @@ from typing import Any, Protocol
 
 from loguru import logger
 
+from livetranslator import __version__
 from livetranslator.core.state import StatusLevel
 from livetranslator.services.speakers.fusion import SpeakingInterval
 from livetranslator.services.speakers.token_store import TokenStore
@@ -42,8 +43,13 @@ from livetranslator.services.speakers.token_store import TokenStore
 OP_HANDSHAKE, OP_FRAME, OP_CLOSE = 0, 1, 2
 SCOPES = ("rpc", "rpc.voice.read")
 REDIRECT_URI = "http://127.0.0.1"  # the user registers exactly this in the portal (guide)
+PROJECT_URL = "https://github.com/Unbakedcookie/Live-Translator-pc-app"
 TOKEN_URL = "https://discord.com/api/oauth2/token"  # nosec B105 - Discord's public endpoint
 RETRY_S = 5.0
+# Discord's firewall answers Python's default "Python-urllib/x.y" with 403 "error code: 1010"
+# (user's sign-in failed 2026-10-18; reproduced with dummy values: default agent 403,
+# named agent 400 invalid_client). Any real request must name the app.
+USER_AGENT = f"LiveTranslator ({PROJECT_URL}, {__version__})"
 KEEP_S = 120.0  # speaking history kept for fusion
 PIPES = 10
 
@@ -191,7 +197,7 @@ def _token_request(form: dict[str, str]) -> dict[str, Any]:
     request = urllib.request.Request(
         TOKEN_URL,
         data=urllib.parse.urlencode(form).encode("ascii"),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Content-Type": "application/x-www-form-urlencoded", "User-Agent": USER_AGENT},
     )
     try:
         with urllib.request.urlopen(request, timeout=20) as response:  # nosec B310 - fixed https URL

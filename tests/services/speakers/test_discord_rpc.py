@@ -342,3 +342,20 @@ def test_display_name_and_token_store(tmp_path: Path):
     assert store.load() is None  # unreadable: treated as signed out
     store.delete()
     assert not store.path.exists()
+
+
+def test_token_requests_name_the_app(monkeypatch):
+    """Discord's firewall blocks Python's default agent with 403 "error code: 1010"."""
+    import io
+    import urllib.request
+
+    seen: list[urllib.request.Request] = []
+
+    def fake_urlopen(request: urllib.request.Request, timeout: float) -> io.BytesIO:
+        seen.append(request)
+        return io.BytesIO(b'{"access_token": "a"}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert rpc.exchange_code("1" * 18, "s", "c") == tok("a")
+    agent = seen[0].get_header("User-agent")
+    assert agent is not None and agent.startswith("LiveTranslator (") and "urllib" not in agent
