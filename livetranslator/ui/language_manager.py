@@ -34,6 +34,8 @@ def pack_description(pack: LanguagePack) -> str:
     else:
         what = "From English only"
     licences = ", ".join(pack.licences)
+    if pack.rough:
+        what += " · rough on slang (Qwen translates it first while it's on)"
     if pack.is_partial:
         left = sum(e.size_mb for e in pack.missing)
         return f"{what} · partly downloaded, {size_text(left)} to go · {licences}"

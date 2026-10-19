@@ -83,6 +83,7 @@ class ModelEntry:
     marker: str = ""  # a file under dest that proves it's installed
     languages: tuple[str, ...] = ()
     attribution: str = ""
+    quality: str = ""  # "rough": usable, but Qwen does better while it's on (T074)
 
 
 # ---------------------------------------------------------------- catalogue
@@ -125,6 +126,7 @@ def _entry(raw: Mapping[str, Any]) -> ModelEntry:
         marker=str(raw.get("marker", "")),
         languages=tuple(raw.get("languages", ())),
         attribution=str(raw.get("attribution", "")),
+        quality=str(raw.get("quality", "")),
     )
 
 

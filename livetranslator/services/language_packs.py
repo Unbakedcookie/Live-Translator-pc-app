@@ -52,6 +52,10 @@ class LanguagePack:
         return (self.code, PIVOT) in pairs, (PIVOT, self.code) in pairs
 
     @property
+    def rough(self) -> bool:
+        return any(e.quality == "rough" for e in self.entries)
+
+    @property
     def licences(self) -> tuple[str, ...]:
         return tuple(sorted({e.license for e in self.entries}))
 
@@ -59,6 +63,13 @@ class LanguagePack:
 def pair_of(entry: ModelEntry) -> tuple[str, str]:
     src, _, tgt = entry.dest.removeprefix(OPUS_PREFIX).partition("-")
     return src, tgt
+
+
+def rough_pairs(catalog: Mapping[str, ModelEntry]) -> frozenset[tuple[str, str]]:
+    """Pairs whose model is usable but weak: Qwen goes first for them while it's on."""
+    return frozenset(
+        pair_of(e) for e in catalog.values() if is_pair_entry(e) and e.quality == "rough"
+    )
 
 
 def is_pair_entry(entry: ModelEntry) -> bool:

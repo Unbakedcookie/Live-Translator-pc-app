@@ -76,3 +76,15 @@ def test_catalogue_entries_are_pinned_and_pass_the_apps_checks(tmp_path: Path):
     assert entry.source.sha256 == pairs[0]["sha256"] and entry.source.archive == "zip"
     assert (entry.dest, entry.marker) == ("opus-mt/en-pl", "model.bin")
     assert entry.languages == ("en", "pl")
+
+
+def test_rough_pairs_carry_their_quality_into_the_catalogue(tmp_path: Path):
+    converted(tmp_path / "converted", "en-hi")
+    converted(tmp_path / "converted", "en-it")
+    pairs = pack(tmp_path / "converted", tmp_path / "staging")
+    assert [p["quality"] for p in pairs] == ["rough", ""]
+    catalogue = tmp_path / "catalog.json"
+    catalogue.write_text(json.dumps({"schema": 1, "models": []}), "utf-8")
+    write_catalog(catalog_entries(pairs, REPO, COMMIT), catalogue)
+    loaded = load_catalog(catalogue)
+    assert loaded["opus-mt-en-hi"].quality == "rough" and loaded["opus-mt-en-it"].quality == ""

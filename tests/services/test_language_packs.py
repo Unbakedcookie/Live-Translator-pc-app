@@ -79,3 +79,15 @@ def test_remove_deletes_only_the_packs_folders(tmp_path: Path):
 
     assert remove_pack(LanguagePack("xx", (escaping,), frozenset()), tmp_path) == []
     assert (tmp_path / "qwen3-4b").exists()  # a bad dest can't reach outside opus-mt/
+
+
+def test_rough_pairs_are_flagged(tmp_path: Path):
+    from dataclasses import replace
+
+    from livetranslator.services.language_packs import rough_pairs
+
+    hi = replace(pair("hi", "en"), quality="rough")
+    catalog = {**CATALOG, hi.id: hi}
+    assert rough_pairs(catalog) == {("hi", "en")}
+    packs = {p.code: p for p in language_packs(catalog, tmp_path)}
+    assert packs["hi"].rough and not packs["pt"].rough

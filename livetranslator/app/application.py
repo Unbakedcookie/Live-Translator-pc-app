@@ -41,6 +41,7 @@ from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.errors import EngineError
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
+from livetranslator.services.language_packs import rough_pairs
 from livetranslator.services.metrics import MetricsService, NvmlSampler
 from livetranslator.services.models import load_catalog
 from livetranslator.services.mt.engines.qwen_llama import QwenLlamaEngine
@@ -114,8 +115,9 @@ class LiveTranslatorApp(QObject):
         self.single_instance: SingleInstance | None = None
         self.region_selector: RegionSelector | None = None
         self.discord = DiscordController(self.store, paths.config_dir, parent=self)
+        self.catalog = load_catalog()
         self.languages = LanguageController(
-            self.store, self.models_dir, load_catalog(), on_changed=self._on_languages_changed
+            self.store, self.models_dir, self.catalog, on_changed=self._on_languages_changed
         )
         self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
         self.transcript_window: TranscriptWindow | None = None
@@ -163,7 +165,9 @@ class LiveTranslatorApp(QObject):
         timings = Timings()
         self.mt_engine = OpusMtEngine(models_dir)
         self.smart_engine = QwenLlamaEngine(models_dir) if qwen_installed(models_dir) else None
-        self.translation = build_translation(self.store, self.mt_engine, timings, self.smart_engine)
+        self.translation = build_translation(
+            self.store, self.mt_engine, timings, self.smart_engine, rough_pairs(self.catalog)
+        )
         self.translation.start()
         self.asr_engine = FasterWhisperEngine(models_dir)
         self.speech = build_speech(
@@ -483,6 +487,7 @@ def build_translation(
     engine: OpusMtEngine,
     timings: Timings | None = None,
     smart: QwenLlamaEngine | None = None,
+    rough: frozenset[tuple[str, str]] = frozenset(),
 ) -> TranslationController:
     """Opus-MT through the router (T051/T053; the G4 default). Game mode puts it on the
     processor (T092). With `smart` (Qwen, when installed), lines from or into the languages
@@ -491,8 +496,13 @@ def build_translation(
     engine.load()  # picks the device only; each language pair loads on first use
 
     def preferred(src: str, tgt: str) -> QwenLlamaEngine | None:
-        languages = effective(store.state.config).smart_languages
-        return smart if smart is not None and (src in languages or tgt in languages) else None
+        now = effective(store.state.config)
+        if smart is None:
+            return None
+        if src in now.smart_languages or tgt in now.smart_languages:
+            return smart
+        # A weak downloaded model (e.g. Hindi, D-039) mustn't make lines worse than Qwen did.
+        return smart if now.smart_fallback and (src, tgt) in rough else None
 
     def fallback(src: str, tgt: str) -> QwenLlamaEngine | None:
         wanted = effective(store.state.config).smart_fallback

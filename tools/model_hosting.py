@@ -34,6 +34,9 @@ MANIFEST = "manifest.json"
 REQUIRED = ("model.bin", "config.json", "source.spm", "target.spm", "opus_mt.json", "LICENCE.txt")
 LICENCES = {"cc-by-4.0": "CC-BY-4.0", "apache-2.0": "Apache-2.0"}
 MIB = 1 << 20
+# Spot check 2026-10-19 (D:/LiveTranslator/check_pairs.py, D-039): garbled or loose on
+# game-chat lines; Qwen translates these first while it's on.
+ROUGH_PAIRS = frozenset({("en", "hi"), ("hi", "en"), ("ur", "en")})
 
 
 def _sha256(path: Path) -> str:
@@ -74,6 +77,7 @@ def pack_pair(folder: Path, out_dir: Path) -> dict[str, Any]:
         "upstream": str(meta["repo"]),
         "revision": str(meta["revision"]),
         "language_tag": str(meta.get("language_tag", "")),
+        "quality": "rough" if (src, tgt) in ROUGH_PAIRS else "",
     }
 
 
@@ -155,6 +159,7 @@ def catalog_entries(pairs: list[dict[str, Any]], repo: str, commit: str) -> list
                 "dest": f"opus-mt/{src}-{tgt}",
                 "marker": "model.bin",
                 "languages": [src, tgt],
+                **({"quality": p["quality"]} if p.get("quality") else {}),
                 "attribution": (
                     f"Helsinki-NLP/{p['upstream'].rsplit('/', 1)[-1]} by Helsinki-NLP / OPUS-MT "
                     f"({p['licence']}), converted to CTranslate2 by Live Translator"
