@@ -33,6 +33,7 @@ PORTAL = "https://discord.com/developers/applications?new_application=true"
 # a "What brings you to the Developer Portal?" page now comes first, with Skip at the bottom).
 OPEN_STEP = 1
 COPY_REDIRECT_STEP = 5
+TEST_STEP = 7  # the Test connection button sits in this step (user couldn't find it below)
 STEPS = (
     "Click Open. Discord's developer website opens in your web browser (this is a website, "
     "not the Discord app). Log in with your normal Discord account if it asks.",
@@ -45,8 +46,8 @@ STEPS = (
     f"{REDIRECT_URI} exactly (the Copy button copies it), and click Save Changes.",
     "On the same page click “Reset Secret”, confirm, copy the secret and paste it below. It "
     "stays encrypted on this PC and is only ever sent to Discord.",
-    "Open the Discord app, join a voice channel, then click Test connection here and approve "
-    "the request that pops up inside Discord.",
+    "Open the Discord app, join a voice channel, then click Test connection (right here) and "
+    "approve the request that pops up inside Discord.",
     "If Discord says the request isn't allowed: open your app's “App Testers” page on the "
     "developer website, add your own account, accept the invite, and test again.",
 )
@@ -80,6 +81,7 @@ class DiscordSetup(QWidget):
                 "free Discord app once (about 3 minutes). Nothing is posted anywhere."
             )
         )
+        self.test = QPushButton("Test connection")
         steps = Section("Steps")
         for i, text in enumerate(STEPS, start=1):
             control: QWidget | None = None
@@ -89,6 +91,8 @@ class DiscordSetup(QWidget):
             elif i == COPY_REDIRECT_STEP:
                 control = QPushButton("Copy")
                 control.clicked.connect(lambda: QGuiApplication.clipboard().setText(REDIRECT_URI))
+            elif i == TEST_STEP:
+                control = self.test
             steps.row(f"Step {i}", text, control)
         root.addWidget(steps)
 
@@ -107,10 +111,8 @@ class DiscordSetup(QWidget):
         self.result = note("", self)
         root.addWidget(self.result)
         buttons = QHBoxLayout()
-        self.test = QPushButton("Test connection")
         self.save = QPushButton("Save")
         self.remove = QPushButton("Disconnect")
-        buttons.addWidget(self.test)
         buttons.addStretch(1)
         buttons.addWidget(self.remove)
         buttons.addWidget(self.save)
