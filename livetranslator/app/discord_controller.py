@@ -16,7 +16,7 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QObject, QTimer, Signal
 
 from livetranslator.core import actions as a
 from livetranslator.core.state import Source, SpeakerMode, StatusLevel
@@ -41,6 +41,8 @@ ClientFactory = Callable[[str, str], DiscordClient]  # (app id, secret) -> clien
 
 
 class DiscordController(QObject):
+    _check_passed = Signal()  # from the test thread; restarts the background client
+
     def __init__(
         self,
         store: Store,
@@ -64,6 +66,7 @@ class DiscordController(QObject):
         store.config_changed.connect(
             lambda section: self.apply() if section in ("speakers", "all") else None
         )
+        self._check_passed.connect(self.restart)
 
     # ------------------------------------------------------------ setup (Settings / guide)
 
@@ -93,11 +96,14 @@ class DiscordController(QObject):
 
         def run() -> None:
             try:
-                done(True, self._make_client(app_id.strip(), secret.strip()).check())
+                message = self._make_client(app_id.strip(), secret.strip()).check()
             except RpcError as exc:
                 done(False, str(exc))
             except Exception as exc:  # report, never crash the guide
                 done(False, f"Couldn't connect ({type(exc).__name__}).")
+            else:
+                done(True, message)
+                self._check_passed.emit()  # signed in now: the background client can run
 
         threading.Thread(target=run, name="discord-check", daemon=True).start()
 
@@ -121,6 +127,12 @@ class DiscordController(QObject):
         self.client.start()
         self._running_for = wanted
         self._timer.start()
+
+    def restart(self) -> None:
+        """Start again from scratch (e.g. after Test connection signed in, or after the
+        background client gave up because it had no sign-in)."""
+        self._stop()
+        self.apply()
 
     def _stop(self) -> None:
         self._timer.stop()

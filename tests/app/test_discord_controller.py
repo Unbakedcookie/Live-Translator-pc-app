@@ -110,3 +110,16 @@ def test_check_reports_on_a_background_thread(qtbot, tmp_path: Path):
     bad.check(FAKE_ID, "s", lambda ok, msg: got.append((ok, msg)))
     qtbot.waitUntil(lambda: bool(got), timeout=2000)
     assert got == [(False, "Discord isn't running")]
+
+
+def test_a_passed_test_restarts_the_background_client(qtbot, tmp_path: Path):
+    """The background client stops when it has no sign-in (it never prompts); a passed
+    Test connection saved one, so the client starts again by itself."""
+    _, ctl, made, _ = make(qtbot, tmp_path)
+    ctl.save_setup(FAKE_ID, "s")
+    first = made[-1]
+    got: list[tuple[bool, str]] = []
+    ctl.check(FAKE_ID, "s", lambda ok, msg: got.append((ok, msg)))
+    qtbot.waitUntil(lambda: len(made) == 3, timeout=2000)  # setup, check, restarted
+    assert not first.running and made[-1].running and ctl.client is made[-1]
+    assert got[0][0] is True

@@ -140,27 +140,91 @@ def run_session(env: Env) -> None:
         env.client.session()
 
 
-def test_first_connect_authorizes_exchanges_and_follows_the_channel(tmp_path: Path):
-    fake = FakeDiscord(events=[speaking("SPEAKING_START", "2"), "CLOSE"])
-    env = Env(tmp_path, fake)
-    run_session(env)
+def test_test_connection_authorizes_then_the_session_follows_the_channel(tmp_path: Path):
+    """Only the guide's Test connection asks Discord to approve; the session then uses the
+    saved token."""
+    checking = FakeDiscord()
+    env = Env(tmp_path, checking)
+    assert env.client.check() == "Connected. 3 people in your voice channel."
     assert env.cmds() == [
         ("HANDSHAKE", None),
         ("AUTHORIZE", None),
+        ("AUTHENTICATE", None),
+        ("GET_SELECTED_VOICE_CHANNEL", None),
+    ]
+    assert checking.sent[1]["args"] == {"client_id": "123", "scopes": ["rpc", "rpc.voice.read"]}
+    assert env.exchanged == ["the-code"]
+    saved = env.tokens.load()
+    assert saved == tok("good", "r1", client="123")
+    assert b"good" not in env.tokens.path.read_bytes()  # encrypted on disk
+
+    fake = FakeDiscord(events=[speaking("SPEAKING_START", "2"), "CLOSE"])
+    env.fake = fake
+    env.client.connect = lambda: fake
+    run_session(env)
+    assert env.cmds() == [
+        ("HANDSHAKE", None),
         ("AUTHENTICATE", None),
         ("SUBSCRIBE", "VOICE_CHANNEL_SELECT"),
         ("GET_SELECTED_VOICE_CHANNEL", None),
         ("SUBSCRIBE", "SPEAKING_START"),
         ("SUBSCRIBE", "SPEAKING_STOP"),
     ]
-    assert fake.sent[1]["args"] == {"client_id": "123", "scopes": ["rpc", "rpc.voice.read"]}
-    assert env.exchanged == ["the-code"]
     assert env.names == [{"1": "Mika", "2": "Kenji G", "3": "rin"}]  # nick > global > user
     assert env.channels == ["111"]
-    saved = env.tokens.load()
-    assert saved == tok("good", "r1", client="123")
-    assert b"good" not in env.tokens.path.read_bytes()  # encrypted on disk
     assert (StatusLevel.OK, "Discord connected.") in env.statuses
+
+
+def test_background_never_prompts_and_stops_without_a_sign_in(tmp_path: Path, monkeypatch):
+    """User report 2026-10-18: Discord's approve window popped up again and again because
+    the background session re-asked every 5 s."""
+    monkeypatch.setattr(rpc, "RETRY_S", 0.01)
+    attempts: list[FakeDiscord] = []
+
+    def connect() -> FakeDiscord:
+        fake = FakeDiscord()
+        attempts.append(fake)
+        return fake
+
+    env = Env(tmp_path, FakeDiscord())
+    env.client.connect = connect
+    env.client.start()
+    assert env.client._thread is not None
+    env.client._thread.join(5)
+    assert not env.client._thread.is_alive()  # gave up instead of retrying
+    assert len(attempts) == 1
+    assert all(f.get("cmd") != "AUTHORIZE" for f in attempts[0].sent)
+    level, message = env.statuses[-1]
+    assert level is StatusLevel.WARNING and "Test connection" in message
+
+
+def test_refused_approval_and_token_errors_say_what_to_do(tmp_path: Path):
+    class Refusing(FakeDiscord):
+        def write(self, data: bytes) -> None:
+            _op, length = struct.unpack("<II", data[:8])
+            frame = json.loads(data[8 : 8 + length])
+            if frame.get("cmd") == "AUTHORIZE":
+                self.sent.append(frame)
+                self.push(
+                    OP_FRAME,
+                    {
+                        "cmd": "AUTHORIZE",
+                        "nonce": frame["nonce"],
+                        "evt": "ERROR",
+                        "data": {"code": 5000, "message": "OAuth2 Error: invalid_scope"},
+                    },
+                )
+                return
+            super().write(data)
+
+    env = Env(tmp_path, Refusing())
+    with pytest.raises(RpcError, match="App Testers"):
+        env.client.check()
+    assert env.exchanged == []
+    assert "step 5" in rpc.token_error_advice("invalid_grant")
+    assert "step 6" in rpc.token_error_advice("invalid_client")
+    assert "(weird)" in rpc.token_error_advice("weird")
+    assert "Authorize" in rpc.authorize_error_advice("User cancelled the request")
 
 
 def test_stored_token_skips_the_prompt_and_a_stale_one_is_refreshed(tmp_path: Path):
@@ -181,8 +245,9 @@ def test_stored_token_skips_the_prompt_and_a_stale_one_is_refreshed(tmp_path: Pa
 def test_token_for_another_app_id_is_not_used(tmp_path: Path):
     env = Env(tmp_path, FakeDiscord(events=["CLOSE"]))
     env.tokens.save(tok("good", client="999"))
-    run_session(env)
-    assert ("AUTHORIZE", None) in env.cmds()
+    with pytest.raises(rpc.NeedsApproval):
+        env.client.session()  # needs Test connection; never prompts by itself
+    assert ("AUTHENTICATE", None) not in env.cmds() and ("AUTHORIZE", None) not in env.cmds()
 
 
 def test_speaking_events_build_the_timeline(tmp_path: Path):
@@ -206,6 +271,7 @@ def test_speaking_events_build_the_timeline(tmp_path: Path):
 def test_dispatch_routes_speaking_and_channel_changes(tmp_path: Path):
     fake = FakeDiscord(events=["CLOSE"])
     env = Env(tmp_path, fake)
+    env.tokens.save(tok("good", client="123"))
     run_session(env)  # now following channel 111
     fake.channel = CHANNEL_B
     fake.out.clear()

@@ -48,8 +48,9 @@ STEPS = (
     "stays encrypted on this PC and is only ever sent to Discord.",
     "Open the Discord app, join a voice channel, then click Test connection (right here) and "
     "approve the request that pops up inside Discord.",
-    "If Discord says the request isn't allowed: open your app's “App Testers” page on the "
-    "developer website, add your own account, accept the invite, and test again.",
+    "Usually not needed: you own the app, which Discord normally allows. Only if the message "
+    "under Test connection mentions App Testers: open that page on the developer website, "
+    "add your own account, accept the invite, and test again.",
 )
 
 

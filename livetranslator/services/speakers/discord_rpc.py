@@ -6,12 +6,16 @@ frames are `<op:uint32 LE><length:uint32 LE><JSON>`. Flow:
 1. HANDSHAKE with the user's own Application ID → READY.
 2. AUTHENTICATE with a stored token, or AUTHORIZE (Discord shows its own prompt) → code →
    token exchange over HTTPS (needs the app's client secret: D-030 Plan A) → AUTHENTICATE.
+   Only the guide's "Test connection" may AUTHORIZE. The background session never does: it
+   retried every 5 s and Discord's approve window popped up again and again (user report
+   2026-10-18). Without a usable token it stops and says to run the test.
 3. GET_SELECTED_VOICE_CHANNEL → members' display names; SUBSCRIBE VOICE_CHANNEL_SELECT,
    and SPEAKING_START / SPEAKING_STOP for the current channel (moved along on channel change).
 4. Speaking events go into a `SpeakingTimeline` the speaker worker reads (fusion, T101).
 
-If Discord isn't running or closes, the client keeps retrying in the background. Nothing is
-written to disk except the DPAPI-encrypted token (TokenStore). Names never reach the logs.
+If Discord isn't running or closes, the client keeps retrying in the background (no
+prompts). Nothing is written to disk except the DPAPI-encrypted token (TokenStore). Names
+never reach the logs.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ import json
 import struct
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -191,8 +196,56 @@ def _token_request(form: dict[str, str]) -> dict[str, Any]:
     try:
         with urllib.request.urlopen(request, timeout=20) as response:  # nosec B310 - fixed https URL
             return dict(json.load(response))
+    except urllib.error.HTTPError as exc:
+        error = _oauth_error(exc)
+        logger.warning("Discord token request refused (HTTP {}, {})", exc.code, error or "?")
+        raise RpcError(token_error_advice(error)) from exc
     except OSError as exc:
-        raise RpcError("Discord refused the sign-in. Check the Application ID and secret.") from exc
+        logger.warning("Discord token request failed ({})", type(exc).__name__)
+        raise RpcError("Couldn't reach Discord to finish signing in. Check the internet.") from exc
+
+
+def _oauth_error(exc: urllib.error.HTTPError) -> str:
+    """The OAuth2 error code from Discord's reply body (e.g. "invalid_grant"), or ""."""
+    try:
+        body = json.loads(exc.read().decode("utf-8", "replace"))
+    except (OSError, ValueError):
+        return ""
+    return str(body.get("error") or "") if isinstance(body, dict) else ""
+
+
+def token_error_advice(error: str) -> str:
+    """Plain advice for a refused token request (the guide shows it)."""
+    if error == "invalid_client":
+        return (
+            "Discord didn't accept the client secret. Do step 6 again (Reset Secret), paste "
+            "the new secret and test again."
+        )
+    if error == "invalid_grant":
+        return (
+            "Discord refused the sign-in code. Check step 5: the redirect must be exactly "
+            f"{REDIRECT_URI} and saved with Save Changes. Then test again."
+        )
+    if error == "invalid_scope":
+        return (
+            "Discord doesn't allow this app to read voice channels for your account yet "
+            "(step 8: App Testers)."
+        )
+    detail = f" ({error})" if error else ""
+    return f"Discord refused the sign-in{detail}. Check the Application ID and secret."
+
+
+def authorize_error_advice(message: str) -> str:
+    """Plain advice for a failed AUTHORIZE (Discord's approve window)."""
+    lowered = message.lower()
+    if "cancel" in lowered or "denied" in lowered or "closed" in lowered:
+        return "The request was closed in Discord. Click Test connection and choose Authorize."
+    if "scope" in lowered or "not allowed" in lowered or "whitelist" in lowered:
+        return (
+            f"Discord said: {message}. Your account may need to be on the app's App Testers "
+            "list (step 8)."
+        )
+    return f"Discord said: {message}."
 
 
 # ---------------------------------------------------------------- client
@@ -213,6 +266,10 @@ def display_name(state: dict[str, Any]) -> str:
     """A voice state's best name: server nickname, then global name, then username."""
     user = state.get("user") or {}
     return str(state.get("nick") or user.get("global_name") or user.get("username") or "?")
+
+
+class NeedsApproval(RpcError):
+    """No usable sign-in: only the setup guide's Test connection may ask Discord again."""
 
 
 @dataclass
@@ -248,6 +305,13 @@ class DiscordClient:
         while not self._stop.is_set():
             try:
                 self.session()
+            except NeedsApproval:
+                self.callbacks.status(
+                    StatusLevel.WARNING,
+                    "Discord isn't signed in. Open Settings, Speakers, Set up… and click "
+                    "Test connection.",
+                )
+                return  # never prompt from the background; the guide restarts us
             except RpcError as exc:
                 self.callbacks.status(StatusLevel.WARNING, f"Discord: {exc}. Retrying…")
             except Exception as exc:  # never let the thread die
@@ -274,7 +338,7 @@ class DiscordClient:
                 raise RpcError(
                     str(ready.get("message") or "Discord didn't accept the Application ID")
                 )
-            self._sign_in()
+            self._sign_in(allow_prompt=True)
             channel = self._selected_channel()
         finally:
             if self._transport is not None:
@@ -292,7 +356,7 @@ class DiscordClient:
         op, ready = read_frame(self._transport)
         if op == OP_CLOSE or ready.get("evt") != "READY":
             raise RpcError(str(ready.get("message") or "Discord didn't accept the Application ID"))
-        self._sign_in()
+        self._sign_in(allow_prompt=False)
         self.callbacks.status(StatusLevel.OK, "Discord connected.")
         self._call("SUBSCRIBE", {}, evt="VOICE_CHANNEL_SELECT")
         self._follow(self._selected_channel())
@@ -302,7 +366,7 @@ class DiscordClient:
                 raise RpcError("Discord closed the connection")
             self._dispatch(frame)
 
-    def _sign_in(self) -> None:
+    def _sign_in(self, allow_prompt: bool) -> None:
         saved = self.tokens.load() or {}
         token = saved.get("access_token")
         if token and saved.get("client_id") == self.client_id:
@@ -315,8 +379,17 @@ class DiscordClient:
                         return
                 except RpcError:
                     pass
+        if not allow_prompt:
+            raise NeedsApproval("not signed in")
         self.callbacks.status(StatusLevel.BUSY, "Discord: approve the request in Discord…")
-        reply = self._call("AUTHORIZE", {"client_id": self.client_id, "scopes": list(SCOPES)})
+        reply = self._call(
+            "AUTHORIZE", {"client_id": self.client_id, "scopes": list(SCOPES)}, check=False
+        )
+        if reply.get("evt") == "ERROR":
+            data = reply.get("data") or {}
+            message = str(data.get("message") or "error")
+            logger.warning("Discord AUTHORIZE refused (code {})", data.get("code", "?"))
+            raise RpcError(authorize_error_advice(message))
         code = (reply.get("data") or {}).get("code")
         if not code:
             raise RpcError("Discord didn't approve the request")
