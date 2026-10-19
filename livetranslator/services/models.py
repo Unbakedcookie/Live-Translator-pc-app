@@ -72,13 +72,30 @@ class UrlSource:
 
 
 @dataclass(frozen=True)
+class RemoteFile:
+    name: str  # file name inside the model folder
+    url: str
+    sha256: str
+    size: int  # bytes (progress across files)
+
+
+@dataclass(frozen=True)
+class FilesSource:
+    """Several HTTPS files that together make one model folder (e.g. a Whisper model from
+    its Hugging Face repo, file by file at a pinned commit): resumable, cancellable and
+    checked like a URL source, no Hugging Face cache layout (T073)."""
+
+    files: tuple[RemoteFile, ...]
+
+
+@dataclass(frozen=True)
 class ModelEntry:
     id: str
     title: str
     kind: str  # "speech", "translation", "speakers", "runtime"
     license: str
     size_mb: int
-    source: HfSource | UrlSource
+    source: HfSource | UrlSource | FilesSource
     dest: str  # where it lives under the models folder ("" = Hugging Face cache layout)
     marker: str = ""  # a file under dest that proves it's installed
     languages: tuple[str, ...] = ()
@@ -95,7 +112,7 @@ def _entry(raw: Mapping[str, Any]) -> ModelEntry:
     if licence not in ALLOWED_LICENSES:
         raise CatalogError(f"{entry_id}: licence {licence!r} isn't allowed in a shareable app")
     src = raw["source"]
-    source: HfSource | UrlSource
+    source: HfSource | UrlSource | FilesSource
     if src["type"] == "hf":
         revision = str(src["revision"])
         if not _REVISION.match(revision):
@@ -110,6 +127,20 @@ def _entry(raw: Mapping[str, Any]) -> ModelEntry:
         if not _SHA256.match(digest):
             raise CatalogError(f"{entry_id}: a URL source needs its SHA-256")
         source = UrlSource(url, digest, str(src.get("archive", "")))
+    elif src["type"] == "files":
+        files = []
+        for item in src["files"]:
+            url, digest, name = str(item["url"]), str(item["sha256"]).lower(), str(item["name"])
+            if not url.startswith("https://"):
+                raise CatalogError(f"{entry_id}: downloads must use HTTPS")
+            if not _SHA256.match(digest):
+                raise CatalogError(f"{entry_id}: every file needs its SHA-256")
+            if "/" in name or "\\" in name or name in ("", ".", ".."):
+                raise CatalogError(f"{entry_id}: file names can't contain folders")
+            files.append(RemoteFile(name, url, digest, int(item["size"])))
+        if not files:
+            raise CatalogError(f"{entry_id}: a files source needs files")
+        source = FilesSource(tuple(files))
     else:
         raise CatalogError(f"{entry_id}: unknown source type {src['type']!r}")
     dest = str(raw.get("dest", ""))
@@ -244,7 +275,52 @@ class ModelManager:
         with self._lock:
             if isinstance(entry.source, HfSource):
                 return self._download_hf(entry, entry.source)
+            if isinstance(entry.source, FilesSource):
+                return self._download_files(entry, entry.source, progress, cancel)
             return self._download_url(entry, entry.source, progress, cancel)
+
+    def _download_files(
+        self,
+        entry: ModelEntry,
+        source: FilesSource,
+        progress: Progress | None,
+        cancel: threading.Event | None,
+    ) -> Path:
+        """Each file to its own resumable `.part`, checked, then the whole folder swapped in
+        at once: the engine never sees a half-downloaded model."""
+        target = self.models_dir / entry.dest
+        staging = self.models_dir / ".downloads" / f"{entry.id}.files"
+        staging.mkdir(parents=True, exist_ok=True)
+        total = sum(f.size for f in source.files)
+        done_before = 0
+        for remote in source.files:
+            final = staging / remote.name
+            if final.exists() and sha256_of(final) == remote.sha256:
+                done_before += remote.size  # finished in an earlier, paused run
+                if progress is not None:
+                    progress(done_before, total)
+                continue
+            part = staging / f"{remote.name}.part"
+            offset = done_before
+
+            def report(done: int, _size: int, offset: int = offset) -> None:
+                if progress is not None:
+                    progress(offset + done, total)
+
+            self._fetch(remote.url, part, report, cancel)
+            if sha256_of(part) != remote.sha256:
+                part.unlink(missing_ok=True)
+                raise DownloadError(
+                    f"{entry.title} was damaged in transit and has been deleted. Try again."
+                )
+            os.replace(part, final)
+            done_before += remote.size
+        if entry.marker and not (staging / entry.marker).exists():
+            raise DownloadError(f"{entry.title}: the download doesn't contain {entry.marker}.")
+        shutil.rmtree(target, ignore_errors=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        staging.replace(target)
+        return target
 
     def _hf(self) -> HfFunctions:
         if self.hf is None:

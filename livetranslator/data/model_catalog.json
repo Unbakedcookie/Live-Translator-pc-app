@@ -1,34 +1,90 @@
 {
   "schema": 1,
-  "notes": "T054. Every source is pinned (HF commit or SHA-256). Opus-MT translation pairs are added once the converted models are hosted (G4 decision 5: an HF repo under the user's account).",
+  "notes": "T054. Every source is pinned (HF commit or SHA-256). Opus-MT translation pairs are added once the converted models are hosted (G4 decision 5: an HF repo under the user's account). Whisper models are fetched file by file from their pinned HF commits (T073: resumable, cancellable, SHA-256 checked; no HF cache layout).",
   "models": [
     {
       "id": "whisper-large-v3-turbo",
       "title": "Speech recognition (Whisper large-v3-turbo)",
       "kind": "speech",
       "license": "MIT",
-      "size_mb": 1620,
+      "size_mb": 1547,
       "source": {
-        "type": "hf",
-        "repo": "dropbox-dash/faster-whisper-large-v3-turbo",
-        "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf"
+        "type": "files",
+        "files": [
+          {
+            "name": "config.json",
+            "url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf/config.json",
+            "sha256": "b0253ea6c0d3bea6b1e19e91a02acfd3b53f4467362efcb5a3e6b16c9b3a9b7e",
+            "size": 2263
+          },
+          {
+            "name": "model.bin",
+            "url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf/model.bin",
+            "sha256": "e76620f83d5f5b69efd3d87e3dc180c1bd21df9fbebacfd4335e5e1efcc018da",
+            "size": 1617884929
+          },
+          {
+            "name": "preprocessor_config.json",
+            "url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf/preprocessor_config.json",
+            "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711",
+            "size": 340
+          },
+          {
+            "name": "tokenizer.json",
+            "url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf/tokenizer.json",
+            "sha256": "297b13372ac43916285644fb9687add3cc62ee2a1adb60da3dc25cc94c1871fd",
+            "size": 2710337
+          },
+          {
+            "name": "vocabulary.json",
+            "url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/resolve/0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf/vocabulary.json",
+            "sha256": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+            "size": 1068114
+          }
+        ]
       },
-      "dest": "",
-      "attribution": "OpenAI Whisper (MIT), CTranslate2 conversion by Mobius Labs / Dropbox"
+      "dest": "whisper/large-v3-turbo",
+      "attribution": "OpenAI Whisper (MIT), CTranslate2 conversion by Mobius Labs / Dropbox",
+      "marker": "model.bin"
     },
     {
       "id": "whisper-small",
       "title": "Speech recognition for computers without an NVIDIA card (Whisper small)",
       "kind": "speech",
       "license": "MIT",
-      "size_mb": 484,
+      "size_mb": 464,
       "source": {
-        "type": "hf",
-        "repo": "Systran/faster-whisper-small",
-        "revision": "536b0662742c02347bc0e980a01041f333bce120"
+        "type": "files",
+        "files": [
+          {
+            "name": "config.json",
+            "url": "https://huggingface.co/Systran/faster-whisper-small/resolve/536b0662742c02347bc0e980a01041f333bce120/config.json",
+            "sha256": "b55496ac7940a7ae47d2c01eab40edfd8701feec1229d9cce3b40014383fb828",
+            "size": 2370
+          },
+          {
+            "name": "model.bin",
+            "url": "https://huggingface.co/Systran/faster-whisper-small/resolve/536b0662742c02347bc0e980a01041f333bce120/model.bin",
+            "sha256": "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671",
+            "size": 483546902
+          },
+          {
+            "name": "tokenizer.json",
+            "url": "https://huggingface.co/Systran/faster-whisper-small/resolve/536b0662742c02347bc0e980a01041f333bce120/tokenizer.json",
+            "sha256": "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab",
+            "size": 2203239
+          },
+          {
+            "name": "vocabulary.txt",
+            "url": "https://huggingface.co/Systran/faster-whisper-small/resolve/536b0662742c02347bc0e980a01041f333bce120/vocabulary.txt",
+            "sha256": "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913",
+            "size": 459861
+          }
+        ]
       },
-      "dest": "",
-      "attribution": "OpenAI Whisper (MIT), CTranslate2 conversion by Systran"
+      "dest": "whisper/small",
+      "attribution": "OpenAI Whisper (MIT), CTranslate2 conversion by Systran",
+      "marker": "model.bin"
     },
     {
       "id": "speakers-titanet",
@@ -54,11 +110,15 @@
         "type": "hf",
         "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
         "revision": "a06e946bb6b655725eafa393f4a9745d460374c9",
-        "files": ["Qwen3-4B-Instruct-2507-Q4_K_M.gguf"]
+        "files": [
+          "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+        ]
       },
       "dest": "qwen3-4b",
       "marker": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-      "languages": ["zh"],
+      "languages": [
+        "zh"
+      ],
       "attribution": "Qwen3-4B-Instruct-2507 by Alibaba Qwen (Apache-2.0), GGUF by Unsloth"
     },
     {

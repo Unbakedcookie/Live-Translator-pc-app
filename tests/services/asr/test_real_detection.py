@@ -36,3 +36,21 @@ def test_whole_lines_are_detected_among_the_users_languages():
             assert code == language and share > 0.9, (language, code, share)
     finally:
         engine.unload()
+
+
+def test_the_plain_model_folder_is_used_first(tmp_path: Path):
+    """T073: models the app downloads live in <models>/whisper/<key>; no Hugging Face cache."""
+    from livetranslator.services.asr.faster_whisper_engine import (
+        WHISPER_MODELS,
+        is_downloaded,
+        model_path,
+        plain_folder,
+    )
+
+    spec = WHISPER_MODELS["small"]
+    assert not is_downloaded(spec, tmp_path)
+    folder = plain_folder(spec, tmp_path)
+    folder.mkdir(parents=True)
+    (folder / "model.bin").write_bytes(b"")
+    assert model_path(spec, tmp_path, download=False) == folder
+    assert is_downloaded(spec, tmp_path)

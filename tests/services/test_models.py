@@ -16,6 +16,7 @@ from livetranslator.services.models import (
     CatalogError,
     DownloadCancelled,
     DownloadError,
+    FilesSource,
     HfFunctions,
     HfSource,
     ModelEntry,
@@ -121,6 +122,10 @@ def test_shipped_catalogue_is_valid():
         assert entry.license in ALLOWED_LICENSES
         if isinstance(entry.source, HfSource):
             assert len(entry.source.revision) == 40  # pinned commit
+        elif isinstance(entry.source, FilesSource):
+            for remote in entry.source.files:
+                assert remote.url.startswith("https://") and len(remote.sha256) == 64
+                assert "/resolve/" not in remote.url or "/resolve/main/" not in remote.url
         else:
             assert entry.source.url.startswith("https://") and len(entry.source.sha256) == 64
 
@@ -266,3 +271,89 @@ def test_changing_the_folder_moves_models(tmp_path: Path):
     assert mgr.move_to(new) == ["speakers"]
     assert (new / "speakers" / "a.onnx").read_bytes() == b"x"
     assert (old / "keep").exists() and mgr.models_dir == new
+
+
+# ---------------------------------------------------------------- several files (T073)
+
+SMALL = b'{"vocab": true}'
+
+
+def files_entry(server: Server, bad_sha: bool = False) -> ModelEntry:
+    from livetranslator.services.models import FilesSource, RemoteFile
+
+    server.files["/config.json"] = SMALL
+    small_sha = hashlib.sha256(SMALL).hexdigest()
+    return ModelEntry(
+        id="whisper-test",
+        title="Speech model",
+        kind="speech",
+        license="MIT",
+        size_mb=4,
+        source=FilesSource(
+            (
+                RemoteFile("model.bin", server.url("/model.onnx"), PAYLOAD_SHA, len(PAYLOAD)),
+                RemoteFile(
+                    "config.json",
+                    server.url("/config.json"),
+                    "0" * 64 if bad_sha else small_sha,
+                    len(SMALL),
+                ),
+            )
+        ),
+        dest="whisper/test",
+        marker="model.bin",
+    )
+
+
+def test_a_model_of_several_files_lands_whole_with_progress(tmp_path: Path, server: Server):
+    mgr = manager(tmp_path, server)
+    entry = files_entry(server)
+    seen: list[tuple[int, int]] = []
+    folder = mgr.download(entry, lambda done, total: seen.append((done, total)))
+    assert folder == tmp_path / "models" / "whisper" / "test"
+    assert (folder / "model.bin").read_bytes() == PAYLOAD
+    assert (folder / "config.json").read_bytes() == SMALL
+    total = len(PAYLOAD) + len(SMALL)
+    assert seen[-1] == (total, total) and all(t == total for _, t in seen)
+    assert [d for d, _ in seen] == sorted(d for d, _ in seen)  # one bar across the files
+    assert mgr.is_installed(entry)
+
+
+def test_pausing_mid_way_resumes_without_fetching_finished_files(tmp_path: Path, server: Server):
+    mgr = manager(tmp_path, server)
+    entry = files_entry(server)
+    cancel = threading.Event()
+
+    def stop_after_a_block(done: int, _total: int) -> None:
+        if done >= 1 << 20:
+            cancel.set()
+
+    with pytest.raises(DownloadCancelled):
+        mgr.download(entry, stop_after_a_block, cancel)
+    assert not (tmp_path / "models" / "whisper" / "test").exists()  # nothing half-installed
+    server.ranges.clear()
+    mgr.download(entry)
+    assert server.ranges and server.ranges[0].startswith("bytes=")  # model.bin resumed
+    assert (tmp_path / "models" / "whisper" / "test" / "model.bin").read_bytes() == PAYLOAD
+
+
+def test_a_damaged_file_stops_the_install(tmp_path: Path, server: Server):
+    mgr = manager(tmp_path, server)
+    with pytest.raises(DownloadError, match="damaged"):
+        mgr.download(files_entry(server, bad_sha=True))
+    assert not (tmp_path / "models" / "whisper" / "test").exists()
+
+
+def test_files_sources_are_checked_in_the_catalogue(tmp_path: Path):
+    good = {"name": "model.bin", "url": "https://x.test/m", "sha256": "a" * 64, "size": 1}
+    base = {"id": "w", "title": "W", "kind": "speech", "license": "MIT", "size_mb": 1, "dest": "w"}
+    for bad, message in (
+        ({**good, "url": "http://x.test/m"}, "HTTPS"),
+        ({**good, "sha256": "nope"}, "SHA-256"),
+        ({**good, "name": "../evil"}, "folders"),
+    ):
+        path = tmp_path / "c.json"
+        source = {"type": "files", "files": [bad]}
+        path.write_text(json.dumps({"models": [{**base, "source": source}]}), "utf-8")
+        with pytest.raises(CatalogError, match=message):
+            load_catalog(path)

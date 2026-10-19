@@ -81,10 +81,19 @@ def ensure_av_importable() -> None:
         sys.modules["av"] = stub
 
 
+def plain_folder(spec: WhisperModelSpec, models_dir: Path) -> Path:
+    """Where the setup wizard / Language Manager put a Whisper model (catalogue `dest`)."""
+    return models_dir / "whisper" / spec.key
+
+
 def model_path(spec: WhisperModelSpec, models_dir: Path, *, download: bool) -> Path:
-    """Local folder of `spec`; downloads it first when `download` (raises if missing)."""
+    """Local folder of `spec`: the plain folder the app downloads to (T073), else an older
+    Hugging Face cache copy; with `download`, fetches the cache copy (developer runs)."""
     from huggingface_hub import snapshot_download
 
+    folder = plain_folder(spec, models_dir)
+    if (folder / "model.bin").is_file():
+        return folder
     try:
         return Path(
             snapshot_download(
