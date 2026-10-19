@@ -161,6 +161,10 @@ class SettingsController:
         wanted = tuple(sorted({*current, code} if on else set(current) - {code}))
         self._store.dispatch(a.UpdateConfigSection("engines", {"smart_languages": wanted}))
 
+    def set_smart_fallback(self, on: bool) -> None:
+        """Use Qwen for languages no installed translation model covers."""
+        self._store.dispatch(a.UpdateConfigSection("engines", {"smart_fallback": on}))
+
     def set_show_readout(self, on: bool) -> None:
         self._store.dispatch(a.UpdateConfigSection("performance", {"show_readout": on}))
 

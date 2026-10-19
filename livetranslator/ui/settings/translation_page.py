@@ -39,6 +39,7 @@ class TranslationPage(SettingsPage):
             "Japanese → English → Spanish. That takes a little longer.",
         )
         self.chinese: QCheckBox | None = None
+        self.fallback: QCheckBox | None = None
         if ctx.smart_translation:
             smart = self.section("Smarter translation")
             self.chinese = QCheckBox()
@@ -49,6 +50,15 @@ class TranslationPage(SettingsPage):
                 "slang and gaming talk (麦 = mic, 开黑 = play together), about 0.3 s per line. "
                 "Needs about 2.8 GB of graphics memory, so it pauses in game mode.",
                 self.chinese,
+            )
+            self.fallback = QCheckBox()
+            self.fallback.toggled.connect(ctx.settings.set_smart_fallback)
+            smart.row(
+                "Languages without their own model",
+                "Uses Qwen for languages you haven't downloaded a translation model for "
+                "(e.g. Portuguese, Indonesian, Urdu), instead of leaving them untranslated. "
+                "Rougher for rare languages. Pauses in game mode.",
+                self.fallback,
             )
         self.finish()
         self._shown: EngineSummary | None = None
@@ -63,6 +73,10 @@ class TranslationPage(SettingsPage):
             on = "zh" in self._ctx.settings.store.state.config.engines.smart_languages
             box = self.chinese
             silently(box, lambda: box.setChecked(on))
+        if self.fallback is not None:
+            fallback_on = self._ctx.settings.store.state.config.engines.smart_fallback
+            fallback_box = self.fallback
+            silently(fallback_box, lambda: fallback_box.setChecked(fallback_on))
         summary = self._ctx.engines() if self._ctx.engines else EngineSummary()
         if summary == self._shown:
             return

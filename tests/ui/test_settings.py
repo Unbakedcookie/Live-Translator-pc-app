@@ -369,6 +369,12 @@ def test_translation_page_chinese_switch_only_when_installed(qtbot, tmp_path: Pa
     env.store.dispatch(a.UpdateConfigSection("engines", {"smart_languages": ()}))
     page.refresh()
     assert not page.chinese.isChecked()
+    assert page.fallback is not None and page.fallback.isChecked()  # on by default
+    page.fallback.setChecked(False)
+    assert not env.store.state.config.engines.smart_fallback
+    env.store.dispatch(a.UpdateConfigSection("engines", {"smart_fallback": True}))
+    page.refresh()
+    assert page.fallback.isChecked()
 
 
 def test_general_page_chinese_script(env: Env):

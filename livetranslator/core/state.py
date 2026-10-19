@@ -175,6 +175,9 @@ class EngineConfig(Frozen):
     # (Mandarin follow-up 2026-10-18: Opus-MT garbles Chinese chat slang). Empty = off.
     # Chinese on by default (user decision 2026-10-18); game mode still turns it off.
     smart_languages: tuple[str, ...] = ("zh",)
+    # Qwen also translates any pair no installed Opus-MT model covers (user decision
+    # 2026-10-18: pt, id, ur, hi... lines were showing untranslated). Game mode turns it off.
+    smart_fallback: bool = True
     # Recognised Mandarin is written in one script (Whisper sometimes mixes them).
     chinese_script: Literal["simplified", "traditional"] = "simplified"
 

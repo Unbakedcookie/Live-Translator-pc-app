@@ -136,3 +136,21 @@ def test_warm_loads_every_leg_and_skips_the_rest():
     router.warm("ko", "fr")  # unsupported: quietly nothing
     router.warm("de", "en")  # engine without warm(): skipped
     assert engine.warmed == [("ja", "en"), ("en", "es")]
+
+
+def test_fallback_takes_pairs_nothing_installed_covers():
+    """User log 2026-10-18: pt/id/ur lines showed untranslated; Qwen now takes them."""
+    opus = FakeEngine("opus", {("es", "en"), ("en", "ja")})
+    qwen = FakeEngine("qwen", {("pt", "en"), ("ur", "ja"), ("es", "en")})
+    use_qwen = [True]
+    router = TranslationRouter([opus], fallback=lambda s, t: qwen if use_qwen[0] else None)
+    assert router.translate("olá", "pt", "en") == "en(olá)"
+    assert router.translate("hola", "es", "en") == "en(hola)"  # installed model still first
+    assert router.translate("hola", "es", "ja") == "ja(en(hola))"  # a pivot beats fallback
+    assert [s.engine.name for s in router.route("ur", "ja")] == ["qwen"]  # whole pair
+    assert opus.calls == [("hola", "es", "en"), ("en(hola)", "en", "ja")]
+    assert qwen.calls == [("olá", "pt", "en")]
+    with pytest.raises(UnsupportedLanguage):
+        router.route("xx", "en")  # the fallback doesn't know it either
+    use_qwen[0] = False  # e.g. game mode
+    assert not router.supports("pt", "en")

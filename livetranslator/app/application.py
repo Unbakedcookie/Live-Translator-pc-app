@@ -38,6 +38,7 @@ from livetranslator.platform.app_identity import register_app_identity, write_ic
 from livetranslator.platform.win32 import APP_USER_MODEL_ID, set_app_user_model_id
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
+from livetranslator.services.errors import EngineError
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
 from livetranslator.services.metrics import MetricsService, NvmlSampler
 from livetranslator.services.mt.engines.qwen_llama import QwenLlamaEngine
@@ -169,6 +170,7 @@ class LiveTranslatorApp(QObject):
             parent=self,
         )
         self.metrics.start()
+        self._apply_smart_translation()  # Qwen up before the first line needs it
 
     def _quit_now(self) -> None:
         """Qt 6 quits by asking every *visible* window to close and cancels the quit if one
@@ -306,13 +308,16 @@ class LiveTranslatorApp(QObject):
         )
         smart = self.smart_engine
         if smart is not None:
-            wanted = effective(self.store.state.config).smart_languages
+            now = effective(self.store.state.config)
             where = (
                 WHERE["cuda"]
                 if smart.is_loaded
-                else ("Starts with the first line" if wanted else "Off")
+                else ("Starts with the first line" if now.smart_wanted else "Off")
             )
-            names = ", ".join(sorted(language(c).english for c in wanted)) or "no languages"
+            jobs = sorted(language(c).english for c in now.smart_languages)
+            if now.smart_fallback:
+                jobs.append("languages without their own model")
+            names = ", ".join(jobs) or "nothing"
             rows = (*rows, EngineRow("Smarter translation", f"Qwen3-4B ({names})", where))
         return EngineSummary(rows, self._pairs)
 
@@ -373,11 +378,23 @@ class LiveTranslatorApp(QObject):
         engine = self.smart_engine
         if engine is None:
             return
-        if effective(self.store.state.config).smart_languages:
-            if self.translation is not None:
-                self.translation.rewarm()  # pairs in use now route to Qwen: starts it
+        if effective(self.store.state.config).smart_wanted:
+            if not engine.is_loaded:
+                # Up front, off the UI thread: started on the first line it cost ~3 s plus a
+                # ~10 s first request (measured 2026-10-18), and fallback languages can't be
+                # known in advance.
+                threading.Thread(target=self._start_smart, name="qwen-start", daemon=True).start()
         elif engine.is_loaded:
             threading.Thread(target=engine.unload, name="qwen-stop", daemon=True).start()
+
+    def _start_smart(self) -> None:
+        engine = self.smart_engine
+        if engine is None:
+            return
+        try:
+            engine.load()
+        except EngineError as exc:  # lines fall back to Opus-MT / stay untranslated
+            logger.warning("starting Qwen failed ({})", type(exc).__name__)
 
     def _register_hotkeys(self) -> None:
         if self._hotkeys_suspended:
@@ -466,7 +483,11 @@ def build_translation(
         languages = effective(store.state.config).smart_languages
         return smart if smart is not None and (src in languages or tgt in languages) else None
 
-    router = TranslationRouter([engine], timings=timings, preferred=preferred)
+    def fallback(src: str, tgt: str) -> QwenLlamaEngine | None:
+        wanted = effective(store.state.config).smart_fallback
+        return smart if smart is not None and wanted else None
+
+    router = TranslationRouter([engine], timings=timings, preferred=preferred, fallback=fallback)
     return TranslationController(store, router, partials_allowed(store.state.config))
 
 

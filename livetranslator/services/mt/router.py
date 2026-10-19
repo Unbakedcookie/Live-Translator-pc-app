@@ -1,8 +1,9 @@
 """Pick an engine per language pair, pivot through English when needed (T052; spec §5.5).
 
 Engines are tried in preference order (the G4 default first). A pair no engine supports
-directly is translated src -> en -> tgt if some engines cover both legs. src == tgt is passed
-through untouched. Each leg is cached, so a repeated line costs no engine call.
+directly is translated src -> en -> tgt if some engines cover both legs; failing that, the
+`fallback` engine (Qwen, which knows many more languages) takes the pair whole. src == tgt is
+passed through untouched. Each leg is cached, so a repeated line costs no engine call.
 """
 
 from __future__ import annotations
@@ -42,9 +43,11 @@ class TranslationRouter:
         pivot: str = PIVOT,
         timings: Timings | None = None,
         preferred: PreferFn | None = None,
+        fallback: PreferFn | None = None,
     ) -> None:
         self._timings = timings
         self._preferred = preferred  # per-pair override (e.g. Qwen for Chinese)
+        self._fallback = fallback  # pairs nothing installed covers (e.g. Qwen for Urdu)
         self._engines = list(engines)
         self._cache = cache if cache is not None else TranslationCache()
         self._pivot = pivot
@@ -60,7 +63,13 @@ class TranslationRouter:
         preferred = self._preferred(src, tgt) if self._preferred else None
         if preferred is not None and preferred.supports(src, tgt):
             return (Step(preferred, src, tgt),)
-        return self._standard_route(src, tgt)
+        try:
+            return self._standard_route(src, tgt)
+        except UnsupportedLanguage:
+            fallback = self._fallback(src, tgt) if self._fallback else None
+            if fallback is not None and fallback.supports(src, tgt):
+                return (Step(fallback, src, tgt),)
+            raise
 
     def _standard_route(self, src: str, tgt: str) -> tuple[Step, ...]:
         direct = self._direct(src, tgt)

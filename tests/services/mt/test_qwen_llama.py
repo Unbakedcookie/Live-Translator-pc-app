@@ -115,6 +115,31 @@ def test_real_qwen_translates_chinese_gaming_slang():
     assert not engine.is_loaded  # the server process is gone
 
 
+@pytest.mark.skipif(
+    not installed(Path(os.environ.get("LOCALAPPDATA", "")) / "LiveTranslator" / "models"),
+    reason="Qwen files not installed on this PC",
+)
+def test_real_qwen_covers_languages_without_an_opus_model():
+    """The fallback languages from the user's log (2026-10-18). load() warms the server, so
+    the first line isn't the ~10 s first request."""
+    import time
+
+    engine = QwenLlamaEngine(Path(os.environ["LOCALAPPDATA"]) / "LiveTranslator" / "models")
+    try:
+        engine.load()
+        start = time.perf_counter()
+        pt = engine.translate(["Estou sem munição."], "pt", "en")[0]
+        first_line_s = time.perf_counter() - start
+        hi = engine.translate(["भाई, मेरा माइक काम नहीं कर रहा है।"], "hi", "en")[0]
+        sv = engine.translate(["Kan du ge mig lite hälsa?"], "sv", "en")[0]
+    finally:
+        engine.unload()
+    assert "ammo" in pt.lower() or "ammunition" in pt.lower()
+    assert "mic" in hi.lower()
+    assert "health" in sv.lower()
+    assert first_line_s < 3.0
+
+
 QWEN_MODELS = Path(os.environ.get("LOCALAPPDATA", "")) / "LiveTranslator" / "models"
 
 

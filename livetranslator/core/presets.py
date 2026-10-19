@@ -38,16 +38,25 @@ class Effective:
     translate_partials: bool
     mt_device: str  # "auto" | "cpu"
     smart_languages: frozenset[str] = frozenset()  # lines to/from these use Qwen
+    smart_fallback: bool = False  # Qwen for pairs with no installed model
+
+    @property
+    def smart_wanted(self) -> bool:
+        """Qwen has a job (so its server should run)."""
+        return bool(self.smart_languages) or self.smart_fallback
 
 
 def effective(config: AppConfig, preset: GameModePreset = GAME_MODE) -> Effective:
     interval = config.performance.asr_update_interval_s
     smart = frozenset(config.engines.smart_languages)
+    fallback = config.engines.smart_fallback
     if not config.performance.game_mode:
-        return Effective(interval, True, NORMAL_MT_DEVICE, smart)
+        return Effective(interval, True, NORMAL_MT_DEVICE, smart, fallback)
+    allowed = preset.smart_translation
     return Effective(
         max(interval, preset.min_asr_interval_s),
         preset.translate_partials,
         preset.mt_device,
-        smart if preset.smart_translation else frozenset(),
+        smart if allowed else frozenset(),
+        fallback and allowed,
     )

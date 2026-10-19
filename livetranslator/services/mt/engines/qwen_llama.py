@@ -39,29 +39,17 @@ CONTEXT = 2048
 MAX_TOKENS = 256
 START_TIMEOUT_S = 120.0
 REQUEST_TIMEOUT_S = 30.0
-# Languages Qwen3 handles well that the app offers (both directions).
+# Languages the app lets Qwen3 translate (both directions). Qwen3 is trained on 119
+# languages; the first rows are its strongest. The rest are for pairs with no installed
+# Opus-MT model (fallback, 2026-10-18), where a rougher translation beats none (D-038).
 LANGUAGES = frozenset(
-    [
-        "en",
-        "zh",
-        "ja",
-        "ko",
-        "es",
-        "fr",
-        "de",
-        "it",
-        "pt",
-        "ru",
-        "ar",
-        "hi",
-        "th",
-        "vi",
-        "id",
-        "tr",
-        "pl",
-        "nl",
-        "uk",
-    ]
+    (
+        *("en", "zh", "ja", "ko", "es", "fr", "de", "it", "pt", "ru"),
+        *("ar", "hi", "th", "vi", "id", "tr", "pl", "nl", "uk"),
+        *("ur", "bn", "ta", "te", "mr", "fa", "he", "ms", "tl", "sr", "hr", "bs"),
+        *("cs", "sk", "sl", "ro", "bg", "el", "hu", "fi", "sv", "no", "da", "ca"),
+        *("lt", "lv", "et", "sw"),
+    )
 )
 PROMPT = (
     "You translate live voice and game chat from {src} to {tgt}. Keep the tone, slang and "
@@ -152,11 +140,20 @@ class QwenLlamaEngine:
                     self._proc = None
                     raise EngineError(f"the Qwen server stopped while starting (exit {code})")
                 if self._healthy():
+                    self._warm_up()
                     logger.info("Qwen translation ready")
                     return
                 time.sleep(0.25)
             self._stop()
             raise EngineError("the Qwen server didn't start in time")
+
+    def _warm_up(self) -> None:
+        """One tiny request: the graphics card's first one took ~10 s (measured 2026-10-18),
+        later ones 0.2-0.5 s. Paid here, at start, instead of on someone's first line."""
+        try:
+            self._one("ok", "en", "zh")
+        except EngineError as exc:
+            logger.warning("Qwen warm-up failed ({})", type(exc).__name__)
 
     def _healthy(self) -> bool:
         try:
