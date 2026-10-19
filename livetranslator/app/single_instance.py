@@ -8,8 +8,10 @@ A per-user local socket (a named pipe on Windows) carries the one-word request.
 from __future__ import annotations
 
 import getpass
+import hashlib
 import re
 from collections.abc import Callable
+from pathlib import Path
 
 from PySide6.QtCore import QObject
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -18,9 +20,14 @@ SHOW = b"show"
 CONNECT_TIMEOUT_MS = 500
 
 
-def server_name(app_name: str) -> str:
+def server_name(app_name: str, profile: Path | None = None) -> str:
+    """Per user, and per settings folder: a test profile (LIVETRANSLATOR_HOME) runs next to
+    the everyday app instead of handing over to it."""
     user = re.sub(r"[^A-Za-z0-9_-]", "_", getpass.getuser())
-    return f"{app_name}-{user}"
+    if profile is None:
+        return f"{app_name}-{user}"
+    digest = hashlib.sha256(str(profile.resolve()).casefold().encode()).hexdigest()[:12]
+    return f"{app_name}-{user}-{digest}"
 
 
 def ask_running_copy_to_show(name: str) -> bool:

@@ -3,6 +3,7 @@
 import subprocess  # nosec B404
 import sys
 import uuid
+from pathlib import Path
 
 from livetranslator.app.single_instance import SingleInstance, server_name
 
@@ -11,6 +12,9 @@ def test_name_is_per_user_and_pipe_safe():
     name = server_name("LiveTranslator")
     assert name.startswith("LiveTranslator-")
     assert all(c.isalnum() or c in "_-" for c in name)
+    one = server_name("LiveTranslator", Path("D:/a/config"))
+    assert one == server_name("LiveTranslator", Path("d:/A/config"))  # same folder, same app
+    assert one != server_name("LiveTranslator", Path("D:/b/config"))  # a test profile apart
 
 
 def ask_from_another_process(name: str) -> subprocess.Popen[bytes]:

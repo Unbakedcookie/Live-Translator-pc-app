@@ -599,7 +599,7 @@ def run(demo: bool = False, speech: bool = True) -> int:
         APP_USER_MODEL_ID, APP_DISPLAY_NAME, write_icon(app.windowIcon(), paths.data_dir)
     ):
         logger.warning("registering the app's notification name failed")
-    instance_name = server_name(APP_NAME)
+    instance_name = server_name(APP_NAME, paths.config_dir)
     if not demo and ask_running_copy_to_show(instance_name):
         logger.info("already running: asked that copy to show its windows")
         return 0
