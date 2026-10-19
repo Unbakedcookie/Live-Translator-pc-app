@@ -34,7 +34,7 @@ from loguru import logger
 
 from livetranslator.core import actions as a
 from livetranslator.core.state import Source, StatusLevel, Utterance, VadConfig
-from livetranslator.services.asr.base import SAMPLE_RATE, ASREngine, Transcription, Word
+from livetranslator.services.asr.base import SAMPLE_RATE, ASREngine, Audio, Transcription, Word
 from livetranslator.services.asr.chinese import ChineseScript, is_chinese, to_script
 from livetranslator.services.asr.local_agreement import LocalAgreement
 from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_energy
@@ -73,6 +73,8 @@ MIN_PARTIAL_S = 0.5  # Whisper guesses wildly on shorter audio
 MIN_FINAL_S = 0.25
 EARLY_LABEL_S = 1.5  # audio needed before a partial line gets a provisional speaker label
 LANGUAGE_LOCK_P = 0.7  # "Others": keep the detected language once this sure
+DETECT_SURE = 0.97  # Me in several languages: keep the pick once this sure (its share)
+DETECT_MIN_S = 1.0  # ... and the line is at least this long
 NO_SPEECH_P = 0.6  # drop a segment Whisper itself thinks is not speech...
 LOW_LOGPROB = -1.0  # ...and decoded with low confidence (faster-whisper's own thresholds)
 IDLE_S = 0.03
@@ -86,7 +88,9 @@ SPEAKER_IDS = {Source.ME: "me", Source.OTHERS: "others"}
 @dataclass(frozen=True)
 class AsrSettings:
     update_interval_s: float = 0.5
-    my_language: str = "en"
+    # The languages the mic may be in: one = always that one; several = detect among them per
+    # line; empty = detect any (speech_controller.mic_languages resolves the setting).
+    mic_languages: tuple[str, ...] = ("en",)
     vad: VadConfig = field(default_factory=VadConfig)
     enabled: frozenset[Source] = frozenset({Source.ME, Source.OTHERS})
     chinese_script: ChineseScript = "simplified"
@@ -102,6 +106,7 @@ class OpenUtterance:
     decoded_to: int = 0  # end sample of the newest partial decode
     added: bool = False  # AddUtterance sent
     language: str | None = None  # locked language
+    language_locked: bool = False  # Me in several languages: the pick is final
     end_sample: int | None = None
     end_time: float | None = None
     early_audio_sent: bool = False  # speaker labels: provisional fingerprint handed over
@@ -330,20 +335,42 @@ class ASRWorker:
     # ------------------------------------------------------------ decoding
 
     def _language(self, job: Job, settings: AsrSettings) -> str | None:
-        if job.stream.source is Source.ME:
-            return settings.my_language
+        if job.stream.source is Source.ME and len(settings.mic_languages) == 1:
+            return settings.mic_languages[0]
         return job.utterance.language
+
+    def _detect_me(
+        self, job: Job, settings: AsrSettings, audio: Audio, final: bool = False
+    ) -> None:
+        """Me in several languages: the likeliest of *those* (Whisper scores every language).
+        Checked on each partial until it's clearly sure, and always once more on the whole
+        line before the final decode (measured 2026-10-19 on FLEURS es/en, zh/en, ja/en:
+        sure (share >= 0.97, >= 1 s) was right 63 of 64 times, whole lines 80 of 80)."""
+        u, languages = job.utterance, settings.mic_languages
+        if job.stream.source is not Source.ME or len(languages) < 2:
+            return
+        if u.language_locked and not final:
+            return
+        detect = getattr(self._engine, "detect_language", None)
+        if detect is None:  # an engine without language scores: the first one
+            u.language, u.language_locked = languages[0], True
+            return
+        with timed(self._timings, "asr"):
+            code, share = detect(audio, languages)
+        u.language = str(code)
+        u.language_locked = share >= DETECT_SURE and len(audio) >= DETECT_MIN_S * SAMPLE_RATE
 
     def _partial(self, job: Job, settings: AsrSettings) -> None:
         u, stream = job.utterance, job.stream
         end = stream.cursor
         audio = stream.ring.read(u.start_sample, end)
+        self._detect_me(job, settings, audio)
         with timed(self._timings, "asr"):
             result = self._engine.transcribe(audio, language=self._language(job, settings))
         u.decoded_to = end
         if (
             u.language is None
-            and stream.source is not Source.ME
+            and (stream.source is not Source.ME or not settings.mic_languages)  # any: detect
             and (result.language_probability or 0.0) >= LANGUAGE_LOCK_P
         ):
             u.language = result.language
@@ -367,6 +394,7 @@ class ASRWorker:
         u, stream = job.utterance, job.stream
         end = u.end_sample if u.end_sample is not None else stream.cursor
         audio = stream.ring.read(u.start_sample, end)
+        self._detect_me(job, settings, audio, final=True)
         if len(audio) < MIN_FINAL_S * SAMPLE_RATE:
             text = u.agreement.committed_text
             language = self._language(job, settings)

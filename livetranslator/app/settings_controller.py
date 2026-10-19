@@ -151,6 +151,12 @@ class SettingsController:
 
     # ------------------------------------------------------------ performance / advanced
 
+    def set_mic_languages(self, first: str, also: str = "") -> None:
+        """Settings "I speak" + "I also speak". `first`: "same" (the language you translate
+        into), "auto" (detect any) or a language code; `also`: "" or a second code."""
+        chosen = mic_languages_for(first, also, self._store.state.config.my_language)
+        self._store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": chosen}))
+
     def set_chinese_script(self, script: str) -> None:
         """'simplified' or 'traditional': how recognised Mandarin is written."""
         self._store.dispatch(a.UpdateConfigSection("engines", {"chinese_script": script}))
@@ -195,3 +201,22 @@ class SettingsController:
                 )
             )
         )
+
+
+def mic_choice(mic_languages: tuple[str, ...]) -> tuple[str, str]:
+    """The ("I speak", "I also speak") choices that show a saved `mic_languages`."""
+    if not mic_languages:
+        return "same", ""
+    if mic_languages == ("auto",):
+        return "auto", ""
+    return mic_languages[0], mic_languages[1] if len(mic_languages) > 1 else ""
+
+
+def mic_languages_for(first: str, also: str, my_language: str) -> tuple[str, ...]:
+    """The saved `mic_languages` for the ("I speak", "I also speak") choices."""
+    if first == "auto":
+        return ("auto",)
+    base = my_language if first == "same" else first
+    if also and also != base:
+        return (base, also)
+    return () if first == "same" else (base,)

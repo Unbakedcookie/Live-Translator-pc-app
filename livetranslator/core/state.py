@@ -135,11 +135,30 @@ class DeviceRef(Frozen):
     host_api: str = "Windows WASAPI"
 
 
+MAX_MIC_LANGUAGES = 3
+_LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}$")
+
+
 class AudioConfig(Frozen):
     mic_device: DeviceRef | None = None  # None = Windows default
     output_device: DeviceRef | None = None
     mic_enabled: bool = True
     others_enabled: bool = True
+    # What the microphone may hear (user request 2026-10-18: practise another language and
+    # see your own lines translated). () = the language you translate into; ("auto",) =
+    # detect any; 1-3 codes = those (with 2+, each line is checked against just them).
+    mic_languages: tuple[str, ...] = ()
+
+    @field_validator("mic_languages")
+    @classmethod
+    def _mic_languages(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if value == ("auto",):
+            return value
+        if len(value) > MAX_MIC_LANGUAGES or len(set(value)) != len(value):
+            raise ValueError(f"up to {MAX_MIC_LANGUAGES} different languages")
+        if any(not _LANGUAGE_CODE.match(code) for code in value):
+            raise ValueError("language codes like 'en' or 'zh'")
+        return value
 
 
 MAX_SPEAKERS_LIMIT = 12

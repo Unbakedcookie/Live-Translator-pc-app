@@ -17,6 +17,7 @@ from __future__ import annotations
 import sys
 import threading
 import types
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -174,6 +175,19 @@ class FasterWhisperEngine:
         with self._lock:
             self._model = None
             self.device_used = self.model_used = None
+
+    def detect_language(self, audio: Audio, candidates: Sequence[str]) -> tuple[str, float]:
+        """The likeliest of `candidates` for this audio and its share of their combined
+        probability (Whisper scores every language; 1.0 = certain among them)."""
+        with self._lock:
+            model = self._model
+            if model is None:
+                raise EngineNotLoaded("load() the speech model first")
+            _language, _probability, scores = model.detect_language(audio)
+        by_code = dict(scores)
+        pick = max(candidates, key=lambda code: by_code.get(code, 0.0))
+        total = sum(by_code.get(code, 0.0) for code in candidates)
+        return pick, (by_code.get(pick, 0.0) / total if total else 0.0)
 
     def transcribe(
         self,

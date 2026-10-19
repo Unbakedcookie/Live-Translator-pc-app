@@ -136,3 +136,33 @@ def test_smart_language_toggle():
     settings.set_smart_language("ja", False)
     settings.set_smart_language("ko", False)  # not on: no change
     assert store.state.config.engines.smart_languages == ("zh",)
+
+
+def test_mic_language_choices_round_trip():
+    from livetranslator.app.settings_controller import mic_choice, mic_languages_for
+
+    cases = [
+        (("same", ""), ()),
+        (("same", "es"), ("en", "es")),
+        (("same", "en"), ()),  # "also" = the same language: nothing extra
+        (("auto", "es"), ("auto",)),
+        (("ja", ""), ("ja",)),
+        (("ja", "en"), ("ja", "en")),
+    ]
+    for (first, also), saved in cases:
+        assert mic_languages_for(first, also, "en") == saved, (first, also)
+    assert mic_choice(()) == ("same", "")
+    assert mic_choice(("auto",)) == ("auto", "")
+    assert mic_choice(("ja", "en")) == ("ja", "en") and mic_choice(("ja",)) == ("ja", "")
+
+
+def test_mic_languages_are_validated():
+    import pytest
+    from pydantic import ValidationError
+
+    from livetranslator.core.state import AudioConfig
+
+    assert AudioConfig(mic_languages=("auto",)).mic_languages == ("auto",)
+    for bad in (("en", "en"), ("en", "es", "ja", "ko"), ("auto", "en"), ("English",)):
+        with pytest.raises(ValidationError):
+            AudioConfig(mic_languages=bad)

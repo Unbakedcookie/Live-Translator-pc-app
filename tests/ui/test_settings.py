@@ -385,3 +385,22 @@ def test_general_page_chinese_script(env: Env):
     assert env.store.state.config.engines.chinese_script == "traditional"
     env.store.dispatch(a.UpdateConfigSection("engines", {"chinese_script": "simplified"}))
     assert page.chinese.current_choice() == "simplified"
+
+
+def test_general_page_i_speak_is_separate_from_translate_into(env: Env):
+    """User request 2026-10-18: speak Spanish to practise, read English translations."""
+    page = env.page(GeneralPage)
+    assert page.speak.current_choice() == "same" and page.also.current_choice() == ""
+    page.speak.set_choice("es")
+    page.speak.choice_changed.emit("es")
+    assert env.store.state.config.audio.mic_languages == ("es",)
+    assert env.store.state.config.my_language == "en"  # still read in English
+    page.also.set_choice("en")
+    page.also.choice_changed.emit("en")
+    assert env.store.state.config.audio.mic_languages == ("es", "en")
+    page.speak.set_choice("auto")
+    page.speak.choice_changed.emit("auto")
+    assert env.store.state.config.audio.mic_languages == ("auto",)
+    assert not page.also_row.isEnabled()  # "any language" already covers a second one
+    env.store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": ()}))
+    assert page.speak.current_choice() == "same" and page.also_row.isEnabled()

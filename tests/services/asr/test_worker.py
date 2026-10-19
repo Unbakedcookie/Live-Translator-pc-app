@@ -14,6 +14,7 @@ from livetranslator.core.store import Store
 from livetranslator.services.asr.base import SAMPLE_RATE, Segment, Transcription, Word
 from livetranslator.services.asr.vad import FRAME, Segmenter
 from livetranslator.services.asr.worker import (
+    DETECT_MIN_S,
     AsrSettings,
     ASRWorker,
     Job,
@@ -147,7 +148,7 @@ def test_partials_then_final_for_one_utterance():
 
 def test_me_is_decoded_in_my_language():
     engine = FakeEngine(language="xx")
-    worker, emitted = make_worker(engine, my_language="de")
+    worker, emitted = make_worker(engine, mic_languages=("de",))
     ring = RingBuffer(60, SAMPLE_RATE)
     worker.add_stream(Source.ME, ring)
     feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
@@ -398,3 +399,45 @@ def test_ready_status_mentions_the_cpu_fallback():
     assert ready_status(Engine())[0] is StatusLevel.WARNING
     Engine.gpu_error = "RuntimeError: cudnn missing"
     assert "graphics card couldn't" in ready_status(Engine())[1]
+
+
+class DetectingEngine(FakeEngine):
+    """Scores languages like Whisper: unsure Spanish for the first second, then sure English."""
+
+    def __init__(self) -> None:
+        super().__init__(language="xx")
+        self.detections: list[tuple[int, tuple[str, ...]]] = []
+
+    def detect_language(self, audio, candidates) -> tuple[str, float]:
+        self.detections.append((len(audio), tuple(candidates)))
+        return ("es", 0.6) if len(audio) < SAMPLE_RATE else ("en", 0.99)
+
+
+def test_me_in_two_languages_is_detected_among_them():
+    """User request 2026-10-18: switching between two languages. Each line is checked against
+    just those two: on every partial until clearly sure, and once more on the whole line."""
+    engine = DetectingEngine()
+    worker, emitted = make_worker(engine, mic_languages=("es", "en"))
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.ME, ring)
+    feed(worker, ring, [(0.25, SPEECH)] * 10 + [(0.25, 0.0)] * 4)
+    assert engine.detections and all(c == ("es", "en") for _, c in engine.detections)
+    partial_sizes = [n for n, _ in engine.detections[:-1]]
+    first_sure = next(n for n in partial_sizes if n >= DETECT_MIN_S * SAMPLE_RATE)
+    assert partial_sizes[-1] == first_sure  # no more checks on partials once sure
+    final_decode = engine.calls[-1]
+    assert final_decode[2] is True and engine.detections[-1][0] == final_decode[0]  # whole line
+    languages = [lang for _, lang, _ in engine.calls]
+    assert languages[0] == "es" and languages[-1] == "en"  # decoded in the picked language
+    assert last_fields(emitted)["language"] == "en"
+
+
+def test_me_detect_any_language_locks_like_others():
+    engine = FakeEngine(language="ko", probability=0.9)
+    worker, emitted = make_worker(engine, mic_languages=())
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.ME, ring)
+    feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
+    assert engine.calls[0][1] is None  # the first decode detects
+    assert engine.calls[-1][1] == "ko"  # then the language is kept
+    assert last_fields(emitted)["language"] == "ko"

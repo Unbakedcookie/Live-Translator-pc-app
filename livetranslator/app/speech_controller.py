@@ -47,6 +47,15 @@ CaptureFactory = Callable[
 ]
 
 
+def mic_languages(config: AppConfig) -> tuple[str, ...]:
+    """Settings "I speak", resolved for the recogniser: nothing chosen = the language you
+    translate into; "auto" = any (empty)."""
+    chosen = config.audio.mic_languages
+    if not chosen:
+        return (config.my_language,)
+    return () if chosen == ("auto",) else chosen
+
+
 def asr_settings(config: AppConfig) -> AsrSettings:
     enabled = {
         source
@@ -58,7 +67,7 @@ def asr_settings(config: AppConfig) -> AsrSettings:
     }
     return AsrSettings(
         update_interval_s=effective(config).asr_interval_s,  # game mode: ≥ 1.0 s (T092)
-        my_language=config.my_language,
+        mic_languages=mic_languages(config),
         vad=config.vad,
         enabled=frozenset(enabled),
         chinese_script=config.engines.chinese_script,

@@ -134,7 +134,7 @@ def test_settings_snapshot_follows_config():
         audio=AudioConfig(others_enabled=False),
     )
     settings = asr_settings(config)
-    assert settings.my_language == "ja"
+    assert settings.mic_languages == ("ja",)  # nothing chosen: the language you read
     assert settings.update_interval_s == 1.0  # game mode
     assert settings.enabled == frozenset({Source.ME})
 
@@ -190,3 +190,14 @@ def test_speaker_worker_follows_settings_and_forgets_voices_with_the_session(qtb
         assert speakers.clusters.count == 0  # voices never outlive the session (D-028)
     finally:
         speech.stop()
+
+
+def test_i_speak_resolves_for_the_recogniser():
+    from livetranslator.app.speech_controller import mic_languages
+
+    def config(*chosen: str) -> AppConfig:
+        return AppConfig(my_language="ja", audio=AudioConfig(mic_languages=chosen))
+
+    assert mic_languages(config()) == ("ja",)  # nothing chosen: the language you read
+    assert mic_languages(config("auto")) == ()  # detect any
+    assert mic_languages(config("es", "en")) == ("es", "en")
