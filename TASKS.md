@@ -17,6 +17,7 @@
   3. Waiting on the user: HF account + write token + `hf auth login` + username, then **ask before** `publish` (uploads to their account) → catalogue written → Tier B the Languages page with real downloads.
   4. Then the user's "I speak" vs "Translate into" split (queued below), then T073 wizard, T113 licences/About, installer.
   5. G3 look review of the new Settings → Languages page still pending.
+  6. User report (night): "settings doesn't work again". Cause (from the new crash log): the app ran from 23:00, Settings is imported lazily, so it loaded the new language_manager.py from disk, which needs `dialogs.confirm_remove_language`; the running app had the old dialogs module loaded -> ImportError. Restarted the app; Settings opens (verified). **Prevent it:** import the Settings/Transcript/dialog modules at startup so a running app never mixes old and new code, and restart the user's app after every code change.
 
 ## Task map
 | Milestone | Task IDs | Spec file | History file | Gate | Status |
