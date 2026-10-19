@@ -37,3 +37,6 @@ desktop.ini
 
 # Benchmark run logs (large, machine-specific)
 benchmarks/results/*.log
+
+# Local app data, models and download caches (kept on D: at the user's request, 2026-10-18)
+local/

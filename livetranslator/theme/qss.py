@@ -129,6 +129,22 @@ def settings_qss(p: Palette) -> str:
             f"color: {p.accent}",
             f"border-color: {p.accent}",
         ),
+        # Language Manager download progress (T074).
+        _rule(
+            "QProgressBar#LanguageProgress",
+            f"background: {p.bg}",
+            f"border: {border}",
+            f"border-radius: {RADIUS.sm}px",
+            f"color: {p.text_secondary}",
+            f"font-size: {FONTS.ui_size_small}pt",
+            "text-align: center",
+        ),
+        _rule(
+            "QProgressBar#LanguageProgress::chunk",
+            f"background: {p.accent}",
+            f"border-radius: {RADIUS.sm}px",
+        ),
+        _rule("#LanguageInstalled", f"color: {p.accent}", f"font-size: {FONTS.ui_size_small}pt"),
     ]
     return "".join(r + "\n" for r in rules)
 

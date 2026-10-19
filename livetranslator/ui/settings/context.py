@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from livetranslator.app.discord_controller import DiscordController
+from livetranslator.app.language_controller import LanguageController
 from livetranslator.app.settings_controller import SettingsController
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core.state import Source
@@ -42,3 +43,4 @@ class SettingsContext:
     hotkey_actions: tuple[str, ...] = ()  # actions this build can perform (no dead rows)
     smart_translation: bool = False  # the Qwen files are installed (Translation page switch)
     discord: DiscordController | None = None  # Speakers page: Discord names setup (T104)
+    languages: LanguageController | None = None  # Languages page (T074)

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.discord_controller import DiscordController
+from livetranslator.app.language_controller import LanguageController
 from livetranslator.app.lifecycle import Exporter, QuitFlow
 from livetranslator.app.log import install_excepthook, setup_logging
 from livetranslator.app.ocr_controller import OcrController
@@ -41,6 +42,7 @@ from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.errors import EngineError
 from livetranslator.services.hotkeys import HotkeyService, valid_hotkey
 from livetranslator.services.metrics import MetricsService, NvmlSampler
+from livetranslator.services.models import load_catalog
 from livetranslator.services.mt.engines.qwen_llama import QwenLlamaEngine
 from livetranslator.services.mt.engines.qwen_llama import installed as qwen_installed
 from livetranslator.services.mt.router import TranslationRouter
@@ -108,6 +110,9 @@ class LiveTranslatorApp(QObject):
         self.single_instance: SingleInstance | None = None
         self.region_selector: RegionSelector | None = None
         self.discord = DiscordController(self.store, paths.config_dir, parent=self)
+        self.languages = LanguageController(
+            self.store, self.models_dir, load_catalog(), on_changed=self._on_languages_changed
+        )
         self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
         self.transcript_window: TranscriptWindow | None = None
         self._quit_app = quit_app
@@ -240,6 +245,13 @@ class LiveTranslatorApp(QObject):
         if overlays:
             place_beside(window, overlays[0])
 
+    def _on_languages_changed(self) -> None:
+        """A language was downloaded or removed (T074): the engine re-reads its pairs; new
+        ones load on first use."""
+        self._pairs = None
+        if self.mt_engine is not None:
+            self.mt_engine.rescan(self.models_dir())
+
     def models_dir(self) -> Path:
         configured = self.store.state.config.models_dir
         return Path(configured) if configured else self.paths.default_models_dir
@@ -270,6 +282,7 @@ class LiveTranslatorApp(QObject):
             hotkey_actions=ALL_HOTKEY_ACTIONS,
             smart_translation=qwen_installed(self.models_dir()),
             discord=self.discord,
+            languages=self.languages,
         )
 
     def engine_summary(self) -> EngineSummary:

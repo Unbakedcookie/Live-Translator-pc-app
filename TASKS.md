@@ -9,6 +9,15 @@
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
 
+- **User requests queued (2026-10-18):** (1) separate "I speak" (mic recognition: same / detect any / 1-2 chosen languages, constrained Whisper detection) from "Translate into" (my_language), so own lines in another language get translated; (2) one person switching between two languages mid-talk (same fix: per-line detection within the chosen set). Doing after T074 core.
+
+- **RESUME HERE (paused 2026-10-18 night, user asleep):**
+  1. Opus-MT conversion of the last 12 pairs was left running in the background (`D:\LiveTranslator\convert2.log`; re-run `benchmarks/opus_convert.py` with `HF_HOME` on D: if any failed; it skips done pairs). 43 pairs total incl. en-vi.
+  2. Sanity-check every converted pair (translate a few sentences, no "⁇"; try en-pt with/without a tag), then `python -m tools.model_hosting pack D:\LiveTranslatorench-data\models\opus-mt D:\LiveTranslator\hf-staging`.
+  3. Waiting on the user: HF account + write token + `hf auth login` + username, then **ask before** `publish` (uploads to their account) → catalogue written → Tier B the Languages page with real downloads.
+  4. Then the user's "I speak" vs "Translate into" split (queued below), then T073 wizard, T113 licences/About, installer.
+  5. G3 look review of the new Settings → Languages page still pending.
+
 ## Task map
 | Milestone | Task IDs | Spec file | History file | Gate | Status |
 |---|---|---|---|---|---|

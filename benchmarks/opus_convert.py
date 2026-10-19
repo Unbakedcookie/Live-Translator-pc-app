@@ -47,6 +47,80 @@ MODELS: dict[tuple[str, str], tuple[str, str, str, str]] = {
         "Apache-2.0",
         "",
     ),
+    # T074 catalogue, 2026-10-18: the app's other target languages, both ways. Revisions and
+    # licences read from the HF API that day (cardData); the README says which multi-target
+    # models need a >>tag<<.
+    ("en", "pt"): (
+        "opus-mt-tc-big-en-pt",
+        "9f2863d807ecf91a374bdbecb8d01e402e90622e",
+        "CC-BY-4.0",
+        "",
+    ),
+    ("pt", "en"): (  # no pt-en model: the Romance-languages -> English one covers pt / pt_BR
+        "opus-mt-ROMANCE-en",
+        "e9ca9975e3972afd80732f08ce01d3a1339f47f8",
+        "Apache-2.0",
+        "",
+    ),
+    ("en", "it"): ("opus-mt-en-it", "be5a254d936f1a8c8da080406ca582a6615e6658", "Apache-2.0", ""),
+    ("it", "en"): ("opus-mt-it-en", "42556a0848fc726f4d27399f20b19ff6f01afe11", "Apache-2.0", ""),
+    ("en", "uk"): ("opus-mt-en-uk", "634fdc4b28bf0c8a1d4359cbbcfb29190a09dc0e", "Apache-2.0", ""),
+    ("uk", "en"): ("opus-mt-uk-en", "1b9a2a0d1aa2a329d8476d2be5c7b0b27d5397b0", "Apache-2.0", ""),
+    ("en", "pl"): (  # West Slavic multi-target: README requires >>id<<
+        "opus-mt-en-zlw",
+        "92ffd5aa936924688bd715b26d6bb75393082c03",
+        "Apache-2.0",
+        ">>pol<<",
+    ),
+    ("pl", "en"): ("opus-mt-pl-en", "7f2bb874fdfb6139f9842b91a9b75c4a6c93401c", "Apache-2.0", ""),
+    ("en", "tr"): (
+        "opus-mt-tc-big-en-tr",
+        "e539fc16a8a1a0ea5950eb339b595bfcce990e90",
+        "CC-BY-4.0",
+        "",
+    ),
+    ("tr", "en"): ("opus-mt-tr-en", "19c65427cc2af5f191337d4899e0348c4af25902", "Apache-2.0", ""),
+    ("en", "ar"): (  # Arabic varieties multi-target: README requires >>id<<
+        "opus-mt-en-ar",
+        "03087980e8ce753d64b3248ed0a912444545b840",
+        "Apache-2.0",
+        ">>ara<<",
+    ),
+    ("ar", "en"): ("opus-mt-ar-en", "c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1", "Apache-2.0", ""),
+    ("en", "hi"): ("opus-mt-en-hi", "75d7f7c9232b2891c7d65fe4ef635616c72be867", "Apache-2.0", ""),
+    ("hi", "en"): ("opus-mt-hi-en", "a7d96a16729f812578bd55e7366147beda625d86", "Apache-2.0", ""),
+    # Into English only: languages often heard in voice chat that aren't window targets.
+    ("id", "en"): ("opus-mt-id-en", "9a7f1b0d0dfe0a92ba691030b01d6f23f966e7ec", "Apache-2.0", ""),
+    ("vi", "en"): ("opus-mt-vi-en", "c8d2853e77f5fae31124d993e0b35176b1c8914e", "Apache-2.0", ""),
+    # Vietnamese became a window language (user request 2026-10-18): the other direction too.
+    ("en", "vi"): ("opus-mt-en-vi", "989c9fb9ec63987901022baf0182dcec3e149be6", "Apache-2.0", ""),
+    ("th", "en"): ("opus-mt-th-en", "0fff80be1c3f40d6180efd59f566ece956ace689", "Apache-2.0", ""),
+    ("nl", "en"): ("opus-mt-nl-en", "48af999f2c59b10c05ca6e008dcedc07677a9b15", "Apache-2.0", ""),
+    ("sv", "en"): ("opus-mt-sv-en", "202cf6240046bd8b6d08c207ee751ffd630d7ba8", "Apache-2.0", ""),
+    ("fi", "en"): ("opus-mt-fi-en", "c4d8fff0f8f00b637f0578666f35cdacef354778", "Apache-2.0", ""),
+    ("da", "en"): ("opus-mt-da-en", "0960cff506758772cf23186b941305e0afeb43c5", "Apache-2.0", ""),
+    ("no", "en"): (  # no Norwegian-only model: North Germanic -> English (da, nb, nn, sv...)
+        "opus-mt-gmq-en",
+        "82e9a0a21f1393f58f3a12dfee196adf058d1236",
+        "Apache-2.0",
+        "",
+    ),
+    ("ur", "en"): ("opus-mt-ur-en", "1425fec421641ff8b064596e77d42a2450d684c2", "Apache-2.0", ""),
+    ("tl", "en"): ("opus-mt-tl-en", "8d2dee91f8b3fa48dda8ec06ee2af8f24970dcbc", "Apache-2.0", ""),
+    ("cs", "en"): ("opus-mt-cs-en", "577d2053d249b476aefec9524a37ec945ccbd331", "Apache-2.0", ""),
+    ("hu", "en"): ("opus-mt-hu-en", "cdf0ec884dc05cf435cef756dbf05a91c877f105", "Apache-2.0", ""),
+    ("he", "en"): (
+        "opus-mt-tc-big-he-en",
+        "134c5a850dcaa763eec85bd1f4eb25112fecedbb",
+        "CC-BY-4.0",
+        "",
+    ),
+    ("el", "en"): (
+        "opus-mt-tc-big-el-en",
+        "a69108562775c6727edf3540346f9d8900b73634",
+        "CC-BY-4.0",
+        "",
+    ),
 }
 # The Hugging Face port of tc-big en-ko is broken: the original is a "sepvoc" model (separate
 # source/target vocabularies) but the HF port merged them, so it emits "⁇" garbage. It is

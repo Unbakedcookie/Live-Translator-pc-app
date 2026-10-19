@@ -67,6 +67,15 @@ class OpusMtEngine:
     def pairs(self) -> list[tuple[str, str]]:
         return sorted(self._pairs)
 
+    def rescan(self, models_dir: Path) -> None:
+        """Re-read the installed pairs after the Language Manager added or removed some
+        (T074). A removed pair's loaded model is dropped; new ones load on first use."""
+        found = installed_pairs(models_dir)
+        with self._lock:
+            self._pairs = found
+            for key in [k for k in self._models if k not in found]:
+                del self._models[key]
+
     def supports(self, src: str, tgt: str) -> bool:
         return (src, tgt) in self._pairs
 

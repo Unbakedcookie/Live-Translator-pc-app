@@ -86,20 +86,21 @@ def env(qtbot, tmp_path: Path) -> Env:
     return Env(qtbot, tmp_path)
 
 
-def test_window_has_the_eight_pages_in_order(env: Env):
+def test_window_has_the_nine_pages_in_order(env: Env):
     assert list(env.window.pages) == [
         "General",
         "Audio",
         "Speakers",
         "Windows",
         "Translation",
+        "Languages",  # T074
         "Hotkeys",
         "Performance",
         "Advanced",
     ]
     env.window.show_page("Hotkeys")
     assert env.window.stack.currentWidget() is env.window.pages["Hotkeys"]
-    assert env.window.nav.currentRow() == 5
+    assert env.window.nav.currentRow() == 6
 
 
 def test_close_only_hides_and_reopens(env: Env, qtbot):

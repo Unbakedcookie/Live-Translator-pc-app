@@ -58,3 +58,24 @@ def ask_export_before_quit(parent: QWidget | None, palette: Palette) -> QuitChoi
     if clicked is discard:
         return QuitChoice.DISCARD
     return QuitChoice.CANCEL
+
+
+def confirm_remove_language(
+    parent: QWidget | None, palette: Palette, name: str, reasons: list[str]
+) -> bool:
+    """T074: removing a language something still uses. True = remove anyway."""
+    box = QMessageBox(parent)
+    box.setWindowTitle(APP_DISPLAY_NAME)
+    box.setIcon(QMessageBox.Icon.Warning)
+    box.setText(f"Remove {name}?")
+    box.setInformativeText(
+        f"It's still in use: {'; '.join(reasons)}. Those lines will be translated by Qwen if "
+        "it's installed, or left untranslated. You can download it again later."
+    )
+    box.setStyleSheet(window_qss(palette) + dialog_qss(palette))
+    remove = box.addButton("Remove", QMessageBox.ButtonRole.DestructiveRole)
+    keep = box.addButton("Keep", QMessageBox.ButtonRole.RejectRole)
+    box.setDefaultButton(keep)
+    box.setEscapeButton(keep)
+    box.exec()
+    return box.clickedButton() is remove

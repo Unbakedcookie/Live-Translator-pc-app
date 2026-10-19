@@ -29,11 +29,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from livetranslator import __version__
+
 CATALOG_FILE = Path(__file__).resolve().parents[1] / "data" / "model_catalog.json"
 ALLOWED_LICENSES = frozenset(
     {"MIT", "Apache-2.0", "BSD-3-Clause", "CC-BY-4.0", "FunASR-Model-License-1.1"}
 )
 CHUNK = 1 << 20
+USER_AGENT = (
+    f"LiveTranslator/{__version__} (+https://github.com/Unbakedcookie/Live-Translator-pc-app)"
+)
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -303,7 +308,9 @@ class ModelManager:
         cancel: threading.Event | None,
     ) -> None:
         done = part.stat().st_size if part.exists() else 0
-        request = urllib.request.Request(url)
+        # Named agent: Discord's firewall blocked Python's default one (2026-10-18); hosts
+        # may do the same.
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         if done:
             request.add_header("Range", f"bytes={done}-")
         try:

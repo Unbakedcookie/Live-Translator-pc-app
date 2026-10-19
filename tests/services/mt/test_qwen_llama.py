@@ -20,6 +20,7 @@ from livetranslator.services.mt.engines.qwen_llama import (
     installed,
 )
 from livetranslator.services.mt.router import TranslationRouter
+from tests.real_models import REAL_MODELS
 
 
 def test_clean_reply():
@@ -97,11 +98,11 @@ BENCH = Path(os.environ.get("LT_BENCH_DIR", r"D:\LiveTranslator\bench-data")) / 
 
 
 @pytest.mark.skipif(
-    not installed(Path(os.environ.get("LOCALAPPDATA", "")) / "LiveTranslator" / "models"),
+    not installed(REAL_MODELS),
     reason="Qwen files not installed on this PC",
 )
 def test_real_qwen_translates_chinese_gaming_slang():
-    models = Path(os.environ["LOCALAPPDATA"]) / "LiveTranslator" / "models"
+    models = REAL_MODELS
     engine = QwenLlamaEngine(models)
     try:
         engine.load()
@@ -116,7 +117,7 @@ def test_real_qwen_translates_chinese_gaming_slang():
 
 
 @pytest.mark.skipif(
-    not installed(Path(os.environ.get("LOCALAPPDATA", "")) / "LiveTranslator" / "models"),
+    not installed(REAL_MODELS),
     reason="Qwen files not installed on this PC",
 )
 def test_real_qwen_covers_languages_without_an_opus_model():
@@ -124,7 +125,7 @@ def test_real_qwen_covers_languages_without_an_opus_model():
     the first line isn't the ~10 s first request."""
     import time
 
-    engine = QwenLlamaEngine(Path(os.environ["LOCALAPPDATA"]) / "LiveTranslator" / "models")
+    engine = QwenLlamaEngine(REAL_MODELS)
     try:
         engine.load()
         start = time.perf_counter()
@@ -140,7 +141,7 @@ def test_real_qwen_covers_languages_without_an_opus_model():
     assert first_line_s < 3.0
 
 
-QWEN_MODELS = Path(os.environ.get("LOCALAPPDATA", "")) / "LiveTranslator" / "models"
+QWEN_MODELS = REAL_MODELS
 
 
 @pytest.mark.skipif(not installed(QWEN_MODELS), reason="Qwen files not installed on this PC")
