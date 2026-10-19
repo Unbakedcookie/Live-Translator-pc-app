@@ -10,7 +10,7 @@ from livetranslator.core.state import AppState
 from livetranslator.core.store import Store
 from livetranslator.services.speakers.discord_rpc import REDIRECT_URI, SpeakingTimeline
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
-from livetranslator.ui.discord_setup import STEPS, DiscordSetup
+from livetranslator.ui.discord_setup import PORTAL, STEPS, DiscordSetup
 
 FAKE_ID = "1" * 18  # made-up Discord application IDs
 OTHER_ID = "4" * 18
@@ -42,7 +42,9 @@ def env(qtbot, tmp_path: Path):
 
 
 def test_steps_mention_the_redirect_and_the_tester_fallback():
-    assert len(STEPS) == 7
+    assert len(STEPS) == 8
+    assert "Skip" in STEPS[1]  # the portal's new first page (seen live 2026-10-18)
+    assert PORTAL.endswith("?new_application=true")
     assert any(REDIRECT_URI in s for s in STEPS)
     assert "App Testers" in STEPS[-1]
 
@@ -80,3 +82,22 @@ def test_reopening_shows_the_saved_setup(env, qtbot):
     again = DiscordSetup(ctl, PALETTES[DEFAULT_PALETTE_ID])
     qtbot.addWidget(again)
     assert again.app_id.text() == OTHER_ID and again.secret.text() == "abc"
+
+
+def test_guide_stays_on_top_and_opens_beside_its_anchor(env, qtbot):
+    """User report 2026-10-18: it opened behind Settings and fell behind the browser."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QWidget
+
+    from livetranslator.ui.screens import monitors, place_beside
+
+    _, _, window = env
+    assert window.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+    anchor = QWidget()
+    qtbot.addWidget(anchor)
+    work = monitors()[0].work
+    anchor.setGeometry(work.left + 50, work.top + 50, 200, 200)
+    anchor.show()
+    window.resize(300, 200)
+    place_beside(window, anchor)
+    assert window.x() > anchor.frameGeometry().right()  # to the right, not on top of it

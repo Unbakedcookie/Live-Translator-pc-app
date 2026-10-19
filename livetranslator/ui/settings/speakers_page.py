@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QLineEdit, QPushButton, QWidget
 from livetranslator.core.state import MAX_SPEAKERS_LIMIT, SpeakerMode
 from livetranslator.theme.tokens import SETTINGS
 from livetranslator.ui.discord_setup import DiscordSetup
+from livetranslator.ui.screens import place_beside
 from livetranslator.ui.settings.context import SettingsContext
 from livetranslator.ui.settings.rows import SettingRow, SettingsPage, note, number_box, silently
 from livetranslator.ui.widgets.choice_combo import ChoiceCombo
@@ -78,6 +79,7 @@ class SpeakersPage(SettingsPage):
             return
         if self.discord_setup is None:
             self.discord_setup = DiscordSetup(self._ctx.discord, self._ctx.palette)
+            place_beside(self.discord_setup, self.window())
         self.discord_setup.load()
         self.discord_setup.show()
         self.discord_setup.raise_()

@@ -27,20 +27,28 @@ from livetranslator.theme.tokens import SETTINGS, SPACE, Palette
 from livetranslator.ui.session import session_ending
 from livetranslator.ui.settings.rows import Section, note
 
-PORTAL = "https://discord.com/developers/applications"
+# Opens the "create app" box directly (Discord's own quick-start links this).
+PORTAL = "https://discord.com/developers/applications?new_application=true"
+# Steps re-checked on the live site 2026-10-18 (user report: no "New Application" button —
+# a "What brings you to the Developer Portal?" page now comes first, with Skip at the bottom).
+OPEN_STEP = 1
+COPY_REDIRECT_STEP = 5
 STEPS = (
-    "Open the Discord developer site and log in with your normal Discord account.",
-    "Click “New Application” (it may say “Create App”). Name it anything, for example "
-    "“My Live Translator”, tick the terms box if there is one, and click Create.",
+    "Click Open. Discord's developer website opens in your web browser (this is a website, "
+    "not the Discord app). Log in with your normal Discord account if it asks.",
+    "If it asks “What brings you to the Developer Portal?”, click Skip at the bottom.",
+    "Click “New Application” at the top right (skip this if a name box is already open). "
+    "Type a name such as “My Live Translator”, tick the box agreeing to Discord's terms, "
+    "and click Create.",
     "On “General Information”, copy the Application ID (a long number) and paste it below.",
     f"In the menu on the left, open “OAuth2”. Under Redirects click “Add Redirect”, paste "
-    f"{REDIRECT_URI} exactly, and click Save Changes.",
+    f"{REDIRECT_URI} exactly (the Copy button copies it), and click Save Changes.",
     "On the same page click “Reset Secret”, confirm, copy the secret and paste it below. It "
     "stays encrypted on this PC and is only ever sent to Discord.",
-    "Keep Discord open, join a voice channel, then click Test connection here and approve the "
-    "request that pops up inside Discord.",
-    "If Discord says the request isn't allowed: open your app's “App Testers” page in the "
-    "developer site, add your own account, accept the invite, and test again.",
+    "Open the Discord app, join a voice channel, then click Test connection here and approve "
+    "the request that pops up inside Discord.",
+    "If Discord says the request isn't allowed: open your app's “App Testers” page on the "
+    "developer website, add your own account, accept the invite, and test again.",
 )
 
 
@@ -50,7 +58,9 @@ class DiscordSetup(QWidget):
     def __init__(
         self, discord: DiscordController, palette: Palette, parent: QWidget | None = None
     ) -> None:
-        super().__init__(parent, Qt.WindowType.Window)
+        # On top: the guide is read while working in the browser and Discord (user report
+        # 2026-10-18: it fell behind them, and opened behind Settings).
+        super().__init__(parent, Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         self._discord = discord
         self.setObjectName("SettingsRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
@@ -73,10 +83,10 @@ class DiscordSetup(QWidget):
         steps = Section("Steps")
         for i, text in enumerate(STEPS, start=1):
             control: QWidget | None = None
-            if i == 1:
-                control = QPushButton("Open the Discord site")
+            if i == OPEN_STEP:
+                control = QPushButton("Open")
                 control.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(PORTAL)))
-            elif i == 4:
+            elif i == COPY_REDIRECT_STEP:
                 control = QPushButton("Copy")
                 control.clicked.connect(lambda: QGuiApplication.clipboard().setText(REDIRECT_URI))
             steps.row(f"Step {i}", text, control)

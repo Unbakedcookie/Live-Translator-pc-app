@@ -54,7 +54,7 @@ from livetranslator.theme.icons import icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
 from livetranslator.ui.geometry import Rect, beside, monitor_for
-from livetranslator.ui.screens import monitors, rect_from_qrect
+from livetranslator.ui.screens import monitors, place_beside
 from livetranslator.ui.settings.context import EngineRow, EngineSummary, SettingsContext
 from livetranslator.ui.taskbar_button import TaskbarButton
 
@@ -235,14 +235,8 @@ class LiveTranslatorApp(QObject):
         """First opening: next to the first visible overlay rather than centred over it, so
         the translations stay readable while settings change."""
         overlays = [w for w in self.windows.windows.values() if w.isVisible()]
-        screens = monitors()
-        if not overlays or not screens:
-            return
-        size = window.size()
-        rect = beside(
-            rect_from_qrect(overlays[0].frameGeometry()), screens, size.width(), size.height()
-        )
-        window.move(rect.x, rect.y)
+        if overlays:
+            place_beside(window, overlays[0])
 
     def models_dir(self) -> Path:
         configured = self.store.state.config.models_dir

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from PySide6.QtCore import QRect
 from PySide6.QtGui import QGuiApplication
+from PySide6.QtWidgets import QWidget
 
-from livetranslator.ui.geometry import Monitor, Rect
+from livetranslator.ui.geometry import Monitor, Rect, beside
 
 
 def rect_from_qrect(r: QRect) -> Rect:
@@ -27,3 +28,14 @@ def monitors() -> list[Monitor]:
         )
         for s in QGuiApplication.screens()
     ]
+
+
+def place_beside(window: QWidget, anchor: QWidget) -> None:
+    """Move `window` next to `anchor` (right, else left, below, above; on its monitor) rather
+    than over it, so neither hides the other."""
+    screens = monitors()
+    if not screens:
+        return
+    size = window.size()
+    rect = beside(rect_from_qrect(anchor.frameGeometry()), screens, size.width(), size.height())
+    window.move(rect.x, rect.y)
