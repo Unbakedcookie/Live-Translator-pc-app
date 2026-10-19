@@ -13,7 +13,7 @@
 
 - **RESUME HERE (paused 2026-10-18 night, user asleep):**
   1. Opus-MT conversion of the last 12 pairs was left running in the background (`D:\LiveTranslator\convert2.log`; re-run `benchmarks/opus_convert.py` with `HF_HOME` on D: if any failed; it skips done pairs). 43 pairs total incl. en-vi.
-  2. Sanity-check every converted pair (translate a few sentences, no "⁇"; try en-pt with/without a tag), then `python -m tools.model_hosting pack D:\LiveTranslatorench-data\models\opus-mt D:\LiveTranslator\hf-staging`.
+  2. Sanity-check every converted pair (translate a few sentences, no "⁇"; try en-pt with/without a tag), then `python -m tools.model_hosting pack D:/LiveTranslator/bench-data/models/opus-mt D:/LiveTranslator/hf-staging`.
   3. Waiting on the user: HF account + write token + `hf auth login` + username, then **ask before** `publish` (uploads to their account) → catalogue written → Tier B the Languages page with real downloads.
   4. Then the user's "I speak" vs "Translate into" split (queued below), then T073 wizard, T113 licences/About, installer.
   5. G3 look review of the new Settings → Languages page still pending.
