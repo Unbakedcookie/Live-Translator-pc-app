@@ -36,9 +36,47 @@ DEFAULT_LANGUAGES: tuple[Language, ...] = (
     Language("ja", "Japanese", "日本語"),
     Language("ko", "Korean", "한국어"),
     Language("zh", "Chinese", "中文"),
+    Language("vi", "Vietnamese", "Tiếng Việt"),  # user request 2026-10-18
 )
 
-_BY_CODE = {lang.code: lang for lang in DEFAULT_LANGUAGES}
+# Heard in voice chat and named in the Language Manager / Qwen prompts, but not offered as
+# window targets by default (T074, 2026-10-18: unknown codes used to read "UR", and Qwen was
+# asked to translate "from UR").
+OTHER_LANGUAGES: tuple[Language, ...] = (
+    Language("id", "Indonesian", "Bahasa Indonesia"),
+    Language("th", "Thai", "ไทย"),
+    Language("nl", "Dutch", "Nederlands"),
+    Language("sv", "Swedish", "Svenska"),
+    Language("fi", "Finnish", "Suomi"),
+    Language("da", "Danish", "Dansk"),
+    Language("no", "Norwegian", "Norsk"),
+    Language("ur", "Urdu", "اردو"),
+    Language("tl", "Tagalog", "Tagalog"),
+    Language("cs", "Czech", "Čeština"),
+    Language("hu", "Hungarian", "Magyar"),
+    Language("he", "Hebrew", "עברית"),
+    Language("el", "Greek", "Ελληνικά"),
+    Language("bn", "Bengali", "বাংলা"),
+    Language("ta", "Tamil", "தமிழ்"),
+    Language("te", "Telugu", "తెలుగు"),
+    Language("mr", "Marathi", "मराठी"),
+    Language("fa", "Persian", "فارسی"),
+    Language("ms", "Malay", "Bahasa Melayu"),
+    Language("sr", "Serbian", "Српски"),
+    Language("hr", "Croatian", "Hrvatski"),
+    Language("bs", "Bosnian", "Bosanski"),
+    Language("sk", "Slovak", "Slovenčina"),
+    Language("sl", "Slovenian", "Slovenščina"),
+    Language("ro", "Romanian", "Română"),
+    Language("bg", "Bulgarian", "Български"),
+    Language("ca", "Catalan", "Català"),
+    Language("lt", "Lithuanian", "Lietuvių"),
+    Language("lv", "Latvian", "Latviešu"),
+    Language("et", "Estonian", "Eesti"),
+    Language("sw", "Swahili", "Kiswahili"),
+)
+
+_BY_CODE = {lang.code: lang for lang in (*DEFAULT_LANGUAGES, *OTHER_LANGUAGES)}
 
 
 def language(code: str) -> Language:

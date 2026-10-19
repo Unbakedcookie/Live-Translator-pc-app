@@ -78,7 +78,7 @@ def test_swatch_row_selects_palette(qtbot):
 def test_language_picker(qtbot):
     picker = LanguagePicker("ja")
     qtbot.addWidget(picker)
-    assert picker.count() == len(DEFAULT_LANGUAGES) == 15
+    assert picker.count() == len(DEFAULT_LANGUAGES) == 16
     assert picker.current_code() == "ja"
     assert picker.currentText() == "Japanese · 日本語"
     chosen: list[str] = []
@@ -89,7 +89,8 @@ def test_language_picker(qtbot):
     assert chosen == ["es"]
     picker.set_language("sw")  # not in the defaults: added on the fly
     assert picker.current_code() == "sw"
-    assert language("sw").label == "SW"
+    assert language("sw").label == "Swahili · Kiswahili"  # named, not offered
+    assert language("xh").label == "XH"  # unknown: the code itself
 
 
 def test_colour_seed_picker_shows_generated_palette(qtbot):
@@ -132,7 +133,7 @@ def test_language_search_filters_and_picks(qtbot):
     picker.showPopup()
     popup = picker.popup
     assert popup is not None and popup.isVisible()
-    assert popup.proxy.rowCount() == 15
+    assert popup.proxy.rowCount() == 16
     # "an" (counted by hand): French(Français), German, Italian, Japanese, Korean,
     # Russian, Spanish, Ukrainian = 8. "ko" only Korean (label or code prefix).
     for needle, expected in (("japan", 1), ("日本", 1), ("ko", 1), ("an", 8)):
