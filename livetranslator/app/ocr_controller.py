@@ -92,13 +92,22 @@ class OcrController:
             return 0  # a capture is still running: ignore the extra key press
         try:
             self._status(StatusLevel.BUSY, "Reading the screen…")
+            started = time.monotonic()
             try:
                 image = self._grab(region)
             except Exception as exc:
                 logger.warning("screen grab failed ({})", type(exc).__name__)
                 self._status(StatusLevel.WARNING, "Couldn't capture that part of the screen.")
                 return 0
+            grabbed = time.monotonic()
             result = self._read(image)
+            read = time.monotonic()
+            logger.info(
+                "screen capture: grab {:.0f} ms, read {:.0f} ms, {} lines",
+                (grabbed - started) * 1000,
+                (read - grabbed) * 1000,
+                len(result.lines) if result is not None else 0,
+            )
             if result is None:
                 self._status(StatusLevel.WARNING, "No screen-text reader is available.")
                 return 0

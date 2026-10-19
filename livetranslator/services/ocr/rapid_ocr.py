@@ -4,7 +4,12 @@ The default PP-OCRv6 small models shipped inside the rapidocr wheel (~31 MB, Apa
 read Chinese (Simplified and Traditional), Japanese and Latin-script text in one pass, with
 no language setting. Measured 2026-10-18: 8/8 Chinese game-chat lines exact, Japanese and
 Spanish exact; Korean and Russian came out as garbage (they need other models), so those
-aren't claimed. About 1.1 to 1.7 s per capture on the CPU.
+aren't claimed.
+
+Speed (2026-10-19, user saw a 5 s wait): RapidOCR's default scales the image's *short* side
+up to 736 px, so a 780x130 chat strip became ~4400x736 before text detection (1.1-2 s).
+`PARAMS` only shrinks images larger than 2560 px and skips the text-rotation check (game
+text is upright): 120-175 ms, same text on Swedish, Chinese, Japanese and English strips.
 
 Lines come back top to bottom; each box is the bounding rectangle of the model's polygon.
 """
@@ -17,6 +22,7 @@ from typing import Any
 from livetranslator.services.errors import UnsupportedLanguage
 from livetranslator.services.ocr.base import Image, OcrLine, OcrResult, merge_rows
 
+PARAMS = {"Det.limit_type": "max", "Det.limit_side_len": 2560, "Global.use_cls": False}
 # What the bundled multilingual model reads well (ko and ru excluded: measured garbage).
 LANGUAGES = frozenset({"zh", "ja", "en", "es", "fr", "de", "it", "pt", "nl"})
 
@@ -45,7 +51,7 @@ class RapidOcrEngine:
             if self._engine is None:
                 from rapidocr import RapidOCR
 
-                self._engine = RapidOCR()
+                self._engine = RapidOCR(params=PARAMS)
             output = self._engine(image)
         texts = output.txts or ()
         boxes = output.boxes if output.boxes is not None else ()

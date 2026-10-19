@@ -11,13 +11,16 @@ from __future__ import annotations
 
 import queue
 import threading
+import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from loguru import logger
 
 from livetranslator.services.errors import EngineError
 from livetranslator.services.mt.router import TranslationRouter
+
+SLOW_S = 1.5  # a line taking longer than this end to end is logged (timings only)
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class TranslationJob:
     text: str
     src: str
     tgt: str
+    queued_at: float = field(default_factory=time.monotonic, compare=False)
 
 
 @dataclass(frozen=True)
@@ -76,6 +80,7 @@ class TranslationWorker:
             return
         if not self._is_current(job):
             return
+        started = time.monotonic()
         try:
             text = self._router.translate(job.text, job.src, job.tgt)
         except EngineError as exc:
@@ -83,6 +88,15 @@ class TranslationWorker:
             if self._on_error is not None:
                 self._on_error(job, exc)
             return
+        done = time.monotonic()
+        if done - job.queued_at > SLOW_S:  # waits and run times only, never the text
+            logger.info(
+                "slow translation {}->{}: {:.0f} ms queued, {:.0f} ms running",
+                job.src,
+                job.tgt,
+                (started - job.queued_at) * 1000,
+                (done - started) * 1000,
+            )
         if self._is_current(job):
             self._on_result(job, text)
 
