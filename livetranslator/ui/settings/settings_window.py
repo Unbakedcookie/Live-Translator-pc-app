@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QHBoxLayout, QListWidget, QListWidgetItem, QStacke
 from livetranslator.theme.icons import icon
 from livetranslator.theme.qss import settings_qss, window_qss
 from livetranslator.theme.tokens import SETTINGS, SPACE, WINDOW
+from livetranslator.ui.about import AboutPage
 from livetranslator.ui.language_manager import LanguagesPage
 from livetranslator.ui.session import session_ending
 from livetranslator.ui.settings.advanced_page import AdvancedPage
@@ -40,6 +41,7 @@ PAGE_TYPES: tuple[Callable[[SettingsContext], SettingsPage], ...] = (
     HotkeysPage,
     PerformancePage,
     AdvancedPage,
+    AboutPage,  # T113
 )
 
 

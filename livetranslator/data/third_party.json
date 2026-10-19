@@ -1,0 +1,432 @@
+{
+ "packages": [
+  {
+   "name": "annotated-types",
+   "version": "0.8.0",
+   "license": "MIT",
+   "url": "https://github.com/annotated-types/annotated-types"
+  },
+  {
+   "name": "anyio",
+   "version": "4.15.1",
+   "license": "MIT",
+   "url": "https://github.com/agronholm/anyio"
+  },
+  {
+   "name": "certifi",
+   "version": "2026.7.22",
+   "license": "Mozilla Public License 2.0 (MPL 2.0)",
+   "url": "https://github.com/certifi/python-certifi"
+  },
+  {
+   "name": "charset-normalizer",
+   "version": "3.5.2",
+   "license": "MIT",
+   "url": ""
+  },
+  {
+   "name": "click",
+   "version": "8.5.0",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/pallets/click/"
+  },
+  {
+   "name": "coloraide",
+   "version": "8.13.1",
+   "license": "MIT",
+   "url": "https://github.com/facelessuser/coloraide"
+  },
+  {
+   "name": "colorama",
+   "version": "0.4.6",
+   "license": "BSD License",
+   "url": "https://github.com/tartley/colorama"
+  },
+  {
+   "name": "colorlog",
+   "version": "6.12.0",
+   "license": "MIT License",
+   "url": "https://github.com/borntyping/python-colorlog"
+  },
+  {
+   "name": "ctranslate2",
+   "version": "4.8.3",
+   "license": "MIT",
+   "url": "https://github.com/OpenNMT/CTranslate2"
+  },
+  {
+   "name": "faster-whisper",
+   "version": "1.2.1",
+   "license": "MIT License",
+   "url": "https://github.com/SYSTRAN/faster-whisper"
+  },
+  {
+   "name": "filelock",
+   "version": "4.2.1",
+   "license": "MIT",
+   "url": "https://github.com/tox-dev/py-filelock"
+  },
+  {
+   "name": "flatbuffers",
+   "version": "25.12.19",
+   "license": "Apache Software License",
+   "url": "https://github.com/google/flatbuffers"
+  },
+  {
+   "name": "fsspec",
+   "version": "2026.9.0",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/fsspec/filesystem_spec"
+  },
+  {
+   "name": "h11",
+   "version": "0.16.0",
+   "license": "MIT License",
+   "url": "https://github.com/python-hyper/h11"
+  },
+  {
+   "name": "hf-xet",
+   "version": "1.7.0",
+   "license": "Apache-2.0",
+   "url": "https://github.com/huggingface/xet-core"
+  },
+  {
+   "name": "httpcore2",
+   "version": "2.13.1",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/pydantic/httpx2"
+  },
+  {
+   "name": "httpx2",
+   "version": "2.13.1",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/pydantic/httpx2"
+  },
+  {
+   "name": "huggingface_hub",
+   "version": "2.2.0",
+   "license": "Apache Software License",
+   "url": "https://github.com/huggingface/huggingface_hub"
+  },
+  {
+   "name": "idna",
+   "version": "3.20",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/kjd/idna"
+  },
+  {
+   "name": "loguru",
+   "version": "0.7.3",
+   "license": "MIT License",
+   "url": "https://github.com/Delgan/loguru"
+  },
+  {
+   "name": "materialyoucolor",
+   "version": "3.0.4",
+   "license": "MIT",
+   "url": ""
+  },
+  {
+   "name": "mss",
+   "version": "10.2.0",
+   "license": "MIT License",
+   "url": "https://github.com/BoboTiG/python-mss"
+  },
+  {
+   "name": "numpy",
+   "version": "2.5.4",
+   "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+   "url": "https://numpy.org"
+  },
+  {
+   "name": "nvidia-ml-py",
+   "version": "13.615.71",
+   "license": "BSD License",
+   "url": "https://forums.developer.nvidia.com"
+  },
+  {
+   "name": "omegaconf",
+   "version": "2.4.0",
+   "license": "BSD License",
+   "url": "https://github.com/hydra-ecosystem/omegaconf"
+  },
+  {
+   "name": "onnxruntime",
+   "version": "1.31.0",
+   "license": "MIT License",
+   "url": "https://onnxruntime.ai"
+  },
+  {
+   "name": "OpenCC",
+   "version": "1.4.2",
+   "license": "Apache Software License",
+   "url": "https://github.com/BYVoid/OpenCC"
+  },
+  {
+   "name": "opencv-python-headless",
+   "version": "4.14.0.94",
+   "license": "Apache Software License",
+   "url": "https://github.com/opencv/opencv-python"
+  },
+  {
+   "name": "packaging",
+   "version": "26.3",
+   "license": "Apache-2.0 OR BSD-2-Clause",
+   "url": "https://github.com/pypa/packaging"
+  },
+  {
+   "name": "pillow",
+   "version": "13.0.0",
+   "license": "MIT-CMU",
+   "url": "https://python-pillow.org"
+  },
+  {
+   "name": "platformdirs",
+   "version": "4.13.3",
+   "license": "MIT",
+   "url": "https://github.com/tox-dev/platformdirs"
+  },
+  {
+   "name": "protobuf",
+   "version": "7.36.2",
+   "license": "3-Clause BSD License",
+   "url": "https://developers.google.com/protocol-buffers/"
+  },
+  {
+   "name": "PyAudioWPatch",
+   "version": "0.2.12.9",
+   "license": "Apache Software License",
+   "url": "https://github.com/s0d3s/PyAudioWPatch/"
+  },
+  {
+   "name": "pyclipper",
+   "version": "1.4.0",
+   "license": "MIT License",
+   "url": "https://github.com/fonttools/pyclipper"
+  },
+  {
+   "name": "pydantic",
+   "version": "2.14.1",
+   "license": "MIT",
+   "url": "https://github.com/pydantic/pydantic"
+  },
+  {
+   "name": "pydantic_core",
+   "version": "2.50.1",
+   "license": "MIT",
+   "url": "https://github.com/pydantic"
+  },
+  {
+   "name": "PySide6_Essentials",
+   "version": "6.12.0",
+   "license": "LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+   "url": "https://pyside.org"
+  },
+  {
+   "name": "PyYAML",
+   "version": "6.0.3",
+   "license": "MIT License",
+   "url": "https://github.com/yaml/pyyaml"
+  },
+  {
+   "name": "QtAwesome",
+   "version": "1.4.2",
+   "license": "MIT License",
+   "url": "https://github.com/spyder-ide/qtawesome"
+  },
+  {
+   "name": "QtPy",
+   "version": "2.4.3",
+   "license": "MIT License",
+   "url": "https://github.com/spyder-ide/qtpy"
+  },
+  {
+   "name": "RapidFuzz",
+   "version": "3.14.6",
+   "license": "MIT",
+   "url": "https://github.com/rapidfuzz/RapidFuzz"
+  },
+  {
+   "name": "rapidocr",
+   "version": "3.10.0",
+   "license": "Apache-2.0",
+   "url": ""
+  },
+  {
+   "name": "requests",
+   "version": "2.34.2",
+   "license": "Apache Software License",
+   "url": "https://github.com/psf/requests"
+  },
+  {
+   "name": "shapely",
+   "version": "2.2.0",
+   "license": "BSD-3-Clause",
+   "url": "https://github.com/shapely/shapely"
+  },
+  {
+   "name": "sherpa_onnx",
+   "version": "1.13.8",
+   "license": "Apache-2.0",
+   "url": "https://github.com/k2-fsa/sherpa-onnx"
+  },
+  {
+   "name": "sherpa-onnx-core",
+   "version": "1.13.8",
+   "license": "Apache-2.0",
+   "url": "https://github.com/k2-fsa/sherpa-onnx"
+  },
+  {
+   "name": "shiboken6",
+   "version": "6.12.0",
+   "license": "LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+   "url": "https://pyside.org"
+  },
+  {
+   "name": "six",
+   "version": "1.17.0",
+   "license": "MIT License",
+   "url": "https://github.com/benjaminp/six"
+  },
+  {
+   "name": "tokenizers",
+   "version": "0.23.3",
+   "license": "Apache Software License",
+   "url": "https://github.com/huggingface/tokenizers"
+  },
+  {
+   "name": "tqdm",
+   "version": "4.70.1",
+   "license": "MPL-2.0 AND MIT",
+   "url": "https://tqdm.github.io"
+  },
+  {
+   "name": "truststore",
+   "version": "0.10.5",
+   "license": "MIT",
+   "url": "https://github.com/sethmlarson/truststore"
+  },
+  {
+   "name": "typing_extensions",
+   "version": "4.16.0",
+   "license": "PSF-2.0",
+   "url": "https://github.com/python/typing_extensions"
+  },
+  {
+   "name": "typing-inspection",
+   "version": "0.4.4",
+   "license": "MIT",
+   "url": "https://github.com/pydantic/typing-inspection"
+  },
+  {
+   "name": "urllib3",
+   "version": "2.8.0",
+   "license": "MIT",
+   "url": ""
+  },
+  {
+   "name": "win32_setctime",
+   "version": "1.2.0",
+   "license": "MIT License",
+   "url": "https://github.com/Delgan/win32-setctime"
+  },
+  {
+   "name": "win32mica",
+   "version": "3.0",
+   "license": "MIT License",
+   "url": "https://github.com/marticliment/win32mica"
+  },
+  {
+   "name": "winrt-runtime",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Foundation",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Foundation.Collections",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Globalization",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Graphics.Imaging",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Media.Ocr",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  },
+  {
+   "name": "winrt-Windows.Storage.Streams",
+   "version": "3.2.1",
+   "license": "MIT",
+   "url": "https://github.com/pywinrt/pywinrt"
+  }
+ ],
+ "models": [
+  {
+   "title": "Speech recognition (Whisper large-v3-turbo)",
+   "license": "MIT",
+   "credit": "OpenAI Whisper (MIT), CTranslate2 conversion by Mobius Labs / Dropbox"
+  },
+  {
+   "title": "Speech recognition for computers without an NVIDIA card (Whisper small)",
+   "license": "MIT",
+   "credit": "OpenAI Whisper (MIT), CTranslate2 conversion by Systran"
+  },
+  {
+   "title": "Speaker labels (NVIDIA TitaNet-large)",
+   "license": "CC-BY-4.0",
+   "credit": "TitaNet-large by NVIDIA (CC-BY-4.0), ONNX export by k2-fsa/sherpa-onnx"
+  },
+  {
+   "title": "Smarter translation (Qwen3-4B-Instruct)",
+   "license": "Apache-2.0",
+   "credit": "Qwen3-4B-Instruct-2507 by Alibaba Qwen (Apache-2.0), GGUF by Unsloth"
+  },
+  {
+   "title": "Runtime for smarter translation (llama.cpp, Vulkan)",
+   "license": "MIT",
+   "credit": "llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception)"
+  },
+  {
+   "title": "Translation models (OPUS-MT)",
+   "license": "CC-BY-4.0 / Apache-2.0",
+   "credit": "Helsinki-NLP / OPUS-MT (University of Helsinki), converted to CTranslate2"
+  }
+ ],
+ "fonts": [
+  {
+   "name": "Inter",
+   "license": "SIL Open Font License 1.1",
+   "url": "https://rsms.me/inter/"
+  },
+  {
+   "name": "Noto Sans",
+   "license": "SIL Open Font License 1.1",
+   "url": "https://notofonts.github.io/"
+  },
+  {
+   "name": "Phosphor icons (via QtAwesome)",
+   "license": "MIT",
+   "url": "https://phosphoricons.com/"
+  }
+ ],
+ "qt_notice": "Live Translator uses Qt for Python (PySide6, Shiboken6) and the Qt libraries under the GNU Lesser General Public License version 3 (licenses/LGPL-3.0.txt, which adds to licenses/GPL-3.0.txt). They are included unmodified as separate files in the app folder, and you may replace them with your own compatible build. Their source code is available at https://code.qt.io and https://download.qt.io/official_releases/QtForPython/; on request we will send the exact source of the versions shipped (https://github.com/Unbakedcookie/Live-Translator-pc-app/issues)."
+}

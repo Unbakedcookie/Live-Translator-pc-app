@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QApplication, QPushButton
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 from livetranslator.app.settings_controller import SettingsController
 from livetranslator.app.window_controller import WindowController
@@ -86,7 +86,7 @@ def env(qtbot, tmp_path: Path) -> Env:
     return Env(qtbot, tmp_path)
 
 
-def test_window_has_the_nine_pages_in_order(env: Env):
+def test_window_has_its_pages_in_order(env: Env):
     assert list(env.window.pages) == [
         "General",
         "Audio",
@@ -97,6 +97,7 @@ def test_window_has_the_nine_pages_in_order(env: Env):
         "Hotkeys",
         "Performance",
         "Advanced",
+        "About",  # T113
     ]
     env.window.show_page("Hotkeys")
     assert env.window.stack.currentWidget() is env.window.pages["Hotkeys"]
@@ -404,3 +405,17 @@ def test_general_page_i_speak_is_separate_from_translate_into(env: Env):
     assert not page.also_row.isEnabled()  # "any language" already covers a second one
     env.store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": ()}))
     assert page.speak.current_choice() == "same" and page.also_row.isEnabled()
+
+
+def test_about_page_lists_the_licences(env: Env):
+    from livetranslator.ui.about import AboutPage, licenses_dir
+
+    page = env.page(AboutPage)
+    assert page.package_count > 50
+    texts = [label.text() for label in page.findChildren(QLabel)]
+    assert any("GNU Lesser General Public License" in t for t in texts)
+    assert any(t.startswith("PySide6") for t in texts)
+    assert (licenses_dir() / "LGPL-3.0.txt").is_file()
+    buttons = [b for b in page.findChildren(QPushButton) if b.text() == "Open folder"]
+    buttons[0].click()
+    assert env.opened[-1] == licenses_dir()
