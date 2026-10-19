@@ -71,6 +71,41 @@ _WORDS: dict[str, frozenset[str]] = {
     "nl": _words(
         "de het een en is zijn niet ik je jij hij zij wij met voor op aan van maar wat hoe ook nog"
     ),
+    # Added 2026-10-19 (user: a Swedish screenshot wasn't translated; Swedish fell back to
+    # the hint, English, and English -> English is passed through).
+    "sv": _words(
+        "och är jag det inte att på med för en ett som har du vi de kan ska var men om så "
+        "till vad hur här nu mig dig han hon"
+    ),
+    "da": _words(
+        "og er jeg det ikke at på med for en et som har du vi de kan skal var men om så "
+        "til hvad hvordan her nu mig dig af også"
+    ),
+    "no": _words(
+        "og er jeg det ikke at på med for en et som har du vi de kan skal var men om så "
+        "til hva hvordan her nå meg deg av også"
+    ),
+    "fi": _words(
+        "ja on ei se että minä sinä hän me te he mutta kun niin myös vain jo kuin olen oli "
+        "tämä mitä mikä"
+    ),
+    "pl": _words("i w z na nie się to jest że do co jak ale jestem tak ja ty on ona my wy czy już"),
+    "tr": _words(
+        "ve bir bu da de ne için ile çok ben sen o biz siz ama değil var yok mi mı ki şey"  # noqa: RUF001 - Turkish dotless i
+    ),
+    "id": _words(
+        "dan yang di ke dari ini itu aku kamu dia kita tidak ada untuk dengan saya apa juga "
+        "sudah akan"
+    ),
+    "ms": _words(
+        "dan yang di ke dari ini itu saya awak dia kita tidak ada untuk dengan apa juga "
+        "sudah akan boleh"
+    ),
+    "vi": _words("và là của có không tôi bạn này một những được cho với người đã sẽ đang rồi"),
+    "cs": _words("a je se na v to že ne s z do jsem jsi ale co jak tak už jsme byl"),
+    "hu": _words("a az és egy hogy nem van is de meg ez én te mi ti ők csak már"),
+    "ro": _words("și în de la cu nu este sunt că pe un o eu tu el ea dar ce"),
+    "tl": _words("ang ng sa na mga ako ikaw siya kami tayo hindi at ay ito iyan po"),
 }
 _LETTERS: dict[str, str] = {
     "es": "ñ¿¡",
@@ -78,6 +113,17 @@ _LETTERS: dict[str, str] = {
     "de": "ßäöü",
     "pt": "ãõç",
     "it": "àèìòù",
+    "sv": "åäö",
+    "da": "æøå",
+    "no": "æøå",
+    "fi": "äö",
+    "pl": "ąćęłńśźż",
+    "tr": "ğışçöü",
+    "cs": "ěščřžůý",
+    "hu": "őűáéíóú",
+    "ro": "ăâîșț",
+    # Vietnamese: its own vowels and the tone marks, which no other language here uses.
+    "vi": "ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ",
 }
 _WORD_RE = re.compile(r"[^\W\d_]+(?:'[^\W\d_]+)?")
 

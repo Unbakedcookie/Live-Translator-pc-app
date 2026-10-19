@@ -125,3 +125,40 @@ def test_rapidocr_does_not_claim_korean():
 
     with pytest.raises(UnsupportedLanguage):
         RapidOcrEngine().recognize(np.zeros((8, 8, 3), dtype=np.uint8), "ko")
+
+
+def test_boxes_on_one_row_become_one_line():
+    """2026-10-19 live check: RapidOCR gave "[Lag]" and "Erik: Kan du ..." as two boxes."""
+    from livetranslator.services.ocr.base import OcrLine, merge_rows
+
+    lines = [
+        OcrLine("Erik: Kan du hjälpa mig?", (70, 12, 300, 22), 0.95),
+        OcrLine("[Lag]", (8, 13, 50, 20), 0.9),
+        OcrLine("[Lag] Sara: Vi ses vid bron", (8, 44, 360, 22), 0.97),
+        OcrLine("待って", (400, 80, 60, 20)),
+        OcrLine("門で", (340, 81, 50, 20)),
+    ]
+    merged = merge_rows(lines)
+    assert [line.text for line in merged] == [
+        "[Lag] Erik: Kan du hjälpa mig?",
+        "[Lag] Sara: Vi ses vid bron",
+        "門で待って",  # CJK pieces joined without a space
+    ]
+    assert merged[0].box == (8, 12, 362, 22) and merged[0].confidence == 0.9
+
+
+def test_overlapping_boxes_do_not_repeat_letters():
+    """The real boxes from the 2026-10-19 capture: "[Lag]" and "g] Erik: ..." overlap."""
+    from livetranslator.services.ocr.base import OcrLine, merge_rows
+
+    lines = [
+        OcrLine("[Lag]", (29, 40, 56, 28), 1.0),
+        OcrLine("g] Erik: Kan du hjälpa mig med uppdraget?", (67, 35, 410, 37), 0.98),
+        OcrLine(
+            "[Lag] Sara: Vi ses vid bron om fem minuter, glöm inte nycklarna!", (25, 64, 630, 36)
+        ),
+    ]
+    assert [line.text for line in merge_rows(lines)] == [
+        "[Lag] Erik: Kan du hjälpa mig med uppdraget?",
+        "[Lag] Sara: Vi ses vid bron om fem minuter, glöm inte nycklarna!",
+    ]

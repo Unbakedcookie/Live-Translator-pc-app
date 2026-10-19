@@ -53,3 +53,38 @@ def test_a_short_foreign_tag_does_not_decide_the_language():
     assert detect("[队伍] Mika: wait for me at the gate") == "en"
     assert detect("[队伍]小明:兄弟们快上车，我们去打BOSS了") == "zh"  # some English, mostly Chinese
     assert detect("[Party] 小明：等等我") == "zh"  # Chinese message with an English tag
+
+
+LATIN_SENTENCES = {  # one game-chat line each, written for this test
+    "sv": "Vänta på mig vid bron, jag har nästan slut på ammunition och vi måste gå nu.",
+    "da": "Vent på mig ved broen, jeg er næsten løbet tør for ammunition og vi skal gå nu.",
+    "no": "Vent på meg ved broen, jeg er nesten tom for ammunisjon og vi må gå nå.",
+    "fi": "Odota minua sillalla, ammukset ovat melkein loppu ja meidän on mentävä nyt.",
+    "pl": "Poczekaj na mnie przy moście, prawie skończyła mi się amunicja i musimy już iść.",
+    "tr": "Beni köprüde bekle, cephanem neredeyse bitti ve şimdi gitmemiz gerek.",
+    "id": "Tunggu aku di jembatan, amunisiku hampir habis dan kita harus pergi sekarang.",
+    "vi": "Đợi tôi ở cây cầu, tôi sắp hết đạn rồi và chúng ta phải đi ngay bây giờ.",
+    "cs": "Počkej na mě u mostu, skoro mi došla munice a musíme už jít.",
+    "hu": "Várj meg a hídnál, majdnem elfogyott a lőszerem és most mennünk kell.",
+    "ro": "Așteaptă-mă la pod, aproape am rămas fără muniție și trebuie să plecăm acum.",
+    "tl": "Hintayin mo ako sa tulay, halos ubos na ang bala ko at kailangan na nating umalis.",
+    "en": "Wait for me at the bridge, I am almost out of ammo and we have to go now.",
+    "de": "Warte an der Brücke auf mich, mir geht fast die Munition aus und wir müssen jetzt los.",
+    "nl": "Wacht op me bij de brug, ik heb bijna geen munitie meer en we moeten nu gaan.",
+    "es": "Espérame en el puente, casi me quedo sin munición y tenemos que irnos ya.",
+    "it": "Aspettami al ponte, sono quasi senza munizioni e dobbiamo andare adesso.",
+    "pt": "Espera por mim na ponte, estou quase sem munição e temos de ir agora.",
+    "fr": "Attends-moi au pont, je n'ai presque plus de munitions et on doit partir maintenant.",
+}
+
+
+def test_more_latin_languages_are_told_apart():
+    """User report 2026-10-19: a Swedish screenshot wasn't translated (Swedish wasn't known,
+    so it fell back to English and English -> English is passed through)."""
+    wrong = {
+        lang: detect(text, hint="en")
+        for lang, text in LATIN_SENTENCES.items()
+        if detect(text, hint="en") != lang
+    }
+    assert wrong == {}
+    assert detect("Kan du hjälpa mig med uppdraget? Jag är nästan död.", hint="en") == "sv"

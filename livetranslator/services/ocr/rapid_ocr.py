@@ -15,7 +15,7 @@ import threading
 from typing import Any
 
 from livetranslator.services.errors import UnsupportedLanguage
-from livetranslator.services.ocr.base import Image, OcrLine, OcrResult
+from livetranslator.services.ocr.base import Image, OcrLine, OcrResult, merge_rows
 
 # What the bundled multilingual model reads well (ko and ru excluded: measured garbage).
 LANGUAGES = frozenset({"zh", "ja", "en", "es", "fr", "de", "it", "pt", "nl"})
@@ -55,5 +55,4 @@ class RapidOcrEngine:
             for text, box, score in zip(texts, boxes, scores, strict=False)
             if str(text).strip()
         ]
-        lines.sort(key=lambda line: (line.box[1], line.box[0]))
-        return OcrResult(tuple(lines), None)
+        return OcrResult(merge_rows(lines), None)  # one line per chat row
