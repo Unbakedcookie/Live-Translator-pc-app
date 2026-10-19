@@ -7,8 +7,8 @@ Spanish exact; Korean and Russian came out as garbage (they need other models), 
 aren't claimed.
 
 Speed (2026-10-19, user saw a 5 s wait): RapidOCR's default scales the image's *short* side
-up to 736 px, so a 780x130 chat strip became ~4400x736 before text detection (1.1-2 s).
-`PARAMS` only shrinks images larger than 2560 px and skips the text-rotation check (game
+up to 736 pixels, so a 780x130 chat strip became ~4400x736 before text detection (1.1-2 s).
+`PARAMS` only shrinks images larger than 2560 pixels and skips the text-rotation check (game
 text is upright): 120-175 ms, same text on Swedish, Chinese, Japanese and English strips.
 
 Lines come back top to bottom; each box is the bounding rectangle of the model's polygon.
