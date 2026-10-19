@@ -44,7 +44,7 @@ ManagerFactory = Callable[[Path], Downloader]
 
 
 class LanguageController(QObject):
-    progress = Signal(str, int, int)  # code, bytes done (whole pack), bytes total
+    progress = Signal(str, object, object)  # code, bytes done (whole pack), total (any size)
     finished = Signal(str, bool, str)  # code, ok, message for the user
     changed = Signal()  # packs added or removed (any thread -> UI thread)
 

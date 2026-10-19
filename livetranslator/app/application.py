@@ -18,11 +18,13 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 from livetranslator import APP_DISPLAY_NAME, APP_NAME, __version__
 from livetranslator.app.discord_controller import DiscordController
 from livetranslator.app.language_controller import LanguageController
+from livetranslator.app.level_probe import LevelProbe
 from livetranslator.app.lifecycle import Exporter, QuitFlow
 from livetranslator.app.log import install_excepthook, setup_logging
 from livetranslator.app.ocr_controller import OcrController
 from livetranslator.app.paths import AppPaths, app_paths
 from livetranslator.app.settings_controller import HOTKEY_TITLES, SettingsController
+from livetranslator.app.setup_controller import Machine, SetupController
 from livetranslator.app.single_instance import SingleInstance, ask_running_copy_to_show, server_name
 from livetranslator.app.speech_controller import SpeechController, line_audio_to
 from livetranslator.app.translation_controller import TranslationController, target_languages
@@ -36,7 +38,14 @@ from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, AppState, Source, SpeakerMode, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.platform.app_identity import register_app_identity, write_icon
+from livetranslator.platform.cuda import cuda_device_count
 from livetranslator.platform.win32 import APP_USER_MODEL_ID, set_app_user_model_id
+from livetranslator.services.asr.faster_whisper_engine import (
+    CPU_MODEL,
+    GPU_MODEL,
+    WHISPER_MODELS,
+    is_downloaded,
+)
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.errors import EngineError
@@ -68,6 +77,7 @@ from livetranslator.ui.settings.context import EngineRow, EngineSummary, Setting
 from livetranslator.ui.settings.settings_window import SettingsWindow
 from livetranslator.ui.taskbar_button import TaskbarButton
 from livetranslator.ui.transcript_window import TranscriptWindow
+from livetranslator.ui.wizard.setup_wizard import SetupWizard
 
 if TYPE_CHECKING:
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
@@ -155,8 +165,48 @@ class LiveTranslatorApp(QObject):
                 select_region=self.select_screen_region,
             )
             self.tray.show()
-        if speech:
+        self.setup_wizard: SetupWizard | None = None
+        if speech and self._needs_setup():
+            self._show_setup()
+        elif speech:
             self._start_speech(self.models_dir())
+
+    # ------------------------------------------------------------ first run (T073)
+
+    def _needs_setup(self) -> bool:
+        """The wizard runs until the speech model is on this PC. A PC that already has it
+        (set up before the wizard existed, or by hand) is marked as set up."""
+        if self.store.state.config.wizard_completed:
+            return False
+        cuda = cuda_device_count() > 0
+        spec = WHISPER_MODELS[GPU_MODEL if cuda else CPU_MODEL]
+        if is_downloaded(spec, self.models_dir()):
+            self.store.dispatch(a.SetWizardCompleted(True))
+            return False
+        return True
+
+    def _show_setup(self) -> None:
+        sample = NvmlSampler().sample()
+        machine = Machine(
+            cuda=cuda_device_count() > 0,
+            vram_mb=sample.vram_total_mb if sample is not None else None,
+        )
+        controller = SetupController(
+            self.store, self.catalog, self.paths.default_models_dir, machine, parent=self
+        )
+        self.setup_wizard = SetupWizard(
+            controller, PALETTES[DEFAULT_PALETTE_ID], probe_factory=LevelProbe
+        )
+        self.setup_wizard.completed.connect(self._after_setup)
+        self.setup_wizard.abandoned.connect(self._quit_app)
+        self.store.dispatch(a.SetAllHidden(True))  # no empty overlays during setup
+        self.setup_wizard.show()
+
+    def _after_setup(self) -> None:
+        self.setup_wizard = None
+        self._pairs = None
+        self.store.dispatch(a.SetAllHidden(False))
+        self._start_speech(self.models_dir())
 
     def _start_speech(self, models_dir: Path) -> None:
         from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
