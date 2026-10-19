@@ -57,16 +57,20 @@ from livetranslator.theme.icons import icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
 from livetranslator.ui.geometry import Rect, beside, monitor_for
+from livetranslator.ui.region_selector import RegionSelector
 from livetranslator.ui.screens import monitors, place_beside
 from livetranslator.ui.settings.context import EngineRow, EngineSummary, SettingsContext
+
+# Screens are imported up front, not when first opened: a running app would otherwise load
+# them from newer code on disk and mix versions (2026-10-18: Settings failed to open with an
+# ImportError after an update).
+from livetranslator.ui.settings.settings_window import SettingsWindow
 from livetranslator.ui.taskbar_button import TaskbarButton
+from livetranslator.ui.transcript_window import TranscriptWindow
 
 if TYPE_CHECKING:
     from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
     from livetranslator.services.mt.engines.opus_mt import Device, OpusMtEngine
-    from livetranslator.ui.region_selector import RegionSelector
-    from livetranslator.ui.settings.settings_window import SettingsWindow
-    from livetranslator.ui.transcript_window import TranscriptWindow
 
 # Hotkey actions handled here rather than by the WindowController.
 APP_HOTKEY_ACTIONS = ("open_settings", "ocr_region", "ocr_recapture")
@@ -227,8 +231,6 @@ class LiveTranslatorApp(QObject):
 
     def open_transcript(self) -> None:
         if self.transcript_window is None:
-            from livetranslator.ui.transcript_window import TranscriptWindow
-
             self.transcript_window = TranscriptWindow(
                 self.store,
                 PALETTES[DEFAULT_PALETTE_ID],
@@ -260,8 +262,6 @@ class LiveTranslatorApp(QObject):
 
     def open_settings(self, page: str = "") -> None:
         if self.settings_window is None:
-            from livetranslator.ui.settings.settings_window import SettingsWindow
-
             self.settings_window = SettingsWindow(self.settings_context())
             self._place_beside_overlay(self.settings_window)
         if page:
@@ -350,8 +350,6 @@ class LiveTranslatorApp(QObject):
 
     def select_screen_region(self) -> None:
         if self.region_selector is None:
-            from livetranslator.ui.region_selector import RegionSelector
-
             self.region_selector = RegionSelector(PALETTES[DEFAULT_PALETTE_ID], parent=self)
             self.region_selector.selected.connect(self.ocr.capture)
         self.region_selector.start()
