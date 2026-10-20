@@ -84,12 +84,15 @@ class SettingsWindow(QWidget):
 
         store = ctx.settings.store
         store.config_changed.connect(self._on_config)
-        store.window_changed.connect(lambda _id: self._refresh(WindowsPage.title_text))
+        store.window_changed.connect(self._on_window)  # bound: dropped when this is deleted
         store.runtime_changed.connect(self._on_runtime)
 
     def show_page(self, title: str) -> None:
         row = list(self.pages).index(title)
         self.nav.setCurrentRow(row)
+
+    def _on_window(self, _window_id: str) -> None:
+        self._refresh(WindowsPage.title_text)
 
     def _refresh(self, *titles: str) -> None:
         if not self.isVisible():

@@ -78,3 +78,19 @@ def test_problem_line_appears_above_the_readout(qtbot):
     store.dispatch(a.ClearStatus("audio.me"))
     assert not window.status_strip.isVisible()
     assert window.content.height() == 220 - window.readout.height()
+
+
+def test_closed_windows_stop_listening(qtbot):
+    """Log 2026-10-19 20:54: after windows were closed, a game-mode change reached their
+    deleted readout strips through a lambda connection (RuntimeError per closed window)."""
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    from livetranslator.ui.floating_window import FloatingWindow
+
+    store = Store(AppState(config=AppConfig(windows=(WindowConfig(id="w"),))))
+    window = FloatingWindow(WindowController(store), "w", lambda _id: [])
+    window.show()
+    window.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    store.dispatch(a.UpdateConfigSection("performance", {"game_mode": True}))  # no error
+    assert store.state.config.performance.game_mode

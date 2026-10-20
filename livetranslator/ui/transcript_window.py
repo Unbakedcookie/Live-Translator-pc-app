@@ -135,17 +135,22 @@ class TranscriptWindow(QWidget):
         self._timer.setSingleShot(True)
         self._timer.setInterval(REDRAW_MS)
         self._timer.timeout.connect(self.redraw)
-        for signal in (store.utterance_added, store.utterance_updated, store.utterance_removed):
-            signal.connect(lambda _id: self.schedule())
+        # Bound method, not lambdas: Qt drops it when this window is deleted.
+        for signal in (
+            store.utterance_added,
+            store.utterance_updated,
+            store.utterance_removed,
+            store.speaker_changed,
+            store.config_changed,
+        ):
+            signal.connect(self.schedule)
         store.session_cleared.connect(self.schedule)
-        store.speaker_changed.connect(lambda _id: self.schedule())
-        store.config_changed.connect(lambda _section: self.schedule())
         self.search.textChanged.connect(lambda _text: self.redraw())
         self.copy.clicked.connect(self.copy_shown)
         self.export_button.clicked.connect(self._on_export)
         self.redraw()
 
-    def schedule(self) -> None:
+    def schedule(self, *_changed: object) -> None:
         if self.isVisible() and not self._timer.isActive():
             self._timer.start()
 

@@ -58,13 +58,17 @@ class ReadoutStrip(QLabel):
         font.setPointSize(FONTS.ui_size_small)
         self.setFont(font)
         store.runtime_changed.connect(self._on_runtime)
-        store.config_changed.connect(
-            lambda section: self.refresh() if section in ("performance", "all") else None
-        )
+        # Bound methods, not lambdas: Qt drops them when this strip's window is deleted
+        # (a lambda outlived closed windows and hit deleted labels, log 2026-10-19 20:54).
+        store.config_changed.connect(self._on_config)
         self.refresh()
 
     def apply_palette(self, palette: Palette) -> None:
         self.setStyleSheet(f"color: {palette.text_secondary}; background: transparent;")
+
+    def _on_config(self, section: str) -> None:
+        if section in ("performance", "all"):
+            self.refresh()
 
     def _on_runtime(self, key: str) -> None:
         if key.startswith("metric:") and self.isVisible():
