@@ -48,6 +48,9 @@ CATALOG = {
         entry("opus-mt-es-en", "opus-mt/es-en", 150, "translation"),
         entry("opus-mt-en-es", "opus-mt/en-es", 150, "translation"),
         entry("opus-mt-ja-en", "opus-mt/ja-en", 150, "translation"),
+        entry("cuda-cublas", "cuda/cublas", 528, "gpu-runtime"),
+        entry("cuda-cudnn", "cuda/cudnn", 709, "gpu-runtime"),
+        entry("cuda-nvrtc", "cuda/nvrtc", 73, "gpu-runtime"),
     )
 }
 
@@ -167,3 +170,14 @@ def test_finishing_saves_the_choices(tmp_path: Path):
     assert config.audio.mic_languages == ("es", "de") and config.audio.mic_device == mic
     assert config.engines.smart_languages == () and not config.engines.smart_fallback
     assert config.models_dir == str(tmp_path / "elsewhere")
+
+
+def test_nvidia_libraries_come_with_the_plan_only_when_missing(tmp_path: Path):
+    """D-026: the built app doesn't ship cuBLAS/cuDNN; NVIDIA cards download them."""
+    _, built, _ = make(tmp_path, Machine(cuda=True, vram_mb=12288, gpu_runtime=False))
+    ids = [e.id for e in built.plan(SetupChoices()).entries]
+    assert ids == [SPEECH_GPU, "cuda-cublas", "cuda-cudnn", "cuda-nvrtc", SPEAKERS]
+    _, dev, _ = make(tmp_path, Machine(cuda=True, vram_mb=12288, gpu_runtime=True))
+    assert "cuda-cudnn" not in [e.id for e in dev.plan(SetupChoices()).entries]
+    _, cpu, _ = make(tmp_path, Machine(cuda=False, vram_mb=None, gpu_runtime=False))
+    assert "cuda-cublas" not in [e.id for e in cpu.plan(SetupChoices()).entries]

@@ -1,8 +1,10 @@
 """NVIDIA runtime libraries for CTranslate2 on Windows (T045; moved from the T032 benchmark).
 
 CTranslate2 (faster-whisper, MT engines) needs cuBLAS and cuDNN. In development they come
-from the nvidia-cublas-cu12 / nvidia-cudnn-cu12 pip wheels; how they are delivered to users
-is open (D-026). Without them CTranslate2 still runs on the CPU.
+from the nvidia-cublas-cu12 / nvidia-cudnn-cu12 pip wheels. The built app doesn't ship them
+(NVIDIA's licence, D-026): the setup wizard downloads those same wheels from NVIDIA's
+packages on PyPI into `<models>/cuda/<name>/`, registered here with `set_runtime_root`.
+Without them CTranslate2 still runs on the CPU.
 """
 
 from __future__ import annotations
@@ -14,6 +16,34 @@ from pathlib import Path
 from typing import Any
 
 _added: set[str] = set()
+_runtime_roots: list[Path] = []  # <models>/cuda: wheels the setup wizard downloaded
+RUNTIME_PACKAGES = ("cublas", "cudnn", "cuda_nvrtc")
+
+
+def set_runtime_root(root: Path) -> None:
+    """Where downloaded NVIDIA libraries live (`<root>/<name>/nvidia/<package>/bin`)."""
+    if root not in _runtime_roots:
+        _runtime_roots.append(root)
+
+
+def runtime_bin_dirs() -> list[Path]:
+    """Every NVIDIA library folder found: the pip wheels (development), then downloads."""
+    dirs: list[Path] = []
+    for name in RUNTIME_PACKAGES:
+        try:
+            package: Any = importlib.import_module(f"nvidia.{name}")
+        except ImportError:
+            continue
+        dirs += [Path(root) / "bin" for root in package.__path__]
+    for root in _runtime_roots:
+        dirs += sorted(root.glob("*/nvidia/*/bin"))
+    return [d for d in dirs if d.is_dir()]
+
+
+def runtime_present() -> bool:
+    """cuBLAS and cuDNN can be loaded (from either place)."""
+    names = {d.parent.name for d in runtime_bin_dirs()}
+    return {"cublas", "cudnn"} <= names
 
 
 def add_cuda_dll_dirs() -> list[Path]:
@@ -25,19 +55,13 @@ def add_cuda_dll_dirs() -> list[Path]:
     if sys.platform != "win32":
         return []
     added: list[Path] = []
-    for name in ("nvidia.cublas", "nvidia.cudnn"):
-        try:
-            package: Any = importlib.import_module(name)
-        except ImportError:
+    for bin_dir in runtime_bin_dirs():
+        if str(bin_dir) in _added:
             continue
-        for root in package.__path__:
-            bin_dir = Path(root) / "bin"
-            if not bin_dir.is_dir() or str(bin_dir) in _added:
-                continue
-            os.add_dll_directory(str(bin_dir))
-            os.environ["PATH"] = f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
-            _added.add(str(bin_dir))
-            added.append(bin_dir)
+        os.add_dll_directory(str(bin_dir))
+        os.environ["PATH"] = f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+        _added.add(str(bin_dir))
+        added.append(bin_dir)
     return added
 
 

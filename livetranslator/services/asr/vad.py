@@ -105,6 +105,11 @@ def frame_energy(frame: NDArray[np.float32]) -> float:
 
 
 def default_model_path() -> Path:
+    # faster_whisper imports PyAV, which the app doesn't ship (D-027): the same stand-in the
+    # speech engine uses (2026-10-19: the first build failed here, PyAV hid it in development).
+    from livetranslator.services.asr.faster_whisper_engine import ensure_av_importable
+
+    ensure_av_importable()
     import faster_whisper
 
     return Path(faster_whisper.__file__).parent / "assets" / "silero_vad_v6.onnx"

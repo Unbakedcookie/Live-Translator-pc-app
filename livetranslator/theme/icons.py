@@ -22,6 +22,10 @@ os.environ.setdefault("QT_API", "pyside6")  # QtAwesome uses QtPy; pin it to PyS
 _qta: Any = importlib.import_module("qtawesome")  # untyped package
 
 PREFIX = "ph"
+# QtAwesome opens every bundled font on first use; the app build strips all but Phosphor
+# (their licences aren't shipped; release check), so only Phosphor is listed (2026-10-19:
+# the first build's start failed on the missing fonts otherwise).
+_qta._BUNDLED_FONTS = tuple(f for f in _qta._BUNDLED_FONTS if f[0] == PREFIX)
 IconRole = Literal["text_primary", "text_secondary", "accent", "on_accent", "danger", "ok"]
 
 

@@ -13,6 +13,8 @@ import pytest
 
 from livetranslator.services.models import (
     ALLOWED_LICENSES,
+    GPU_RUNTIME,
+    VENDOR_RUNTIME_LICENSES,
     CatalogError,
     DownloadCancelled,
     DownloadError,
@@ -119,7 +121,10 @@ def test_shipped_catalogue_is_valid():
     catalog = load_catalog()
     assert {"whisper-large-v3-turbo", "speakers-titanet", "qwen3-4b"} <= set(catalog)
     for entry in catalog.values():
-        assert entry.license in ALLOWED_LICENSES
+        if entry.kind == GPU_RUNTIME:  # D-026: NVIDIA's, downloaded from NVIDIA, not shipped
+            assert entry.license in VENDOR_RUNTIME_LICENSES
+        else:
+            assert entry.license in ALLOWED_LICENSES
         if isinstance(entry.source, HfSource):
             assert len(entry.source.revision) == 40  # pinned commit
         elif isinstance(entry.source, FilesSource):
@@ -357,3 +362,25 @@ def test_files_sources_are_checked_in_the_catalogue(tmp_path: Path):
         path.write_text(json.dumps({"models": [{**base, "source": source}]}), "utf-8")
         with pytest.raises(CatalogError, match=message):
             load_catalog(path)
+
+
+def test_nvidias_licence_is_only_allowed_for_the_gpu_runtime(tmp_path: Path):
+    """D-026: downloaded from NVIDIA's packages to the user's PC, never shipped."""
+    raw = {
+        "id": "cuda-cudnn",
+        "title": "NVIDIA cuDNN",
+        "license": "LicenseRef-NVIDIA-Proprietary",
+        "size_mb": 709,
+        "source": {
+            "type": "url",
+            "url": "https://files.example.test/cudnn.whl",
+            "sha256": "a" * 64,
+        },
+        "dest": "cuda/cudnn",
+    }
+    path = tmp_path / "c.json"
+    path.write_text(json.dumps({"models": [{**raw, "kind": "gpu-runtime"}]}), "utf-8")
+    assert load_catalog(path)["cuda-cudnn"].license == "LicenseRef-NVIDIA-Proprietary"
+    path.write_text(json.dumps({"models": [{**raw, "kind": "speech"}]}), "utf-8")
+    with pytest.raises(CatalogError, match="isn't allowed"):
+        load_catalog(path)

@@ -38,7 +38,7 @@ from livetranslator.core.presets import effective
 from livetranslator.core.state import AppConfig, AppState, Source, SpeakerMode, StatusLevel
 from livetranslator.core.store import Store
 from livetranslator.platform.app_identity import register_app_identity, write_icon
-from livetranslator.platform.cuda import cuda_device_count
+from livetranslator.platform.cuda import cuda_device_count, runtime_present, set_runtime_root
 from livetranslator.platform.win32 import APP_USER_MODEL_ID, set_app_user_model_id
 from livetranslator.services.asr.faster_whisper_engine import (
     CPU_MODEL,
@@ -186,10 +186,12 @@ class LiveTranslatorApp(QObject):
         return True
 
     def _show_setup(self) -> None:
+        set_runtime_root(self.models_dir() / "cuda")
         sample = NvmlSampler().sample()
         machine = Machine(
             cuda=cuda_device_count() > 0,
             vram_mb=sample.vram_total_mb if sample is not None else None,
+            gpu_runtime=runtime_present(),
         )
         controller = SetupController(
             self.store, self.catalog, self.paths.default_models_dir, machine, parent=self
@@ -209,6 +211,7 @@ class LiveTranslatorApp(QObject):
         self._start_speech(self.models_dir())
 
     def _start_speech(self, models_dir: Path) -> None:
+        set_runtime_root(models_dir / "cuda")  # NVIDIA libraries the wizard downloaded (D-026)
         from livetranslator.services.asr.faster_whisper_engine import FasterWhisperEngine
         from livetranslator.services.mt.engines.opus_mt import OpusMtEngine
 

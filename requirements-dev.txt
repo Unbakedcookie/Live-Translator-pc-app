@@ -9,3 +9,7 @@ pyright==1.1.414
 pytest==9.1.1
 pytest-qt==4.5.0
 ruff==0.17.1
+
+# Packaging (tools/build_app.py). GPL with the bootloader exception: built apps may be
+# distributed under any licence.
+pyinstaller==6.16.0

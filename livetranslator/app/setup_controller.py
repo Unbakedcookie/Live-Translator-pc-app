@@ -38,6 +38,7 @@ SPEECH_GPU = "whisper-large-v3-turbo"
 SPEECH_CPU = "whisper-small"
 SPEAKERS = "speakers-titanet"
 SMART = ("qwen3-4b", "llama-server-vulkan")
+GPU_RUNTIME = ("cuda-cublas", "cuda-cudnn", "cuda-nvrtc")  # NVIDIA cards only (D-026)
 SMART_MIN_VRAM_MB = 8000  # turbo (~1.2 GB) + Qwen (~2.8 GB) + a game's own needs
 COMMON_LANGUAGES = ("es", "zh", "pt", "ru", "de", "fr")  # pre-ticked after your own
 PRETICKED = 3
@@ -51,6 +52,7 @@ class Machine:
 
     cuda: bool
     vram_mb: float | None  # None = unknown (no NVIDIA driver)
+    gpu_runtime: bool = True  # NVIDIA's cuBLAS/cuDNN already loadable (pip, or downloaded)
 
     @property
     def smart_recommended(self) -> bool:
@@ -127,6 +129,8 @@ class SetupController(QObject):
 
     def wanted(self, choices: SetupChoices) -> list[ModelEntry]:
         ids = [SPEECH_GPU if self.machine.cuda else SPEECH_CPU, SPEAKERS]
+        if self.machine.cuda and not self.machine.gpu_runtime:
+            ids[1:1] = list(GPU_RUNTIME)  # the built app doesn't ship them
         if choices.smart:
             ids += list(SMART)
         entries = [self._catalog[i] for i in ids if i in self._catalog]

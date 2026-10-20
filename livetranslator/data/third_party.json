@@ -391,6 +391,21 @@
    "credit": "OpenAI Whisper (MIT), CTranslate2 conversion by Systran"
   },
   {
+   "title": "Graphics card runtime (NVIDIA cuBLAS 12.9)",
+   "license": "LicenseRef-NVIDIA-Proprietary",
+   "credit": "NVIDIA cuBLAS 12.9 from NVIDIA's nvidia-cublas-cu12 12.9.2.10 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
+  },
+  {
+   "title": "Graphics card runtime (NVIDIA cuDNN 9.27)",
+   "license": "LicenseRef-NVIDIA-Proprietary",
+   "credit": "NVIDIA cuDNN 9.27 from NVIDIA's nvidia-cudnn-cu12 9.27.0.42 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
+  },
+  {
+   "title": "Graphics card runtime (NVIDIA NVRTC 12.9)",
+   "license": "LicenseRef-NVIDIA-Proprietary",
+   "credit": "NVIDIA NVRTC 12.9 from NVIDIA's nvidia-cuda-nvrtc-cu12 12.9.86 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
+  },
+  {
    "title": "Speaker labels (NVIDIA TitaNet-large)",
    "license": "CC-BY-4.0",
    "credit": "TitaNet-large by NVIDIA (CC-BY-4.0), ONNX export by k2-fsa/sherpa-onnx"

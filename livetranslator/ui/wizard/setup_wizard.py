@@ -217,6 +217,11 @@ class DownloadsStep(SettingsPage):
             if machine.cuda
             else "Small model that runs on the processor (no NVIDIA graphics card found)."
         )
+        if machine.cuda and not machine.gpu_runtime:
+            speech = speech.removesuffix(".") + (
+                ", with NVIDIA's graphics libraries (downloaded from NVIDIA's own packages, "
+                "under NVIDIA's licence)."
+            )
         self.speech_row = needed.row("Speech recognition", speech)
         self.speakers_row = needed.row(
             "Speaker labels", "Tells voices apart so each line shows who said it."
@@ -466,8 +471,13 @@ class SetupWizard(QWidget):
     def _replan(self) -> None:
         self.downloads.apply(self.choices)
         plan = self._controller.plan(self.choices)
-        wanted = {e.kind: e.size_mb for e in self._controller.wanted(self.choices)}
-        sizes = {"speech": wanted.get("speech", 0), "speakers": wanted.get("speakers", 0)}
+        wanted = self._controller.wanted(self.choices)
+        sizes = {"speech": 0, "speakers": 0}
+        for entry in wanted:
+            if entry.kind in ("speech", "gpu-runtime"):  # NVIDIA's libraries belong to speech
+                sizes["speech"] += entry.size_mb
+            elif entry.kind == "speakers":
+                sizes["speakers"] += entry.size_mb
         self.downloads.show_plan(plan, self._controller.models_dir(self.choices), sizes)
         self.next.setEnabled(plan.fits)
 

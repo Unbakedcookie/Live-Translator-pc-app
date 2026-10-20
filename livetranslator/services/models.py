@@ -35,6 +35,10 @@ CATALOG_FILE = Path(__file__).resolve().parents[1] / "data" / "model_catalog.jso
 ALLOWED_LICENSES = frozenset(
     {"MIT", "Apache-2.0", "BSD-3-Clause", "CC-BY-4.0", "FunASR-Model-License-1.1"}
 )
+# NVIDIA's cuBLAS/cuDNN (D-026): never shipped with the app. The setup wizard downloads
+# NVIDIA's own PyPI packages straight to the user's PC, so only this kind may carry it.
+GPU_RUNTIME = "gpu-runtime"
+VENDOR_RUNTIME_LICENSES = frozenset({"LicenseRef-NVIDIA-Proprietary"})
 CHUNK = 1 << 20
 USER_AGENT = (
     f"LiveTranslator/{__version__} (+https://github.com/Unbakedcookie/Live-Translator-pc-app)"
@@ -109,7 +113,8 @@ class ModelEntry:
 def _entry(raw: Mapping[str, Any]) -> ModelEntry:
     entry_id = str(raw["id"])
     licence = str(raw["license"])
-    if licence not in ALLOWED_LICENSES:
+    vendor_runtime = str(raw["kind"]) == GPU_RUNTIME and licence in VENDOR_RUNTIME_LICENSES
+    if licence not in ALLOWED_LICENSES and not vendor_runtime:
         raise CatalogError(f"{entry_id}: licence {licence!r} isn't allowed in a shareable app")
     src = raw["source"]
     source: HfSource | UrlSource | FilesSource
