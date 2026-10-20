@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from livetranslator import APP_DISPLAY_NAME, __version__
 from livetranslator.app.paths import app_paths
@@ -34,6 +35,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--self-test",
         action="store_true",
         help="import every part of the app and report what's missing (checks a build)",
+    )
+    parser.add_argument(
+        "--engine-check",
+        metavar="CLIP_WAV",
+        type=Path,
+        help="transcribe and translate a 16 kHz mono WAV with the real engines; the report "
+        "also goes to engine-check.txt in the log folder",
     )
     return parser
 
@@ -88,6 +96,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.self_test:
         return self_test()
+    if args.engine_check is not None:
+        from livetranslator.app.engine_check import engine_check
+
+        return engine_check(args.engine_check)
     if args.paths:
         paths = app_paths()
         print(f"settings: {paths.settings_file}")
