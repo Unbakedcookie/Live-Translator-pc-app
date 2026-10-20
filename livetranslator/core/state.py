@@ -191,6 +191,9 @@ class SpeakerConfig(Frozen):
     me_label: str = Field(default="Me", min_length=1)
     use_discord_name_for_me: bool = False
     discord_app_id: str | None = None  # own-app mode (spec §5.13)
+    # Split lines where two people talk at once (experimental, user request 2026-10-20;
+    # services/speakers/separation.py). Needs two small downloads; off in game mode.
+    separate_overlaps: bool = False
 
     @field_validator("discord_app_id")
     @classmethod

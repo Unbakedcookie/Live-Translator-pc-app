@@ -5,6 +5,7 @@ Build-time tool, not part of the app. Three steps:
     python -m tools.model_hosting pack     <converted dir> <staging dir>
     python -m tools.model_hosting publish  <staging dir> <user>/live-translator-models
     python -m tools.model_hosting catalog  <staging dir> <user>/live-translator-models <commit>
+    python -m tools.model_hosting extras   <staging dir>   # other models only (EXTRAS)
 
 - `pack`: one zip per pair (`opus-mt-<src>-<tgt>.zip`, stored, fixed timestamps so the same
   files always give the same SHA-256), a `manifest.json` (pair, bytes, sha256, licence,
@@ -81,7 +82,63 @@ def pack_pair(folder: Path, out_dir: Path) -> dict[str, Any]:
     }
 
 
-def model_card(pairs: list[dict[str, Any]]) -> str:
+# Other models we host (our own exports of upstream models), packed from a folder of the same
+# name in the staging dir: tools/export_separation.py writes separation-convtasnet/ (D-042).
+EXTRAS_FILE = "extras.json"
+EXTRAS: dict[str, dict[str, str]] = {
+    "separation-convtasnet": {
+        "title": "Voice separation (ConvTasNet, Libri2Mix)",
+        "kind": "speakers",
+        "licence": "CC-BY-SA-4.0",
+        "dest": "separation/convtasnet",
+        "marker": "model.onnx",
+        "upstream": "JorisCos/ConvTasNet_Libri2Mix_sepclean_16k",
+        "attribution": (
+            "ConvTasNet (Asteroid) by Joris Cosentino, trained on Libri2Mix sep_clean from "
+            "LibriSpeech (CC-BY-4.0); ONNX export by Live Translator, shared under CC-BY-SA-4.0"
+        ),
+    }
+}
+
+
+def _zip_folder(folder: Path, archive: Path) -> None:
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as zf:
+        for path in sorted(p for p in folder.iterdir() if p.is_file()):
+            info = zipfile.ZipInfo(path.name, date_time=ZIP_TIME)
+            info.external_attr = 0o644 << 16
+            with path.open("rb") as data, zf.open(info, "w") as dest:
+                while block := data.read(MIB):
+                    dest.write(block)
+
+
+def pack_extras(staging: Path) -> list[dict[str, Any]]:
+    """Zip every EXTRAS folder present in `staging`, write extras.json and refresh the card."""
+    extras: list[dict[str, Any]] = []
+    for name, meta in EXTRAS.items():
+        folder = staging / name
+        if not (folder / meta["marker"]).is_file() or not (folder / "LICENCE.txt").is_file():
+            continue
+        archive = staging / f"{name}.zip"
+        _zip_folder(folder, archive)
+        extras.append(
+            {
+                "id": name,
+                "file": archive.name,
+                "bytes": archive.stat().st_size,
+                "sha256": _sha256(archive),
+                **meta,
+            }
+        )
+    (staging / EXTRAS_FILE).write_text(json.dumps(extras, indent=2) + "\n", encoding="utf-8")
+    manifest = staging / MANIFEST
+    pairs: list[dict[str, Any]] = (
+        json.loads(manifest.read_text(encoding="utf-8")) if manifest.is_file() else []
+    )
+    (staging / "README.md").write_text(model_card(pairs, extras), encoding="utf-8")
+    return extras
+
+
+def model_card(pairs: list[dict[str, Any]], extras: list[dict[str, Any]] | None = None) -> str:
     rows = "\n".join(
         f"| {p['src']} → {p['tgt']} | `{p['file']}` | {p['bytes'] // MIB} MB | {p['licence']} "
         f"| {p['upstream']} @ `{p['revision'][:12]}` |"
@@ -105,6 +162,25 @@ def model_card(pairs: list[dict[str, Any]]) -> str:
         "note that they were converted.\n\n"
         "| Direction | File | Size | Licence | Upstream (Hugging Face) |\n"
         "|---|---|---|---|---|\n"
+        f"{rows}\n" + _extras_card(extras or [])
+    )
+
+
+def _extras_card(extras: list[dict[str, Any]]) -> str:
+    if not extras:
+        return ""
+    rows = "\n".join(
+        f"| {e['title']} | `{e['file']}` | {e['bytes'] // MIB} MB | {e['licence']} "
+        f"| {e['upstream']} | {e['attribution']} |"
+        for e in extras
+    )
+    return (
+        "\n## Other models\n\n"
+        "Exported to ONNX by Live Translator; each zip holds the model, `LICENCE.txt` and "
+        "`NOTICE.txt` (credit and what was changed). CC-BY-SA-4.0 models stay under that "
+        "licence (ShareAlike).\n\n"
+        "| Model | File | Size | Licence | Upstream (Hugging Face) | Credit |\n"
+        "|---|---|---|---|---|---|\n"
         f"{rows}\n"
     )
 
@@ -118,7 +194,7 @@ def pack(source: Path, staging: Path) -> list[dict[str, Any]]:
         pairs.append(pack_pair(folder, staging))
         print(f"packed {folder.name}: {pairs[-1]['bytes'] // MIB} MB", flush=True)
     (staging / MANIFEST).write_text(json.dumps(pairs, indent=2) + "\n", encoding="utf-8")
-    (staging / "README.md").write_text(model_card(pairs), encoding="utf-8")
+    pack_extras(staging)  # also writes the README model card
     return pairs
 
 
@@ -131,7 +207,7 @@ def publish(staging: Path, repo: str) -> str:
         repo_id=repo,
         repo_type="model",
         folder_path=str(staging),
-        allow_patterns=["*.zip", MANIFEST, "README.md"],
+        allow_patterns=["*.zip", MANIFEST, EXTRAS_FILE, "README.md"],
         commit_message="Live Translator translation models (OPUS-MT, CTranslate2)",
     )
     commit = str(info.oid)
@@ -169,10 +245,47 @@ def catalog_entries(pairs: list[dict[str, Any]], repo: str, commit: str) -> list
     return entries
 
 
+def extra_entries(extras: list[dict[str, Any]], repo: str, commit: str) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": e["id"],
+            "title": e["title"],
+            "kind": e["kind"],
+            "license": e["licence"],
+            "size_mb": -(-int(e["bytes"]) // MIB),
+            "source": {
+                "type": "url",
+                "url": f"https://huggingface.co/{repo}/resolve/{commit}/{e['file']}",
+                "sha256": e["sha256"],
+                "archive": "zip",
+            },
+            "dest": e["dest"],
+            "marker": e["marker"],
+            "attribution": e["attribution"],
+        }
+        for e in extras
+    ]
+
+
+def read_staging(staging: Path, repo: str, commit: str) -> list[dict[str, Any]]:
+    """Catalogue entries for everything staged: the Opus-MT pairs and the EXTRAS."""
+    pairs = json.loads((staging / MANIFEST).read_text(encoding="utf-8"))
+    extras_file = staging / EXTRAS_FILE
+    extras: list[dict[str, Any]] = (
+        json.loads(extras_file.read_text(encoding="utf-8")) if extras_file.is_file() else []
+    )
+    return catalog_entries(pairs, repo, commit) + extra_entries(extras, repo, commit)
+
+
 def write_catalog(entries: list[dict[str, Any]], path: Path = CATALOG_FILE) -> None:
-    """Replace the catalogue's Opus-MT pair entries, keep everything else."""
+    """Replace the catalogue's hosted entries (Opus-MT pairs and these ids), keep the rest."""
     data = json.loads(path.read_text(encoding="utf-8"))
-    kept = [m for m in data["models"] if not str(m.get("dest", "")).startswith("opus-mt/")]
+    ids = {e["id"] for e in entries}
+    kept = [
+        m
+        for m in data["models"]
+        if not str(m.get("dest", "")).startswith("opus-mt/") and m["id"] not in ids
+    ]
     data["models"] = kept + entries
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -190,16 +303,19 @@ def main(argv: list[str] | None = None) -> int:
     p_cat.add_argument("staging", type=Path)
     p_cat.add_argument("repo")
     p_cat.add_argument("commit")
+    p_ext = sub.add_parser("extras", help="zip the EXTRAS folders only (no re-pack of pairs)")
+    p_ext.add_argument("staging", type=Path)
     args = parser.parse_args(argv)
     if args.cmd == "pack":
         pack(args.source, args.staging)
+    elif args.cmd == "extras":
+        for extra in pack_extras(args.staging):
+            print(f"packed {extra['file']}: {extra['bytes'] // MIB} MB")
     elif args.cmd == "publish":
         commit = publish(args.staging, args.repo)
-        pairs = json.loads((args.staging / MANIFEST).read_text(encoding="utf-8"))
-        write_catalog(catalog_entries(pairs, args.repo, commit))
+        write_catalog(read_staging(args.staging, args.repo, commit))
     else:
-        pairs = json.loads((args.staging / MANIFEST).read_text(encoding="utf-8"))
-        write_catalog(catalog_entries(pairs, args.repo, args.commit))
+        write_catalog(read_staging(args.staging, args.repo, args.commit))
     return 0
 
 

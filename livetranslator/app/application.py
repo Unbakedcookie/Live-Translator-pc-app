@@ -23,6 +23,7 @@ from livetranslator.app.lifecycle import Exporter, QuitFlow
 from livetranslator.app.log import install_excepthook, setup_logging
 from livetranslator.app.ocr_controller import OcrController
 from livetranslator.app.paths import AppPaths, app_paths
+from livetranslator.app.separation_controller import SeparationController
 from livetranslator.app.settings_controller import HOTKEY_TITLES, SettingsController
 from livetranslator.app.setup_controller import Machine, SetupController
 from livetranslator.app.single_instance import SingleInstance, ask_running_copy_to_show, server_name
@@ -60,6 +61,7 @@ from livetranslator.services.ocr.base import OcrEngine
 from livetranslator.services.ocr.grab import Region, grab
 from livetranslator.services.ocr.rapid_ocr import RapidOcrEngine
 from livetranslator.services.speakers.discord_rpc import SpeakingTimeline
+from livetranslator.services.speakers.separation import Float, SeparationWorker
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
@@ -129,6 +131,7 @@ class LiveTranslatorApp(QObject):
         self.languages = LanguageController(
             self.store, self.models_dir, self.catalog, on_changed=self._on_languages_changed
         )
+        self.separation = SeparationController(self.store, self.models_dir, self.catalog)
         self.ocr = OcrController(self.store, ocr_engines(), grab, self._open_screen_window)
         self.transcript_window: TranscriptWindow | None = None
         self._quit_app = quit_app
@@ -378,6 +381,7 @@ class LiveTranslatorApp(QObject):
             discord=self.discord,
             languages=self.languages,
             run_setup=self.run_setup,
+            separation=self.separation,
         )
 
     def engine_summary(self) -> EngineSummary:
@@ -619,10 +623,23 @@ def build_speech(
         store.dispatch,
         discord_intervals=discord.intervals if discord is not None else None,
     )
-    worker = ASRWorker(
-        engine, store.dispatch, on_line_audio=line_audio_to(speakers), timings=timings
+
+    def transcribe(audio: Float) -> tuple[str, str | None]:
+        # The quick pass: on separated voices the careful one (beam 5) was no better
+        # (72 % vs 73 % both understood) and holds the shared model ~10-20 % longer.
+        result = engine.transcribe(audio, final=False)
+        return result.text, result.language
+
+    # Optional overlap splitting sits between speech and speaker labels (2026-10-20).
+    separation = SeparationWorker(
+        models_dir,
+        transcribe,
+        store.dispatch,
+        line_audio_to(speakers),
+        lambda uid: store.state.session.utterance(uid) is not None,
     )
-    return SpeechController(store, worker, list_devices, speakers=speakers)
+    worker = ASRWorker(engine, store.dispatch, on_line_audio=separation.submit, timings=timings)
+    return SpeechController(store, worker, list_devices, speakers=speakers, separation=separation)
 
 
 def run(demo: bool = False, speech: bool = True) -> int:

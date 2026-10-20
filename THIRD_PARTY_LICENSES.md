@@ -87,6 +87,7 @@ Python itself: Python Software Foundation License (`licenses/Python.txt`).
 | Speaker labels (NVIDIA TitaNet-large) | CC-BY-4.0 | TitaNet-large by NVIDIA (CC-BY-4.0), ONNX export by k2-fsa/sherpa-onnx |
 | Smarter translation (Qwen3-4B-Instruct) | Apache-2.0 | Qwen3-4B-Instruct-2507 by Alibaba Qwen (Apache-2.0), GGUF by Unsloth |
 | Runtime for smarter translation (llama.cpp, Vulkan) | MIT | llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception) |
+| Overlap detection (pyannote segmentation-3.0) | MIT | pyannote segmentation-3.0 by Hervé Bredin / CNRS (MIT), ONNX export by k2-fsa/sherpa-onnx |
 | Translation models (OPUS-MT) | CC-BY-4.0 / Apache-2.0 | Helsinki-NLP / OPUS-MT (University of Helsinki), converted to CTranslate2 |
 
 ## Fonts and icons

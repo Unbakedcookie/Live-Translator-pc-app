@@ -9,6 +9,7 @@ from pathlib import Path
 
 from livetranslator.app.discord_controller import DiscordController
 from livetranslator.app.language_controller import LanguageController
+from livetranslator.app.separation_controller import SeparationController
 from livetranslator.app.settings_controller import SettingsController
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core.state import Source
@@ -45,3 +46,4 @@ class SettingsContext:
     discord: DiscordController | None = None  # Speakers page: Discord names setup (T104)
     languages: LanguageController | None = None  # Languages page (T074)
     run_setup: Callable[[], None] | None = None  # Advanced: the setup wizard again (T073)
+    separation: SeparationController | None = None  # Speakers: overlap splitting (2026-10-20)

@@ -88,3 +88,34 @@ def test_rough_pairs_carry_their_quality_into_the_catalogue(tmp_path: Path):
     write_catalog(catalog_entries(pairs, REPO, COMMIT), catalogue)
     loaded = load_catalog(catalogue)
     assert loaded["opus-mt-en-hi"].quality == "rough" and loaded["opus-mt-en-it"].quality == ""
+
+
+def test_extra_models_are_packed_credited_and_catalogued(tmp_path: Path):
+    """2026-10-20: the separation model (our ONNX export, CC-BY-SA-4.0) rides along."""
+    from tools.model_hosting import EXTRAS_FILE, pack_extras, read_staging
+
+    converted(tmp_path / "converted", "en-pl")
+    staging = tmp_path / "staging"
+    pack(tmp_path / "converted", staging)  # no extra folder yet: nothing extra packed
+    assert json.loads((staging / EXTRAS_FILE).read_text(encoding="utf-8")) == []
+    folder = staging / "separation-convtasnet"
+    folder.mkdir()
+    (folder / "model.onnx").write_bytes(b"onnx")
+    (folder / "LICENCE.txt").write_text("CC-BY-SA-4.0 text", encoding="utf-8")
+    (folder / "NOTICE.txt").write_text("credit", encoding="utf-8")
+    extras = pack_extras(staging)
+    assert [e["file"] for e in extras] == ["separation-convtasnet.zip"]
+    with zipfile.ZipFile(staging / "separation-convtasnet.zip") as zf:
+        assert sorted(zf.namelist()) == ["LICENCE.txt", "NOTICE.txt", "model.onnx"]
+    card = (staging / "README.md").read_text(encoding="utf-8")
+    assert "en → pl" in card and "CC-BY-SA-4.0" in card and "Joris Cosentino" in card
+    catalogue = tmp_path / "catalog.json"
+    catalogue.write_text(json.dumps({"schema": 1, "models": []}), "utf-8")
+    write_catalog(read_staging(staging, REPO, COMMIT), catalogue)
+    loaded = load_catalog(catalogue)  # the app accepts CC-BY-SA-4.0 models now (D-042)
+    entry = loaded["separation-convtasnet"]
+    assert entry.license == "CC-BY-SA-4.0" and entry.dest == "separation/convtasnet"
+    assert isinstance(entry.source, UrlSource) and entry.source.archive == "zip"
+    assert entry.source.url.endswith(f"/{COMMIT}/separation-convtasnet.zip")
+    write_catalog(read_staging(staging, REPO, "b" * 40), catalogue)  # republish: replaced
+    assert sorted(load_catalog(catalogue)) == ["opus-mt-en-pl", "separation-convtasnet"]

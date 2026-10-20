@@ -33,7 +33,7 @@ from livetranslator import __version__
 
 CATALOG_FILE = Path(__file__).resolve().parents[1] / "data" / "model_catalog.json"
 ALLOWED_LICENSES = frozenset(
-    {"MIT", "Apache-2.0", "BSD-3-Clause", "CC-BY-4.0", "FunASR-Model-License-1.1"}
+    {"MIT", "Apache-2.0", "BSD-3-Clause", "CC-BY-4.0", "FunASR-Model-License-1.1", "CC-BY-SA-4.0"}
 )
 # NVIDIA's cuBLAS/cuDNN (D-026): never shipped with the app. The setup wizard downloads
 # NVIDIA's own PyPI packages straight to the user's PC, so only this kind may carry it.

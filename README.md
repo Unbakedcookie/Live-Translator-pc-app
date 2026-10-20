@@ -38,6 +38,10 @@ window, or click the Live Translator icon by the clock).
   top), language, style, minimize, close. Right-click for everything else.
 - **Who said it:** *Me* is your microphone; other voices get *Speaker 1*, *Speaker 2*… Click
   a name to rename it for this session. With Discord set up, people's Discord names appear.
+- **People talking at once (experimental):** turn on **Settings → Speakers → Separate people
+  talking over each other** (a 26 MB download). A line where two people overlapped is split
+  into two lines, each with its own name and translation, a few seconds after it ends. It
+  works on the processor and pauses in game mode.
 - **Language tag:** a line shows e.g. `ZH→EN` when it was translated.
 - **Minimize:** the "–" button puts the window on the taskbar; click "Live Translator" there to
   bring it back.

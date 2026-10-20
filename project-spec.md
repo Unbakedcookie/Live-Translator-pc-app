@@ -291,6 +291,10 @@ Goal: every line shows *who* said it, from day one.
 
 **As built:** per-line TitaNet labels (sherpa-onnx, CPU) + Discord own-app mode. Discord's token exchange needs the app's client secret (D-030 Plan A): the user pastes their own app's ID and secret in the 8-step guide (Settings → Speakers; stay-on-top, beside the overlay; "Skip" for the portal survey), both stored DPAPI-encrypted. Discord's authorize prompt is only requested by "Test connection", never by the background client (it used to pop up every 5 s); the token endpoint needs a named User-Agent (Cloudflare 1010 otherwise). The user's sign-in works (2026-10-19); names in a real call are not yet verified (G6).
 
+**As built (2026-10-20):**
+- A voice heard while Discord is live but nobody in the call speaks (a stream, a video) gets NOT_IN_CALL votes; with ≥ 3 of them (and ≥ 2× any member's) it keeps "Speaker N" even when a member talks over it (D-041).
+- **Separate people talking over each other** (Settings → Speakers, experimental, off by default; `services/speakers/separation.py`, `app/separation_controller.py`). Each final Others line is checked by pyannote segmentation-3.0 (ONNX, MIT, D-043); a line with ≥ 0.5 s of two-talker speech is split by ConvTasNet sep_clean 16k (our ONNX export, CC-BY-SA-4.0, D-042). Each voice is recognised with the quick pass, and the line becomes two lines (`<id>` + `<id>-v2`), each labelled from its own voice and translated. The split is only kept when both voices give real, different text. Both models run on the CPU (onnxruntime); the feature is off in game mode. Downloads: the detector from k2-fsa's HF mirror (pinned), the separator from the app's model repo (`tools.model_hosting extras`, after the HF publish). Spike: both talkers understood 0 % → 72 %; full-app soak: 3.5–10 s per split line with other work sharing the machine (`benchmarks/results/separation.md`).
+
 ## 6. Architecture
 
 ### 6.1 Layers (strict separation)

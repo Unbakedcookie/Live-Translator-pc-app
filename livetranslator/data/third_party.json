@@ -411,6 +411,11 @@
    "credit": "llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception)"
   },
   {
+   "title": "Overlap detection (pyannote segmentation-3.0)",
+   "license": "MIT",
+   "credit": "pyannote segmentation-3.0 by Hervé Bredin / CNRS (MIT), ONNX export by k2-fsa/sherpa-onnx"
+  },
+  {
    "title": "Translation models (OPUS-MT)",
    "license": "CC-BY-4.0 / Apache-2.0",
    "credit": "Helsinki-NLP / OPUS-MT (University of Helsinki), converted to CTranslate2"

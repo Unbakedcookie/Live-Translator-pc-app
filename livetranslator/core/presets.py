@@ -11,6 +11,7 @@ refresh interval survives any number of toggles).
 | Translate unfinished lines (twice a second) | yes | no (finished lines only) |
 | Translation runs on | graphics card if there is one | processor (0 graphics memory) |
 | Smarter Qwen translation (if turned on) | on | off (frees ~2.8 GB) |
+| Separate people talking over each other (if turned on) | on | off (processor-heavy) |
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ class GameModePreset:
     translate_partials: bool = False
     mt_device: str = "cpu"
     smart_translation: bool = False  # Qwen needs ~2.8 GB of graphics memory: off while gaming
+    separate_overlaps: bool = False  # ~0.23 s of processor per second of overlapped speech
 
 
 GAME_MODE = GameModePreset()
@@ -39,6 +41,7 @@ class Effective:
     mt_device: str  # "auto" | "cpu"
     smart_languages: frozenset[str] = frozenset()  # lines to/from these use Qwen
     smart_fallback: bool = False  # Qwen for pairs with no installed model
+    separate_overlaps: bool = False  # split lines where two people talk at once
 
     @property
     def smart_wanted(self) -> bool:
@@ -50,8 +53,9 @@ def effective(config: AppConfig, preset: GameModePreset = GAME_MODE) -> Effectiv
     interval = config.performance.asr_update_interval_s
     smart = frozenset(config.engines.smart_languages)
     fallback = config.engines.smart_fallback
+    separate = config.speakers.separate_overlaps
     if not config.performance.game_mode:
-        return Effective(interval, True, NORMAL_MT_DEVICE, smart, fallback)
+        return Effective(interval, True, NORMAL_MT_DEVICE, smart, fallback, separate)
     allowed = preset.smart_translation
     return Effective(
         max(interval, preset.min_asr_interval_s),
@@ -59,4 +63,5 @@ def effective(config: AppConfig, preset: GameModePreset = GAME_MODE) -> Effectiv
         preset.mt_device,
         smart if allowed else frozenset(),
         fallback and allowed,
+        separate and preset.separate_overlaps,
     )

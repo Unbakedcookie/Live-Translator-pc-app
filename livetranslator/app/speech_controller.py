@@ -29,6 +29,7 @@ from livetranslator.services.audio.capture import AudioCapture
 from livetranslator.services.audio.devices import AudioDevice, DeviceList, match
 from livetranslator.services.audio.level import SILENCE_DB, rms_dbfs
 from livetranslator.services.audio.ring import RingBuffer
+from livetranslator.services.speakers.separation import SeparationSettings, SeparationWorker
 from livetranslator.services.speakers.worker import LabelJob, SpeakerSettings, SpeakerWorker
 
 RING_SECONDS = 60.0  # spec §5.3
@@ -78,6 +79,13 @@ def speaker_settings(config: AppConfig) -> SpeakerSettings:
     return SpeakerSettings(mode=config.speakers.mode, max_speakers=config.speakers.max_speakers)
 
 
+def separation_settings(config: AppConfig) -> SeparationSettings:
+    return SeparationSettings(
+        enabled=effective(config).separate_overlaps,
+        chinese_script=config.engines.chinese_script,
+    )
+
+
 def line_audio_to(speakers: SpeakerWorker) -> LineAudioFn:
     """The ASR worker's line-audio hook, feeding the speaker worker."""
 
@@ -111,12 +119,14 @@ class SpeechController(QObject):
         list_devices: Callable[[], DeviceList],
         capture_factory: CaptureFactory = _default_capture,
         speakers: SpeakerWorker | None = None,
+        separation: SeparationWorker | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._store = store
         self.worker = worker
         self.speakers = speakers
+        self.separation = separation
         self._list_devices = list_devices
         self._capture_factory = capture_factory
         self.captures: dict[Source, CaptureHandle] = {}
@@ -134,6 +144,9 @@ class SpeechController(QObject):
         if self.speakers is not None:
             self.speakers.configure(speaker_settings(self._store.state.config))
             self.speakers.start()
+        if self.separation is not None:
+            self.separation.configure(separation_settings(self._store.state.config))
+            self.separation.start()
         self._apply_audio()
         self.worker.start()
 
@@ -141,6 +154,8 @@ class SpeechController(QObject):
         for source in list(self.captures):
             self._stop_capture(source)
         self.worker.stop()
+        if self.separation is not None:
+            self.separation.stop()
         if self.speakers is not None:
             self.speakers.stop()
 
@@ -172,6 +187,8 @@ class SpeechController(QObject):
             self._apply_audio()
         if section in ("speakers", "all") and self.speakers is not None:
             self.speakers.configure(speaker_settings(self._store.state.config))
+        if section in ("speakers", "performance", "engines", "all") and self.separation:
+            self.separation.configure(separation_settings(self._store.state.config))
 
     def _status(self, source: Source, level: StatusLevel, message: str) -> None:
         self._store.dispatch(a.SetStatus(f"audio.{source.value}", level, message))

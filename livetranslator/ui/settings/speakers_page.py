@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import QCheckBox, QLineEdit, QPushButton, QWidget
 
 from livetranslator.core.state import MAX_SPEAKERS_LIMIT, SpeakerMode
 from livetranslator.theme.tokens import SETTINGS
@@ -18,6 +18,10 @@ MODES: list[tuple[str, object]] = [
 ]
 MAX_SPEAKERS_MIN = 1  # SpeakerConfig allows 1 (a saved 1 must show as 1)
 ME_LABEL_MAX = 24
+OVERLAP_HELP = (
+    "Experimental. When two people talk at once, each gets their own line and translation, "
+    "a few seconds after the line ends. Works on the processor; paused in game mode."
+)
 
 
 def shown_mode(mode: SpeakerMode) -> SpeakerMode:
@@ -54,6 +58,17 @@ class SpeakersPage(SettingsPage):
         self.me_label.setMaxLength(ME_LABEL_MAX)
         self.me_label.editingFinished.connect(self._on_me_label)
         labels.row("Name on your own lines", "Shown instead of “Me”.", self.me_label)
+        self.overlap: QCheckBox | None = None
+        self.overlap_row: SettingRow | None = None
+        self._overlap_note = ""  # download progress or problem, shown under the help text
+        if ctx.separation is not None:
+            self.overlap = QCheckBox()
+            self.overlap.toggled.connect(self._on_overlap)
+            self.overlap_row = labels.row(
+                "Separate people talking over each other", OVERLAP_HELP, self.overlap
+            )
+            ctx.separation.progress.connect(self._on_overlap_progress)
+            ctx.separation.finished.connect(self._on_overlap_finished)
         self.discord_row: SettingRow | None = None
         self.discord_setup: DiscordSetup | None = None
         if ctx.discord is not None:
@@ -73,6 +88,39 @@ class SpeakersPage(SettingsPage):
         self._ctx.settings.set_me_label(self.me_label.text())
         label = self._ctx.settings.store.state.config.speakers.me_label
         silently(self.me_label, lambda: self.me_label.setText(label))  # blank → back to saved
+
+    def _on_overlap(self, on: bool) -> None:
+        separation = self._ctx.separation
+        if separation is None:
+            return
+        if on and not separation.installed:
+            self._overlap_note = "Downloading…"
+        if not separation.set_enabled(on):
+            self._overlap_note = "A download is already running." if separation.busy else ""
+        self.refresh()
+
+    def _on_overlap_progress(self, done: int, total: int) -> None:
+        self._overlap_note = f"Downloading… {done * 100 // max(total, 1)} %"
+        self.refresh()
+
+    def _on_overlap_finished(self, ok: bool, message: str) -> None:
+        self._overlap_note = "" if ok else message
+        self.refresh()
+
+    def _refresh_overlap(self, on: bool) -> None:
+        separation, box, row = self._ctx.separation, self.overlap, self.overlap_row
+        if separation is None or box is None or row is None:
+            return
+        extra = ""
+        if self._overlap_note:
+            extra = self._overlap_note
+        elif not separation.available:
+            extra = "Not downloadable yet: it arrives with the next model update."
+        elif not separation.installed:
+            extra = f"Turning it on downloads {separation.download_mb()} MB once."
+        row.set_description(f"{OVERLAP_HELP}\n{extra}" if extra else OVERLAP_HELP)
+        box.setEnabled(separation.available and not separation.busy)
+        silently(box, lambda: box.setChecked(on or separation.busy))
 
     def open_discord_setup(self) -> None:
         if self._ctx.discord is None:
@@ -97,6 +145,7 @@ class SpeakersPage(SettingsPage):
                 text = "Set up. Names appear while you're in a voice channel."
             self.discord_row.set_description(text)
         self.mode.set_choice(shown_mode(speakers.mode))
+        self._refresh_overlap(speakers.separate_overlaps)
         silently(self.max_speakers, lambda: self.max_speakers.setValue(speakers.max_speakers))
         if not self.me_label.hasFocus():
             silently(self.me_label, lambda: self.me_label.setText(speakers.me_label))

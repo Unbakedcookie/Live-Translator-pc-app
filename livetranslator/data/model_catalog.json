@@ -155,6 +155,33 @@
       "dest": "llama.cpp/vulkan",
       "marker": "llama-server.exe",
       "attribution": "llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception)"
+    },
+    {
+      "id": "overlap-pyannote-seg3",
+      "title": "Overlap detection (pyannote segmentation-3.0)",
+      "kind": "speakers",
+      "license": "MIT",
+      "size_mb": 6,
+      "source": {
+        "type": "files",
+        "files": [
+          {
+            "name": "model.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/model.onnx",
+            "sha256": "220ad67ca923bef2fa91f2390c786097bf305bceb5e261d4af67b38e938e1079",
+            "size": 5992913
+          },
+          {
+            "name": "LICENSE",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/LICENSE",
+            "sha256": "14d7016ad68e7394d6e6b78d96cc2ae431c905287b89674cfdf021e79e62b8ba",
+            "size": 1061
+          }
+        ]
+      },
+      "dest": "separation/overlap",
+      "marker": "model.onnx",
+      "attribution": "pyannote segmentation-3.0 by Hervé Bredin / CNRS (MIT), ONNX export by k2-fsa/sherpa-onnx"
     }
   ]
 }

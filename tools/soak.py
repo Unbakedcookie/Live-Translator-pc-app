@@ -156,7 +156,18 @@ def rss_mb() -> float:
     return counters.WorkingSetSize / 2**20
 
 
-def write_profile(models_dir: Path) -> None:
+OVERLAP_MIXES = Path(r"D:\LiveTranslator\bench-data\separation\mixes")  # benchmarks/separation
+
+
+def overlap_playlist() -> list[np.ndarray]:
+    """Two people talking at once (the separation spike's clean mixtures)."""
+    files = sorted(OVERLAP_MIXES.glob("*-0db-c.wav"))
+    if not files:
+        raise SystemExit(f"no mixtures in {OVERLAP_MIXES}: run python -m benchmarks.separation mix")
+    return [read_clip(f) for f in files]
+
+
+def write_profile(models_dir: Path, separate_overlaps: bool = False) -> None:
     from livetranslator.core.persistence import save_config
     from livetranslator.core.state import (
         AppConfig,
@@ -191,6 +202,7 @@ def write_profile(models_dir: Path) -> None:
                 update={"smart_languages": (), "smart_fallback": False}
             ),
             "performance": base.performance.model_copy(update={"show_readout": True}),
+            "speakers": base.speakers.model_copy(update={"separate_overlaps": separate_overlaps}),
         }
     )
     save_config(PROFILE / "config" / "settings.json", config)
@@ -200,6 +212,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Live Translator soak test (T112)")
     parser.add_argument("--minutes", type=float, default=15.0)
     parser.add_argument("--models", type=Path, help="models folder (default: your app's)")
+    parser.add_argument(
+        "--overlaps",
+        action="store_true",
+        help="Others = two people talking at once, with 'separate overlaps' turned on",
+    )
     args = parser.parse_args(argv)
 
     user_home = os.environ.get("LIVETRANSLATOR_HOME")
@@ -225,10 +242,11 @@ def main(argv: list[str] | None = None) -> int:
         models_dir = Path(saved) if saved else user.default_models_dir
     paths = app_paths()
     paths.ensure()
-    write_profile(models_dir)
+    write_profile(models_dir, separate_overlaps=args.overlaps)
 
     PLAYERS[MIC] = Player(playlist((ME_LANGUAGE,), CLIPS_PER_LANGUAGE), ME_GAP_S)
-    PLAYERS[SPEAKERS] = Player(playlist(OTHERS_LANGUAGES, CLIPS_PER_LANGUAGE), OTHERS_GAP_S)
+    others = overlap_playlist() if args.overlaps else playlist(OTHERS_LANGUAGES, CLIPS_PER_LANGUAGE)
+    PLAYERS[SPEAKERS] = Player(others, OTHERS_GAP_S)
     devices.list_devices = fake_devices  # build_speech imports it at call time
     capture._PyAudioStream = FakeStream  # type: ignore[misc,assignment]
 
@@ -252,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             "rss_mb": round(rss_mb()),
             "lines": len(lines),
             "translated": sum(1 for u in lines if u.translations),
+            "split": sum(1 for u in lines if u.id.endswith("-v2")),  # overlap splitting
             "vram_used_mb": metrics.get("vram_used_mb"),
         }
         for kind in ("asr", "mt", "lag"):
