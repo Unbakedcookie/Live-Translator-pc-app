@@ -4,14 +4,15 @@
 - **Phase:** 2 in progress (Phase 1 approved 2026-10-17). **G1, G2, G4 APPROVED 2026-10-17** (G4 = all defaults: Opus-MT, optional MADLAD best-quality off, game mode turbo 1.0 s, per-line speakers, host models on user's HF).
 - **Next:** user look reviews (Settings, transcript, quit dialog, readout, rename, language tag, region selector); T113 rest (THIRD_PARTY list, About page, user guide); T073 wizard; T074 Language Manager (needs HF repo). Decisions 2026-10-18: Qwen for Chinese ON by default, Simplified, own language detector kept.
 - **Mandarin (user priority, 2026-10-18):** OCR excellent; speech ≈ best shippable (Whisper 5.8 % vs SenseVoice 5.4 %); one-script output (OpenCC); Qwen translation for Chinese (fixes slang) — on by default (user 2026-10-18).
-- **Tests:** 616 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
+- **Tests:** 676 passing (keep the mouse off the bottom-centre of the screen: one hover test reads the real cursor)
 - **Last commit:** see `git log -1`
 - **Open flags:** D-004, D-005, D-013, D-015, D-021, D-024, D-026, D-029, D-030, D-031. Resolved: D-027.
 - **Session start:** read this file + the milestone file in play (M01 next).
 
 
-- **Status 2026-10-19:** 43 Opus-MT pairs converted, spot-checked (D-039: en-hi/hi-en/ur-en rough → Qwen first) and packed in `D:/LiveTranslator/hf-staging` (7.7 GB, manifest + model card). "I speak" / "Translate into" split done (constrained detection measured on FLEURS). Screens import at startup (Settings ImportError fix).
-- **Next:** waiting on the user's HF login + username → ask before `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models` → Tier B real downloads in Settings → Languages. Meanwhile: T073 first-run wizard, T113 licences/About, installer. G3 look review of Settings (General's new rows, Languages page) pending.
+- **Status 2026-10-19 (evening):** done today: Settings ImportError fix (screens load at startup), 43 Opus-MT pairs converted/checked/packed (`D:/LiveTranslator/hf-staging`), "I speak" split, Swedish + 12 languages in screen detection, OCR 10x faster, T073 setup wizard (verified on empty profiles), T113 notices/About/README, PyInstaller build (`python -m tools.build_app`, release check clean), NVIDIA cuBLAS downloaded by the wizard (D-026; cuDNN not needed), Settings → Advanced → Run setup.
+- **Waiting on the user:** (1) HF login + username → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) OK to download Inno Setup (installer compiler) for the setup .exe — or ship a zip; (3) review D-026 (NVIDIA download approach) before any public release; (4) G3 look review (Settings General/Languages/About, wizard).
+- **Next for me:** installer script once (2) is answered; Language Manager live test after (1); T112 long live session; clean `D:/LiveTranslator/fresh-profile` + `fresh2` test profiles (~4 GB) when done testing.
 
 ## Task map
 | Milestone | Task IDs | Spec file | History file | Gate | Status |
