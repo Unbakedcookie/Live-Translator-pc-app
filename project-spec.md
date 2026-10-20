@@ -1,9 +1,35 @@
 # Live Translator — Project Spec
 
-Status: **Phase 1 draft, 2026-10-17. Awaiting user approval.** Read this file by section (`grep -n "^## \|^### " project-spec.md`), never as a whole.
-Inputs: `docs/tasks/M00-setup.md` → "Approved decisions". Unverified values are tracked in `DATA_TRACKER.md` (D-xxx).
+Status: **Phase 3 master doc, as built 2026-10-20** (Phase 1 spec approved 2026-10-17; sections keep the original plan and add **As built** notes where the build differs). Read this file by section (`grep -n "^## \|^### " project-spec.md`), never as a whole.
+Inputs: `docs/tasks/M00-setup.md` → "Approved decisions". Unverified values are tracked in `DATA_TRACKER.md` (D-xxx). Narrative and evidence: `history/`. Current state and what waits on the user: `TASKS.md`.
 
 ---
+
+## 0. Start here (future sessions)
+**Where the project is.** M01–M11 are built; about 700 Tier A/pytest-qt tests pass. Waiting on the user: Hugging Face upload of the language packs (then a live Language Manager test), look reviews (G3 Settings/wizard/Custom colours/icon, G5 region selector in a game), a real Discord call for speaker names (G6), game mode measured with a game running, T112 with a real call + game, MVP sign-off. `TASKS.md` lists the exact items.
+
+**User.** Gamer on Windows 11, RTX 3060 12 GB, two 2560×1440 monitors side by side (virtual desktop 5120 wide). Doesn't run Python; launches the app from shortcuts. Wants Mandarin to work very well. Likes numbered questions with a default. Keep working autonomously until something needs them (CLAUDE.md has the process rules).
+
+**Everything lives on D:** (C: is full). User environment variables: `LIVETRANSLATOR_HOME=D:\Live Translator pc app\local\app` (settings, models `data\models`, logs `logs`), `HF_HOME` and `PIP_CACHE_DIR` under `local\`. PyInstaller's cache: `local\pyinstaller`. Inno Setup: `local\tools\InnoSetup`. Test profiles and benchmark data: `D:\LiveTranslator\` (`fresh-profile`, `fresh2`, `install-test-profile`, `soak-profile`, `bench-data` with FLEURS clips, `hf-staging` with the 43 packed Opus-MT pairs). `local/` and `build/` are git-ignored.
+
+**Commands** (Git Bash, from the repo):
+| What | Command |
+|---|---|
+| Run the app | `.venv/Scripts/python.exe -m livetranslator` (`--demo`, `--no-speech`, `--paths`, `--self-test`, `--engine-check CLIP.wav`) |
+| User's own copy | Start-menu/desktop shortcut → `pythonw -m livetranslator`; after code changes stop it and relaunch the `.lnk` via `explorer.exe` |
+| Tests | `.venv/Scripts/python.exe -m pytest -q` (the `-q` summary line doesn't print in this shell: use `--junitxml` for counts); `ruff check`, `ruff format`, `pyright` |
+| App build | `python -m tools.build_app` → `build/dist/LiveTranslator/` (onedir; strips NVIDIA, PyAV, FFmpeg plugin, unused icon fonts; adds licences; release licence check). `--console` for a debug build, `--check` to re-check |
+| Setup .exe | `python -m tools.build_installer` → `build/installer/LiveTranslator-Setup-<version>.exe` |
+| Licence notices | `python -m tools.third_party` (a test fails when out of date) |
+| Model hosting | `python -m tools.model_hosting pack|publish|catalog` (HF repo `<user>/live-translator-models`) |
+| Long-session soak | `python -m tools.soak --minutes 15` (pretend devices play FLEURS; `soak-profile/soak.csv`) |
+| Engines in a build | `LiveTranslator.exe --engine-check clip.wav` → `engine-check.txt` in the log folder (`CUDA_VISIBLE_DEVICES=-1` = a PC without NVIDIA) |
+
+**Tier B on this PC** (`tools/verify/win.ps1`: list, shot, focus, click, drag, keys). Lessons:
+- A whole-desktop `shot` without `-MaxWidth` misses translucent windows (overlays, popovers); pass `-MaxWidth`. Crop shots to the app: the user's other windows are private.
+- Don't drive the desktop while the user is using it; render widgets off-screen with `QWidget.grab()` instead and leave the live look to their review.
+- A built windowed exe that hits an uncaught top-level exception shows a modal message box, which looks like a hang.
+- Git Bash heredocs turn `\n` inside Python strings into real newlines: edit source with escapes through the editor tools, not heredocs.
 
 ## 1. Overview
 A Windows 11 desktop app that translates live:
@@ -62,6 +88,8 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 7. Voice-out (Kokoro TTS → virtual mic).
 8. Remember voices across sessions (opt-in; voiceprints are biometric data, D-028).
 
+**As built:** item 1 is done in the MVP: `tools/build_app.py` + `tools/build_installer.py` (Inno Setup, per-user install, shortcut boxes offered unticked, uninstall asks before deleting settings/models). Unsigned. The app itself is MIT-licensed (`LICENSE`, user 2026-10-19). Items 2–8 are still backlog. Ideas raised by the user since: one person switching between languages (done: "I also speak", up to 4 languages, §5.4).
+
 ## 5. Feature specs
 
 ### 5.1 Floating window (shared component — approval gate G1)
@@ -79,6 +107,11 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 - **Geometry** is persisted per window with its monitor's device name. If that monitor is missing at startup, the window is moved onto the primary monitor's work area.
 - **Minimum size** 160 × 60 px. Default new window: 520 × 220 px, bottom-centre of the primary monitor.
 - **Multiple windows**: tray → "New window". Each has its own target language and style.
+- **As built:**
+  - Style popover: theme swatches + **Custom…** (2026-10-19), which opens `ui/custom_colours.py`: 21 labelled colour slots (Window, Text, Buttons and status, Names incl. Person 1–8), click a slot then pick on an embedded colour picker; saved as `WindowStyle.custom_colors` on top of the theme; warns about colours that fail 4.5:1. The one-colour generator lives on as "Make a whole theme from the picked colour". The old popover seed picker was removed (its dialog opened behind pinned overlays).
+  - Windows can't be minimised to the taskbar on their own (frameless Tool windows); `ui/taskbar_button.py` is an invisible stand-in that restores them. Hidden/minimised state is `runtime.away`; Ctrl+Alt+H brings everything back.
+  - Settings, the Discord guide and the colour editor are stay-on-top and placed beside the overlay (`screens.place_beside`), never under a pinned overlay.
+  - Every app-wide store signal is connected to bound methods, never lambdas, so closed windows stop listening (2026-10-19 readout crash).
 
 ### 5.2 Chat log, speakers, echo filter
 - An **Utterance** has: id, source (`ME` | `OTHERS` | `SCREEN`), speaker label, start/end time, original text, detected language, `is_final`, translations `{lang: text}`.
@@ -113,6 +146,11 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
   - Others: auto-detect per utterance. An optional "Others usually speak…" hint is available.
 - **GPU scheduling**: one ASR worker thread owns the model and serves both streams with a fair queue (Others first on ties, because that's what the user is waiting to read). Running two model instances is benchmarked in M03 (D-018).
 - **No CUDA** → CPU int8 with a smaller model (benchmark picks it) + a one-time notice.
+- **As built:**
+  - GPU: Whisper large-v3-turbo int8_float16 (warm-up decode proves the GPU; any failure falls back to the CPU and keeps the reason). CPU: Whisper small int8 (built app, card hidden: 5.2 s for a 10.9 s clip; 2026-10-20). The app never downloads a speech model by itself (`download=False`); setup does.
+  - Models sit in `<models>/whisper/<key>` (plain folder) or the older Hugging Face cache layout.
+  - **What the mic hears** (user request 2026-10-18/19), Settings → General: "Translate into" (`my_language`) is separate from "I speak" (same / detect any / a language) and "I also speak" (up to 3 more; `AudioConfig.mic_languages`, max 4). With 2+ languages each line is detected among just those (`detect_language` share; locks at ≥ 0.97 after ≥ 1 s; the final pass always re-detects). FLEURS: 72/72 whole lines right with 4 candidates; in the first 1.5 s 17–23/24.
+  - Chinese is converted to one script (Simplified by default, OpenCC).
 
 ### 5.5 Translation
 - Engine interface `TranslationEngine.translate(texts, src, tgt) -> list[str]` plus `supports(src, tgt)` and `load()/unload()`.
@@ -123,6 +161,11 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 - **Partials**: translate the committed prefix at most 2×/s when the engine's p50 latency < 150 ms (decided by benchmark). This is off in game mode.
 - **LRU cache** (1 000 entries) keyed by (engine, src, tgt, text).
 - **Language packs**: a pack is the set of model files needed for a language **plus the Noto font(s) for its script** (e.g. Noto Sans JP/KR/SC, Noto Sans Arabic, Noto Sans Devanagari). Latin/Cyrillic are covered by Inter + Noto Sans, which ship with the app. ~15 default languages (list in §13, Q3) are offered in the wizard. More are added via the Language Manager. Every pack has a license field, and packs that aren't permissive are never offered (D-001).
+- **As built:**
+  - Opus-MT (CTranslate2) is the default engine; 43 X↔en pairs are converted and packed (`benchmarks/opus_convert.py`, `tools/model_hosting.py`). A language pack = that language to and from English; other pairs pivot through English. Target tags: `>>pol<<`, `>>ara<<`.
+  - **Qwen3-4B (Q4_K_M) via a llama.cpp Vulkan `llama-server` subprocess** is the optional "smarter translation" (needs ~3 GB VRAM; offered when the card has ≥ 8 GB). It goes first for `smart_languages` (default Mandarin), for pairs marked `quality: rough` (en-hi, hi-en, ur-en; D-039), and as the fallback for languages with no installed pack (`smart_fallback`, 47 languages, D-038). It pauses in game mode. MADLAD-400 "Best quality" was not built (Qwen replaced it).
+  - No Noto script fonts are downloaded: CJK, Arabic and Devanagari use Windows' own fonts through Qt's fallback. Inter and Noto Sans ship with the app.
+  - Settings → Languages (`ui/language_manager.py`) installs/removes packs with one progress bar; downloads come from the HF repo once it's published (the catalogue gets the pack entries from `tools.model_hosting catalog`).
 
 ### 5.6 Screen OCR
 - **Hotkey → region selector**: a full-virtual-desktop dim overlay. Drag a rectangle; Esc cancels. Works across both monitors.
@@ -131,6 +174,7 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 - Result goes to the chat log as a `SCREEN` utterance (translated like speech), shown in windows whose sources include Screen. Default: an "OCR" window opens next to the region the first time.
 - **Re-capture last region**: a hotkey runs the same region again (useful for game chat).
 - Auto-watch is post-MVP.
+- **As built:** lingua-py was not used (one 300 MB wheel); `services/langdetect.py` detects the language from script letters + function-word lists for the Latin-script languages (Swedish and 12 more added 2026-10-19). RapidOCR runs with `Det.limit_side_len 2560, limit_type max` (its default upscaled chat strips ~5×: 2 s → 0.2 s per capture). `merge_rows` joins words split across boxes and drops overlap repeats.
 
 ### 5.7 Global hotkeys
 - Win32 `RegisterHotKey` via ctypes + a Qt native event filter. No low-level keyboard hooks (they're less likely to trip anti-cheat, D-020).
@@ -154,6 +198,7 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
 - **Never persisted**: transcripts/chat log, OCR images.
 - **Model folder**: default `%LOCALAPPDATA%\LiveTranslator\models`. Changeable in Settings (this PC: `D:\LiveTranslator\models`). Changing it offers to move existing models.
 - **Settings dialog pages**: General (my language, close behaviour), Speakers (§5.13), Audio (devices + meters), Windows (list, defaults, lock layout), Translation (engines, languages → Language Manager), Hotkeys, Performance (game mode, readout, ASR interval), Advanced (echo filter, VAD thresholds, logs folder).
+- **As built:** pages General (Translate into, I speak, I also speak, Chinese characters, folders), Audio, Speakers, Windows, Translation (Qwen per language + fallback), Languages (pack manager), Hotkeys, Performance, Advanced (echo filter, VAD, Restore defaults, **Run setup** again), About (version, privacy, every licence). Settings screens are imported at startup (a lazy import once mixed code versions after an update). One running copy per settings folder (`QLocalServer`, name hashed by profile); a second launch shows the first copy's windows. The app registers its notification name + icon under `HKCU\Software\Classes\AppUserModelId\LiveTranslator.App` (D-037).
 
 ### 5.9 First run and model management
 - **Wizard**: Welcome + privacy note → My language → Mic + speakers (meters) → Languages to install (pre-ticked: mine + the 3 most common others) + model folder + total download size → Download (progress, resumable, SHA-256 verified) → Done (opens the default window).
@@ -162,6 +207,11 @@ Run: `.venv/Scripts/python.exe -m livetranslator` (package `livetranslator/`).
   - Hugging Face downloads go through **huggingface_hub** (`hf_hub_download` / `snapshot_download`: resumable, cached, no token needed for ungated repos). Other files use plain HTTPS with resume.
   - Downloads into a temp file → verify SHA-256 → move into place.
   - Shows free disk space before downloading.
+- **As built (T073):**
+  - Wizard steps: Welcome → Your languages → Microphone and speakers (live level bars) → What to download (sizes, free space, folder; pre-ticked: your language + 3 common) → Downloading (one bar, Pause/Continue, resumes) → Done. It starts from the saved settings when run again from Settings → Advanced; closing a later run doesn't quit.
+  - Setup runs when the speech model is missing, or when an NVIDIA card's cuBLAS isn't loadable (`_needs_setup`).
+  - **NVIDIA libraries (D-026, accepted by the user 2026-10-19):** never in the build. On NVIDIA PCs the wizard downloads NVIDIA's own `nvidia-cublas-cu12` wheel (528 MB, pinned URL + SHA-256) into `<models>/cuda/cublas` and shows an "NVIDIA graphics libraries" row with a link to NVIDIA's licence. cuDNN isn't needed (measured). `platform/cuda.set_runtime_root` adds those folders at start.
+  - `services/models.py` downloads plain HTTPS (named User-Agent) with resume, SHA-256, cancel and an atomic folder swap; sources are `url` (+zip) or `files` (several files). huggingface_hub isn't used for downloads; the Whisper/Qwen/llama.cpp/TitaNet entries point at their upstream files, the Opus-MT packs at the user's HF repo (pending).
 
 ### 5.10 Game mode and performance readout
 - **Game mode** (toggle in tray/hotkey/Settings) applies a preset: smaller/faster ASR config, update interval 1.0 s, partial translation off, lighter MT engine where one exists. The exact preset is set from M03 data (D-004/D-005). **G4 preset (2026-10-17):** turbo at 1.0 s updates, partial translation off, Opus-MT on CPU (0 VRAM), "Best quality" MADLAD unloaded.
@@ -188,6 +238,8 @@ Menu:
 - Quit
 
 Double-click toggles show/hide. The icon's colour shows the status (listening / paused / error). The menu also gets **Discord: Connected ✓ / Connect…**.
+
+**As built:** the tray glyph keeps the palette colours (accent = listening, grey = paused, red = error), so it stays a status light. The **app icon** (desktop, taskbar, notifications, setup) is different since 2026-10-19: a vibrant red tile with a bold white translate glyph (`theme/icons.app_icon`, `APP_ICON` tokens), because the blue glyph blended into the desktop.
 
 ### 5.13 Speaker identification (shared design — gate G6)
 Goal: every line shows *who* said it, from day one.
@@ -237,6 +289,8 @@ Goal: every line shows *who* said it, from day one.
 - "Me" label.
 - Show speaker colours.
 
+**As built:** per-line TitaNet labels (sherpa-onnx, CPU) + Discord own-app mode. Discord's token exchange needs the app's client secret (D-030 Plan A): the user pastes their own app's ID and secret in the 8-step guide (Settings → Speakers; stay-on-top, beside the overlay; "Skip" for the portal survey), both stored DPAPI-encrypted. Discord's authorize prompt is only requested by "Test connection", never by the background client (it used to pop up every 5 s); the token endpoint needs a named User-Agent (Cloudflare 1010 otherwise). The user's sign-in works (2026-10-19); names in a real call are not yet verified (G6).
+
 ## 6. Architecture
 
 ### 6.1 Layers (strict separation)
@@ -277,6 +331,34 @@ livetranslator/
   platform/win32.py      ctypes helpers (topmost, click-through, hotkeys, work areas)
 tests/                   mirrors the package; Tier A pytest + pytest-qt
 benchmarks/              M03 harness + results (results committed as markdown, audio not committed)
+```
+**As built (2026-10-20):**
+```
+app/        application (composition root, LiveTranslatorApp, run), window_manager, tray, lifecycle,
+            controllers: window, settings, speech, translation, ocr, discord, language (packs),
+            setup (wizard plan/download/apply); level_probe, single_instance, paths, log,
+            engine_check (--engine-check), demo (--demo feed)
+core/       state, actions, reducers, store, persistence, migrations, chatlog (echo filter),
+            chat_view / status_view (pure view models), export, languages, presets
+theme/      tokens (incl. APP_ICON), palette_gen (+ with_colors), contrast (+ hard_to_read), qss,
+            icons (+ app_icon), fonts, backdrop
+ui/         floating_window, translation_view, style_popover, custom_colours, transcript_window,
+            region_selector, language_manager, discord_setup, about, readout, status_strip,
+            taskbar_button, screens (place_beside), session (quit/export), dialogs, gallery (dev)
+ui/settings/  settings_window, rows (page/section/row blocks), one *_page per page, hotkey_box,
+              level_meter, context
+ui/wizard/  setup_wizard        ui/widgets/  chat_line, choice/search/font/language pickers,
+                                             swatch, slider, pin/icon buttons, speaker_label, toast
+services/   audio (capture, devices, ring, resample, level), asr (faster_whisper_engine, vad,
+            local_agreement, worker, chinese), mt (router, cache, worker, engines/opus_mt,
+            engines/qwen_llama), ocr (grab, windows_ocr, rapid_ocr), speakers (sherpa_engine,
+            clusters, change, fusion, calibration, discord_rpc, token_store, worker),
+            models (catalogue + downloader), language_packs, langdetect, hotkeys, metrics, timings
+platform/   win32 (ctypes), cuda (NVIDIA library folders), app_identity (registry name + icon)
+data/       model_catalog.json, third_party.json (generated)
+tools/      build_app, build_installer + installer/LiveTranslator.iss, app_entry, model_hosting,
+            third_party, release_license_check, check_licenses (+ policy/overrides), soak,
+            palette_preview, verify/win.ps1
 ```
 
 ### 6.3 Central store
@@ -340,6 +422,8 @@ While G1 waits for feedback, the independent non-UI milestones (M03, M04, M05 lo
 | Idle (both muted) | no GPU work | — |
 These are measured in M03/M09 and adjusted with the user if they can't be met.
 
+**Measured so far:** see `history/M03-benchmarks.md`, `M09-game-mode.md` and the T112 soak (`history/M11-hardening.md`, 2026-10-20: recorded speech in 8 languages for 15 min, 140 lines, all translated, no errors, memory flat at ~1.4 GB; delay from speech end to translated line p50 1.2 s, p95 1.5 s rising to 3.3 s when a rare slow translation (3 of 140, 1.8–3.4 s, not reproducible alone) fell inside the 50-line window). CPU-only PCs (Whisper small): ~0.5× real time per final line. Not yet measured with a game running or in a real Discord call.
+
 ## 9. Error handling
 - Every service failure becomes a `runtime` status with a plain-language message + suggested action. It's shown in the window footer and the tray tooltip.
 - CUDA/cuDNN missing → CPU fallback (§5.4). Model missing or corrupt → offer to re-download. Device missing → fallback + retry (§5.3). OCR language missing → RapidOCR.
@@ -385,6 +469,10 @@ These are measured in M03/M09 and adjusted with the user if they can't be met.
 - Every license is recorded in the DATA_TRACKER license register (D-022) and confirmed by `fact-checker` before the dependency is added.
 - Benchmark datasets (e.g. FLEURS, CC-BY-4.0) are used locally for measurement only and never shipped (D-017).
 - New dependencies are added to D-001 with their license before use.
+- **As built:**
+  - Installer and build exist (see §0 commands). The build strips `nvidia/*`, cuBLAS/cuDNN/cudart/NVRTC DLLs, PyAV (`av`, D-027: a stub keeps faster-whisper importable) and opencv's FFmpeg plugin (D-034); keeps only Phosphor of QtAwesome's fonts; copies `licenses/`, `THIRD_PARTY_LICENSES.md` (generated by `tools/third_party.py`) and `LICENSE.txt` (MIT). `tools/release_license_check.py` runs on every build (0 blocking, 0 warnings on 2026-10-20). App folder ~453 MB; setup ~130 MB.
+  - Inno Setup 6.7.3 builds the setup (free for a free app; D-040). The NVIDIA cuBLAS wheel is downloaded by the wizard from NVIDIA's package (D-026, accepted).
+  - Still open before a public release: Qt/PySide6 source hosting + written offer (D-021), D-027 review, D-011 consent note.
 
 ## 12. Milestone plan
 | M | Name | Main output | Gate | Depends on |
@@ -409,3 +497,5 @@ Task details: `docs/tasks/Mxx-*.md`. Index: `TASKS.md`.
 4. **Window opacity model**: separate background opacity (text stays crisp) + whole-window opacity. (Default: both.)
 5. **Profiles and glossary**: post-MVP. (Default: yes.)
 6. **Performance targets** in §8. (Default: accept as targets, revisit after M03.)
+
+**Answered since** (2026-10-17 → 2026-10-19): Discord own-app plan + per-line TitaNet labels accepted (G4/G6 work); default language list kept, plus Vietnamese and 31 more in "other languages"; Qwen for Mandarin on by default with Simplified script; installer via Inno Setup with shortcuts unticked; D-026 NVIDIA download accepted; app licence MIT; everything on D:. Pending: Hugging Face account/username for the pack upload.

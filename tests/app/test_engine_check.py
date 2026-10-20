@@ -56,3 +56,19 @@ def test_a_failure_still_writes_the_report(tmp_path: Path, monkeypatch, capsys):
     report = next(tmp_path.rglob(check.REPORT_FILE)).read_text(encoding="utf-8")
     assert report.startswith("FAILED: FileNotFoundError")
     assert "FAILED" in capsys.readouterr().out
+
+
+def test_a_console_without_chinese_doesnt_crash_the_report(tmp_path: Path, monkeypatch):
+    """2026-10-20: printing a Mandarin result to a cp1252 console crashed the built app,
+    whose crash box then sat hidden and looked like a hang."""
+    import io
+    import sys
+
+    from livetranslator.app import engine_check as check
+
+    monkeypatch.setenv("LIVETRANSLATOR_HOME", str(tmp_path))
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    assert check.engine_check(tmp_path / "联合国.wav") == 1  # missing: the name is in the report
+    report = next(tmp_path.rglob(check.REPORT_FILE)).read_text(encoding="utf-8")
+    assert "联合国" in report  # the file keeps it; the console got "?" instead

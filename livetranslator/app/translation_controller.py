@@ -126,7 +126,12 @@ class TranslationController:
         """Called on the worker thread; the store queues the status to the UI thread."""
         pair = f"{language(job.src).english} to {language(job.tgt).english}"
         if isinstance(error, UnsupportedLanguage):
-            message = f"No translation model for {pair} yet, so those lines stay untranslated."
+            other = job.src if job.tgt == "en" else job.tgt
+            message = (
+                f"No translation model for {pair} yet, so those lines stay untranslated. "
+                f"Add {language(other).english} in Settings, Languages, or turn on the "
+                "smarter translator in Settings, Translation."
+            )
         else:
             message = f"Translating {pair} failed. Details are in the log."
         self._store.dispatch(a.SetStatus(STATUS_KEY, StatusLevel.WARNING, message))

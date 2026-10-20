@@ -141,6 +141,7 @@ def test_engine_error_does_not_crash(env):
     status = store.state.runtime.statuses["translation"]  # ...but the user is told (T051)
     assert status.level is StatusLevel.WARNING
     assert status.message.startswith("No translation model for")
+    assert "Settings, Languages" in status.message  # says how to fix it (2026-10-20)
 
 
 def test_real_worker_thread_delivers_on_main_thread(env, qtbot):

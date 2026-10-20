@@ -9,9 +9,9 @@ one. Exit code 0 = speech worked.
 
 from __future__ import annotations
 
-import faulthandler
 import os
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -22,8 +22,6 @@ from livetranslator.core.persistence import load_config
 
 SAMPLE_RATE = 16_000
 REPORT_FILE = "engine-check.txt"
-HANG_FILE = "engine-check-exit.txt"
-HANG_S = 20
 PCM = 1
 FLOAT = 3
 EXTENSIBLE = 0xFFFE
@@ -115,13 +113,16 @@ def engine_check(clip: Path) -> int:
         code, lines = run_check(clip)
     except Exception as exc:  # the report must still be written
         code, lines = 1, [f"FAILED: {type(exc).__name__}: {exc}"]
+    alive = [t for t in threading.enumerate() if t is not threading.main_thread()]
+    lines.append(
+        "threads still running: "
+        + (", ".join(f"{t.name}{'' if t.daemon else ' (non-daemon)'}" for t in alive) or "none")
+    )
     report = "\n".join(lines) + "\n"
     log_dir = app_paths().log_dir
     log_dir.mkdir(parents=True, exist_ok=True)
     (log_dir / REPORT_FILE).write_text(report, encoding="utf-8")
-    if sys.stdout is not None:
-        sys.stdout.write(report)
-    # If shutting down hangs, say where (every thread's stack) instead of lingering.
-    hang = (log_dir / HANG_FILE).open("w", encoding="utf-8")
-    faulthandler.dump_traceback_later(HANG_S, exit=True, file=hang)
+    if sys.stdout is not None:  # a console may not show every script (cp1252)
+        encoding = sys.stdout.encoding or "utf-8"
+        sys.stdout.write(report.encode(encoding, errors="replace").decode(encoding))
     return code
