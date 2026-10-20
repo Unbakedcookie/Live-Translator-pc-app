@@ -103,38 +103,6 @@
       "attribution": "NVIDIA cuBLAS 12.9 from NVIDIA's nvidia-cublas-cu12 12.9.2.10 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
     },
     {
-      "id": "cuda-cudnn",
-      "title": "Graphics card runtime (NVIDIA cuDNN 9.27)",
-      "kind": "gpu-runtime",
-      "license": "LicenseRef-NVIDIA-Proprietary",
-      "size_mb": 709,
-      "source": {
-        "type": "url",
-        "url": "https://files.pythonhosted.org/packages/aa/38/f856579877f7c1c5066e61182e7de7bc27bf35a78c8d1b0fa592e6985bc4/nvidia_cudnn_cu12-9.27.0.42-py3-none-win_amd64.whl",
-        "sha256": "06e9b0026f3bad97d2b58666330fabec04fe1672f776661ecb0ce0029c27f142",
-        "archive": "zip"
-      },
-      "dest": "cuda/cudnn",
-      "marker": "nvidia/cudnn/bin/cudnn64_9.dll",
-      "attribution": "NVIDIA cuDNN 9.27 from NVIDIA's nvidia-cudnn-cu12 9.27.0.42 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
-    },
-    {
-      "id": "cuda-nvrtc",
-      "title": "Graphics card runtime (NVIDIA NVRTC 12.9)",
-      "kind": "gpu-runtime",
-      "license": "LicenseRef-NVIDIA-Proprietary",
-      "size_mb": 73,
-      "source": {
-        "type": "url",
-        "url": "https://files.pythonhosted.org/packages/52/de/823919be3b9d0ccbf1f784035423c5f18f4267fb0123558d58b813c6ec86/nvidia_cuda_nvrtc_cu12-12.9.86-py3-none-win_amd64.whl",
-        "sha256": "72972ebdcf504d69462d3bcd67e7b81edd25d0fb85a2c46d3ea3517666636349",
-        "archive": "zip"
-      },
-      "dest": "cuda/cuda_nvrtc",
-      "marker": "nvidia/cuda_nvrtc/bin/nvrtc64_120_0.dll",
-      "attribution": "NVIDIA NVRTC 12.9 from NVIDIA's nvidia-cuda-nvrtc-cu12 12.9.86 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed"
-    },
-    {
       "id": "speakers-titanet",
       "title": "Speaker labels (NVIDIA TitaNet-large)",
       "kind": "speakers",

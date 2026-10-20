@@ -84,8 +84,6 @@ Python itself: Python Software Foundation License (`licenses/Python.txt`).
 | Speech recognition (Whisper large-v3-turbo) | MIT | OpenAI Whisper (MIT), CTranslate2 conversion by Mobius Labs / Dropbox |
 | Speech recognition for computers without an NVIDIA card (Whisper small) | MIT | OpenAI Whisper (MIT), CTranslate2 conversion by Systran |
 | Graphics card runtime (NVIDIA cuBLAS 12.9) | LicenseRef-NVIDIA-Proprietary | NVIDIA cuBLAS 12.9 from NVIDIA's nvidia-cublas-cu12 12.9.2.10 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed |
-| Graphics card runtime (NVIDIA cuDNN 9.27) | LicenseRef-NVIDIA-Proprietary | NVIDIA cuDNN 9.27 from NVIDIA's nvidia-cudnn-cu12 9.27.0.42 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed |
-| Graphics card runtime (NVIDIA NVRTC 12.9) | LicenseRef-NVIDIA-Proprietary | NVIDIA NVRTC 12.9 from NVIDIA's nvidia-cuda-nvrtc-cu12 12.9.86 package on PyPI, under NVIDIA's licence (in the package); downloaded to this PC, not redistributed |
 | Speaker labels (NVIDIA TitaNet-large) | CC-BY-4.0 | TitaNet-large by NVIDIA (CC-BY-4.0), ONNX export by k2-fsa/sherpa-onnx |
 | Smarter translation (Qwen3-4B-Instruct) | Apache-2.0 | Qwen3-4B-Instruct-2507 by Alibaba Qwen (Apache-2.0), GGUF by Unsloth |
 | Runtime for smarter translation (llama.cpp, Vulkan) | MIT | llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception) |

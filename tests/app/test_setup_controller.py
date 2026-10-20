@@ -176,8 +176,8 @@ def test_nvidia_libraries_come_with_the_plan_only_when_missing(tmp_path: Path):
     """D-026: the built app doesn't ship cuBLAS/cuDNN; NVIDIA cards download them."""
     _, built, _ = make(tmp_path, Machine(cuda=True, vram_mb=12288, gpu_runtime=False))
     ids = [e.id for e in built.plan(SetupChoices()).entries]
-    assert ids == [SPEECH_GPU, "cuda-cublas", "cuda-cudnn", "cuda-nvrtc", SPEAKERS]
+    assert ids == [SPEECH_GPU, "cuda-cublas", SPEAKERS]
     _, dev, _ = make(tmp_path, Machine(cuda=True, vram_mb=12288, gpu_runtime=True))
-    assert "cuda-cudnn" not in [e.id for e in dev.plan(SetupChoices()).entries]
+    assert "cuda-cublas" not in [e.id for e in dev.plan(SetupChoices()).entries]
     _, cpu, _ = make(tmp_path, Machine(cuda=False, vram_mb=None, gpu_runtime=False))
     assert "cuda-cublas" not in [e.id for e in cpu.plan(SetupChoices()).entries]

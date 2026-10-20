@@ -10,8 +10,10 @@ def test_downloaded_libraries_are_found(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(cuda.importlib, "import_module", _no_pip_wheels)
     assert cuda.runtime_bin_dirs() == [] and not cuda.runtime_present()
     root = tmp_path / "cuda"
-    for name in ("cublas", "cudnn"):
-        (root / name / "nvidia" / name / "bin").mkdir(parents=True)
+    (root / "cudnn" / "nvidia" / "cudnn" / "bin").mkdir(parents=True)
+    cuda.set_runtime_root(root)
+    assert not cuda.runtime_present()  # cuDNN alone isn't enough: cuBLAS is the one needed
+    (root / "cublas" / "nvidia" / "cublas" / "bin").mkdir(parents=True)
     cuda.set_runtime_root(root)
     cuda.set_runtime_root(root)  # once only
     assert [d.parent.name for d in cuda.runtime_bin_dirs()] == ["cublas", "cudnn"]

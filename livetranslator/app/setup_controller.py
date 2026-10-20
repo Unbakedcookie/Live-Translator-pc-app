@@ -38,7 +38,9 @@ SPEECH_GPU = "whisper-large-v3-turbo"
 SPEECH_CPU = "whisper-small"
 SPEAKERS = "speakers-titanet"
 SMART = ("qwen3-4b", "llama-server-vulkan")
-GPU_RUNTIME = ("cuda-cublas", "cuda-cudnn", "cuda-nvrtc")  # NVIDIA cards only (D-026)
+# NVIDIA cards only (D-026). cuBLAS is all Whisper / Opus-MT need on the GPU: the built app
+# ran turbo with no cuDNN loaded at all (2026-10-19), so cuDNN (709 MB) isn't fetched.
+GPU_RUNTIME = ("cuda-cublas",)
 SMART_MIN_VRAM_MB = 8000  # turbo (~1.2 GB) + Qwen (~2.8 GB) + a game's own needs
 COMMON_LANGUAGES = ("es", "zh", "pt", "ru", "de", "fr")  # pre-ticked after your own
 PRETICKED = 3

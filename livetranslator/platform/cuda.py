@@ -41,9 +41,9 @@ def runtime_bin_dirs() -> list[Path]:
 
 
 def runtime_present() -> bool:
-    """cuBLAS and cuDNN can be loaded (from either place)."""
-    names = {d.parent.name for d in runtime_bin_dirs()}
-    return {"cublas", "cudnn"} <= names
+    """cuBLAS can be loaded (from either place); CTranslate2 needs nothing else on the GPU
+    for Whisper and Opus-MT (measured 2026-10-19: no cuDNN loaded while transcribing)."""
+    return "cublas" in {d.parent.name for d in runtime_bin_dirs()}
 
 
 def add_cuda_dll_dirs() -> list[Path]:
