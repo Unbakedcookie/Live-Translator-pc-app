@@ -14,6 +14,7 @@ that allows distributing apps built with it.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -76,6 +77,8 @@ def make_icon(path: Path) -> Path:
 
 
 def pyinstaller(icon_path: Path, console: bool = False) -> None:
+    # Its cache defaults to %LOCALAPPDATA% on C:, which is full; keep it with the project.
+    os.environ.setdefault("PYINSTALLER_CONFIG_DIR", str(ROOT / "local" / "pyinstaller"))
     import PyInstaller.__main__ as pyi
 
     sep = ";"  # Windows --add-data separator
