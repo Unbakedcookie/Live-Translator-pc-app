@@ -11,7 +11,7 @@
 
 
 - **Status 2026-10-19 (night):** pushed; installer done (`python -m tools.build_installer`, Inno Setup 6.7.3 in `local/tools`, 130 MB setup, shortcut boxes unticked, install/uninstall verified); D-026 accepted by user + NVIDIA licence row in wizard; up to 4 spoken languages; Custom colours editor (slots + picker) replaces the one-colour picker; red app icon. Tests 688.
-- **Waiting on the user:** (1) HF login + username (tomorrow) → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) G3 look review (Settings General/Languages/About, wizard, Custom colours editor, icon); (3) pick a licence for the app itself before a public release.
+- **Waiting on the user:** (1) HF login + username (tomorrow) → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) G3 look review (Settings General/Languages/About, wizard, Custom colours editor, icon). App licence: MIT (user 2026-10-19, `LICENSE`).
 - **Next for me:** rebuild app + setup with the new icon; readout.py:75 RuntimeError + slow pt->en (log); Language Manager live test after (1); T112 long live session; clean `D:/LiveTranslator/fresh-profile`, `fresh2`, `install-test-profile` when done.
 
 ## Task map

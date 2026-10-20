@@ -53,6 +53,10 @@ class AboutPage(SettingsPage):
         texts.clicked.connect(lambda: ctx.open_folder(licenses_dir()))
         app.row("Licence texts", "The full text of every licence below.", texts)
         app.row("Project page", PROJECT_URL)
+        app.row(
+            f"{APP_DISPLAY_NAME} licence",
+            "MIT License: free to use, change and share (LICENSE.txt next to the app).",
+        )
         qt = self.section("Qt and Qt for Python")
         qt.row("GNU Lesser General Public License v3", str(notices.get("qt_notice", "")))
         models = self.section("Models it downloads")

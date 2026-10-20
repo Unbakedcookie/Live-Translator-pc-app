@@ -124,6 +124,7 @@ def add_notices(app: Path) -> None:
     if missing:
         raise SystemExit(f"no licence text for: {', '.join(missing)}")
     shutil.copy2(ROOT / "THIRD_PARTY_LICENSES.md", app / "THIRD_PARTY_LICENSES.md")
+    shutil.copy2(ROOT / "LICENSE", app / "LICENSE.txt")  # the app's own (MIT, 2026-10-19)
 
 
 def check(app: Path) -> int:

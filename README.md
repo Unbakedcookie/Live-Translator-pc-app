@@ -108,6 +108,8 @@ only ever sent to Discord.
 
 ## Licences
 
+Live Translator itself is free and open source under the [MIT License](LICENSE).
+
 Live Translator uses open-source software and models under their own licences, listed in
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) and in **Settings → About**. Qt for Python
 (PySide6) is used under the LGPL v3.
