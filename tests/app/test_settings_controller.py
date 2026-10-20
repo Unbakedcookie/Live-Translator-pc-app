@@ -142,18 +142,21 @@ def test_mic_language_choices_round_trip():
     from livetranslator.app.settings_controller import mic_choice, mic_languages_for
 
     cases = [
-        (("same", ""), ()),
-        (("same", "es"), ("en", "es")),
-        (("same", "en"), ()),  # "also" = the same language: nothing extra
-        (("auto", "es"), ("auto",)),
-        (("ja", ""), ("ja",)),
-        (("ja", "en"), ("ja", "en")),
+        (("same", ()), ()),
+        (("same", ("es",)), ("en", "es")),
+        (("same", ("en",)), ()),  # "also" = the same language: nothing extra
+        (("auto", ("es",)), ("auto",)),
+        (("ja", ("",)), ("ja",)),
+        (("ja", ("en",)), ("ja", "en")),
+        (("ja", ("en", "", "en", "zh", "vi")), ("ja", "en", "zh", "vi")),  # blanks, repeats
+        (("ja", ("en", "zh", "vi", "ko")), ("ja", "en", "zh", "vi")),  # at most 4
     ]
     for (first, also), saved in cases:
         assert mic_languages_for(first, also, "en") == saved, (first, also)
-    assert mic_choice(()) == ("same", "")
-    assert mic_choice(("auto",)) == ("auto", "")
-    assert mic_choice(("ja", "en")) == ("ja", "en") and mic_choice(("ja",)) == ("ja", "")
+    assert mic_choice(()) == ("same", ())
+    assert mic_choice(("auto",)) == ("auto", ())
+    assert mic_choice(("ja", "en", "zh")) == ("ja", ("en", "zh"))
+    assert mic_choice(("ja",)) == ("ja", ())
 
 
 def test_mic_languages_are_validated():
@@ -163,6 +166,6 @@ def test_mic_languages_are_validated():
     from livetranslator.core.state import AudioConfig
 
     assert AudioConfig(mic_languages=("auto",)).mic_languages == ("auto",)
-    for bad in (("en", "en"), ("en", "es", "ja", "ko"), ("auto", "en"), ("English",)):
+    for bad in (("en", "en"), ("en", "es", "ja", "ko", "vi"), ("auto", "en"), ("English",)):
         with pytest.raises(ValidationError):
             AudioConfig(mic_languages=bad)

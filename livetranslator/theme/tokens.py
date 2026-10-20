@@ -37,6 +37,17 @@ class Palette:
         return self.speaker_others[index % len(self.speaker_others)]
 
 
+def color_names() -> tuple[str, ...]:
+    """Every colour a palette has, by `color_tokens` name (custom colours use these)."""
+    names: list[str] = []
+    for f in fields(Palette):
+        if f.name == "speaker_others":
+            names += [f"speaker_others_{i}" for i in range(1, SPEAKER_RAMP_SIZE + 1)]
+        elif f.type in ("str", str) and f.name not in ("id", "name"):
+            names.append(f.name)
+    return tuple(names)
+
+
 def color_tokens(palette: Palette) -> dict[str, str]:
     """Flatten a palette into `name -> '#RRGGBB'` (speaker ramp as speaker_others_1..8)."""
     tokens: dict[str, str] = {}
@@ -237,6 +248,7 @@ class Motion:
     chrome_fade_ms: int = 150
     chrome_hide_delay_ms: int = 600
     toast_ms: int = 2500
+    colour_apply_ms: int = 40  # custom colour editor: dragging in the picker applies this often
 
 
 @dataclass(frozen=True)
@@ -278,6 +290,7 @@ class SettingsMetrics:
     meter_width: int = 160
     meter_height: int = 6
     title_size: int = 16  # page title, pt
+    colour_slot_width: int = 200  # custom colour editor: one labelled colour slot
 
 
 @dataclass(frozen=True)
@@ -289,6 +302,19 @@ class SelectorMetrics:
     min_size: int = 8  # px; a smaller drag counts as a click (cancel)
 
 
+@dataclass(frozen=True)
+class AppIconStyle:
+    """The app's own icon (desktop, taskbar, notifications). User request 2026-10-19: the
+    blue glyph blended into the desktop; now a vibrant red tile with a bold white glyph."""
+
+    tile: str = "#E8202A"
+    glyph: str = "#FFFFFF"
+    glyph_name: str = "translate-bold"
+    glyph_scale: float = 0.74  # glyph size / tile size
+    corner: float = 0.22  # corner radius / tile size
+    size: int = 256  # largest image; Windows scales it down
+
+
 FONTS = Fonts()
 SPACE = Spacing()
 RADIUS = Radius()
@@ -297,6 +323,7 @@ OVERLAY = OverlayText()
 WINDOW = WindowMetrics()
 SETTINGS = SettingsMetrics()
 SELECTOR = SelectorMetrics()
+APP_ICON = AppIconStyle()
 
 
 def default_outline_width(palette: Palette) -> int:

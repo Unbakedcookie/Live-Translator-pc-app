@@ -13,10 +13,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Literal
 
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 
-from livetranslator.theme.tokens import Palette
+from livetranslator.theme.tokens import APP_ICON, Palette
 
 os.environ.setdefault("QT_API", "pyside6")  # QtAwesome uses QtPy; pin it to PySide6
 _qta: Any = importlib.import_module("qtawesome")  # untyped package
@@ -60,6 +60,25 @@ def icon(
     except Exception as exc:  # QtAwesome raises a bare Exception for unknown names
         raise ValueError(f"unknown Phosphor icon {name!r}") from exc
     return result
+
+
+def app_icon() -> QIcon:
+    """The app's own icon: a red tile with a bold white translate glyph (APP_ICON)."""
+    size = APP_ICON.size
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor(APP_ICON.tile))
+    radius = size * APP_ICON.corner
+    painter.drawRoundedRect(QRectF(0, 0, size, size), radius, radius)
+    glyph = round(size * APP_ICON.glyph_scale)
+    image = _qta.icon(_qualified(APP_ICON.glyph_name), color=APP_ICON.glyph).pixmap(glyph, glyph)
+    offset = (size - glyph) // 2
+    painter.drawPixmap(offset, offset, glyph, glyph, image)
+    painter.end()
+    return QIcon(pixmap)
 
 
 def has_icon(name: str) -> bool:

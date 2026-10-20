@@ -12,7 +12,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, FONTS, OVERLAY, WINDOW
+from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, FONTS, OVERLAY, WINDOW, color_names
 
 SCHEMA_VERSION = 2
 LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
@@ -87,6 +87,9 @@ class WindowStyle(Frozen):
     palette_id: str = DEFAULT_PALETTE_ID
     custom_seed: str | None = None  # '#RRGGBB' -> generated palette instead of palette_id
     custom_dark: bool = True
+    # Colours set one by one in "Custom colours" (user request 2026-10-19), on top of the
+    # theme above: (colour name from tokens.color_names, '#RRGGBB') pairs. () = none.
+    custom_colors: tuple[tuple[str, str], ...] = ()
     bg_opacity: Opacity = WINDOW.bg_opacity_default
     window_opacity: WindowOpacity = WINDOW.window_opacity_default
     font_family: str | None = None  # None = Inter
@@ -102,6 +105,19 @@ class WindowStyle(Frozen):
         if value is not None and not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
             raise ValueError(f"custom_seed must be '#RRGGBB', got {value!r}")
         return value.upper() if value else value
+
+    @field_validator("custom_colors")
+    @classmethod
+    def _custom_colors(cls, value: tuple[tuple[str, str], ...]) -> tuple[tuple[str, str], ...]:
+        names = color_names()
+        seen: set[str] = set()
+        for name, color in value:
+            if name not in names or name in seen:
+                raise ValueError(f"unknown or repeated colour name {name!r}")
+            if not re.fullmatch(r"#[0-9A-Fa-f]{6}", color):
+                raise ValueError(f"colours must be '#RRGGBB', got {color!r}")
+            seen.add(name)
+        return tuple(sorted(((n, c.upper()) for n, c in value), key=lambda nc: names.index(nc[0])))
 
 
 class WindowConfig(Frozen):
@@ -135,7 +151,7 @@ class DeviceRef(Frozen):
     host_api: str = "Windows WASAPI"
 
 
-MAX_MIC_LANGUAGES = 3
+MAX_MIC_LANGUAGES = 4  # "I speak" + 3 more (user request 2026-10-19)
 _LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}$")
 
 
@@ -146,7 +162,7 @@ class AudioConfig(Frozen):
     others_enabled: bool = True
     # What the microphone may hear (user request 2026-10-18: practise another language and
     # see your own lines translated). () = the language you translate into; ("auto",) =
-    # detect any; 1-3 codes = those (with 2+, each line is checked against just them).
+    # detect any; 1-4 codes = those (with 2+, each line is checked against just them).
     mic_languages: tuple[str, ...] = ()
 
     @field_validator("mic_languages")

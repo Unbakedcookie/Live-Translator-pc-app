@@ -52,6 +52,7 @@ from livetranslator.theme.icons import icon
 from livetranslator.theme.palette_gen import palette_for
 from livetranslator.theme.qss import badge_qss, pill_qss, window_qss
 from livetranslator.theme.tokens import FONTS, MOTION, RADIUS, SPACE, WINDOW, Palette
+from livetranslator.ui.custom_colours import CustomColoursEditor
 from livetranslator.ui.geometry import (
     EDGE_BOTTOM,
     EDGE_LEFT,
@@ -210,7 +211,10 @@ class FloatingWindow(QWidget):
         if cfg is None:
             raise ValueError(f"no window config {window_id!r}")
         self.palette_value = palette_for(
-            cfg.style.palette_id, cfg.style.custom_seed, cfg.style.custom_dark
+            cfg.style.palette_id,
+            cfg.style.custom_seed,
+            cfg.style.custom_dark,
+            cfg.style.custom_colors,
         )
         self.content = TranslationView(controller.store, window_id, self)
         # "New lines" pill (T062): shown while scrolled up and newer lines arrived.
@@ -237,6 +241,7 @@ class FloatingWindow(QWidget):
         self._hide_timer.setInterval(MOTION.chrome_hide_delay_ms)
         self._hide_timer.timeout.connect(self._maybe_hide_chrome)
         self.popover: StylePopover | None = None
+        self.colour_editor: CustomColoursEditor | None = None
 
         # Click-through help (user feedback G1): the window gets no mouse events while
         # click-through is on, so the cursor is polled to show how to turn it off.
@@ -284,7 +289,9 @@ class FloatingWindow(QWidget):
 
     def apply_config(self, cfg: WindowConfig) -> None:
         style = cfg.style
-        self.palette_value = palette_for(style.palette_id, style.custom_seed, style.custom_dark)
+        self.palette_value = palette_for(
+            style.palette_id, style.custom_seed, style.custom_dark, style.custom_colors
+        )
         self.chrome.set_state(self.palette_value, cfg)
         self.content.set_view(self.palette_value, cfg)
         self.new_lines.setStyleSheet(pill_qss(self.palette_value))
@@ -593,6 +600,7 @@ class FloatingWindow(QWidget):
     def open_style_popover(self) -> None:
         if self.popover is None:
             self.popover = StylePopover(self._controller, self.window_id, self)
+            self.popover.custom_requested.connect(self.open_colour_editor)
         self.popover.refresh()
         self.popover.adjustSize()
         anchor = self.chrome.style_button.mapToGlobal(QPoint(0, self.chrome.style_button.height()))
@@ -604,6 +612,11 @@ class FloatingWindow(QWidget):
             wanted = clamp_into(wanted, monitor_for(wanted, screens).work)
         self.popover.move(wanted.x, wanted.y)
         self.popover.show()
+
+    def open_colour_editor(self) -> None:
+        if self.colour_editor is None:
+            self.colour_editor = CustomColoursEditor(self._controller, self.window_id, self)
+        self.colour_editor.open_beside(self)
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         menu = QMenu(self)

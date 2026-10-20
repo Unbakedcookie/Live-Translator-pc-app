@@ -13,8 +13,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QCloseEvent, QHideEvent
+from PySide6.QtCore import Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QCloseEvent, QDesktopServices, QHideEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
@@ -31,6 +31,7 @@ from livetranslator import APP_DISPLAY_NAME
 from livetranslator.app.level_probe import LevelProbe
 from livetranslator.app.settings_controller import mic_choice, mic_languages_for
 from livetranslator.app.setup_controller import (
+    NVIDIA_LICENSE_URL,
     SetupChoices,
     SetupController,
     SetupPlan,
@@ -39,13 +40,13 @@ from livetranslator.app.setup_controller import (
 from livetranslator.core.languages import language
 from livetranslator.core.state import DEFAULT_HOTKEYS, Source
 from livetranslator.services.language_packs import LanguagePack
-from livetranslator.theme.icons import icon
+from livetranslator.theme.icons import app_icon
 from livetranslator.theme.qss import settings_qss, window_qss
 from livetranslator.theme.tokens import SETTINGS, SPACE, Palette
 from livetranslator.ui.language_manager import pack_description, size_text
 from livetranslator.ui.session import session_ending
 from livetranslator.ui.settings.audio_page import device_choices
-from livetranslator.ui.settings.general_page import also_items, speak_items
+from livetranslator.ui.settings.general_page import ALSO_SPEAK_HELP, AlsoSpeak, speak_items
 from livetranslator.ui.settings.level_meter import LevelMeter
 from livetranslator.ui.settings.rows import SettingsPage, note
 from livetranslator.ui.widgets.choice_combo import ChoiceCombo
@@ -91,9 +92,7 @@ class LanguagesStep(SettingsPage):
         self.speak = ChoiceCombo(speak_items(), first)
         self.speak.setFixedWidth(SETTINGS.control_width)
         self.speak.apply_palette(palette)
-        self.also = ChoiceCombo(also_items(), also)
-        self.also.setFixedWidth(SETTINGS.control_width)
-        self.also.apply_palette(palette)
+        self.also = AlsoSpeak(palette, also)
         section = self.section()
         section.row(
             "Translate into", "The language you read. Windows translate into it.", self.read
@@ -104,11 +103,7 @@ class LanguagesStep(SettingsPage):
             "translated too, so you can check what you said.",
             self.speak,
         )
-        self.also_row = section.row(
-            "I also speak",
-            "If you switch between two languages, each line is checked against both.",
-            self.also,
-        )
+        self.also_row = section.row("I also speak", ALSO_SPEAK_HELP, self.also)
         self.also_row.setEnabled(first != "auto")
         self.speak.choice_changed.connect(lambda c: self.also_row.setEnabled(str(c) != "auto"))
         self.intro("You can change all of this later in Settings.")
@@ -118,7 +113,7 @@ class LanguagesStep(SettingsPage):
         choices.my_language = self.read.current_code()
         choices.mic_languages = mic_languages_for(
             str(self.speak.current_choice()),
-            str(self.also.current_choice() or ""),
+            self.also.codes(),
             choices.my_language,
         )
 
@@ -225,12 +220,21 @@ class DownloadsStep(SettingsPage):
             if machine.cuda
             else "Small model that runs on the processor (no NVIDIA graphics card found)."
         )
-        if machine.cuda and not machine.gpu_runtime:
-            speech = speech.removesuffix(".") + (
-                ", with NVIDIA's graphics libraries (downloaded from NVIDIA's own packages, "
-                "under NVIDIA's licence)."
-            )
         self.speech_row = needed.row("Speech recognition", speech)
+        self.nvidia_licence: QPushButton | None = None
+        if machine.cuda and not machine.gpu_runtime:
+            # D-026: fetched straight from NVIDIA's own package, never bundled by us.
+            self.nvidia_licence = QPushButton("NVIDIA licence")
+            self.nvidia_licence.clicked.connect(
+                lambda: QDesktopServices.openUrl(QUrl(NVIDIA_LICENSE_URL))
+            )
+            needed.row(
+                "NVIDIA graphics libraries",
+                "Lets speech recognition use your graphics card. Downloaded straight from "
+                "NVIDIA's own package, not from us. By downloading them you accept NVIDIA's "
+                "licence.",
+                self.nvidia_licence,
+            )
         self.speakers_row = needed.row(
             "Speaker labels", "Tells voices apart so each line shows who said it."
         )
@@ -374,7 +378,7 @@ class SetupWizard(QWidget):
         self.setObjectName("SettingsRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setWindowTitle("Setup")
-        self.setWindowIcon(icon("translate", palette, "accent"))
+        self.setWindowIcon(app_icon())
         self.setStyleSheet(window_qss(palette) + settings_qss(palette))
         self.resize(SETTINGS.width, SETTINGS.height)
         probe = probe_factory() if probe_factory is not None else None

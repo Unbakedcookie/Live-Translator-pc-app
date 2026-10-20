@@ -43,6 +43,25 @@ def contrast_ratio(fg: str, bg: str) -> float:
     return Color(fg).contrast(bg, method="wcag21")
 
 
+def relative_luminance(color: str) -> float:
+    """WCAG relative luminance, 0 (black) to 1 (white)."""
+    return float(Color(color).luminance())
+
+
+def hard_to_read(palette: Palette) -> list[str]:
+    """Colour names (tokens.color_tokens) whose text is hard to read on its background, for
+    the custom colour editor's warning. Each name once, in palette order."""
+    values = {f.name: getattr(palette, f.name) for f in fields(palette)}
+    found: list[str] = []
+    for fg, bg in TEXT_PAIRS:
+        if fg not in found and contrast_ratio(values[fg], values[bg]) < TEXT_MIN_RATIO:
+            found.append(fg)
+    for i, color in enumerate(palette.speaker_others, start=1):
+        if contrast_ratio(color, palette.bg) < TEXT_MIN_RATIO:
+            found.append(f"speaker_others_{i}")
+    return found
+
+
 def delta_e(a: str, b: str) -> float:
     return Color(a).delta_e(b, method="2000")
 

@@ -105,7 +105,7 @@ def test_run_again_starts_from_the_current_settings(qtbot, tmp_path: Path):
     qtbot.addWidget(wizard)
     assert wizard.languages.read.current_code() == "ja"
     assert wizard.languages.speak.current_choice() == "es"
-    assert wizard.languages.also.current_choice() == "en"
+    assert wizard.languages.also.codes() == ("en",)
     assert not wizard.downloads.smart.isChecked()  # the saved choice, not the recommendation
     left: list[int] = []
     wizard.abandoned.connect(lambda: left.append(1))
@@ -136,3 +136,28 @@ def test_settings_offer_to_run_setup_again(qtbot, tmp_path: Path):
     [button] = [b for b in page.findChildren(QPushButton) if b.text() == "Run setup"]
     button.click()
     assert runs == [1]
+
+
+def test_nvidia_libraries_come_with_their_licence(qtbot, tmp_path: Path, monkeypatch):
+    """D-026 (user OK 2026-10-19): downloaded from NVIDIA's own package, licence linked."""
+    from PySide6.QtGui import QDesktopServices
+
+    from livetranslator.app.setup_controller import NVIDIA_LICENSE_URL
+
+    opened: list[str] = []
+    monkeypatch.setattr(QDesktopServices, "openUrl", lambda url: opened.append(url.toString()))
+    _, wizard = make(qtbot, tmp_path)
+    assert wizard.downloads.nvidia_licence is None  # libraries already loadable
+    controller = SetupController(
+        Store(AppState()),
+        CATALOG,
+        tmp_path / "models",
+        Machine(cuda=True, vram_mb=12288, gpu_runtime=False),
+        lambda _d: FakeManager(tmp_path / "models"),  # type: ignore[arg-type,return-value]
+    )
+    wizard = SetupWizard(controller, PALETTES[DEFAULT_PALETTE_ID])
+    qtbot.addWidget(wizard)
+    button = wizard.downloads.nvidia_licence
+    assert button is not None
+    button.click()
+    assert opened == [NVIDIA_LICENSE_URL]

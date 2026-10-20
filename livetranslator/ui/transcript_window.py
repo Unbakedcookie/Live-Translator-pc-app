@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 from livetranslator.core.export import TranscriptLine, transcript_lines
 from livetranslator.core.languages import language
 from livetranslator.core.store import Store
-from livetranslator.theme.icons import icon
+from livetranslator.theme.icons import app_icon
 from livetranslator.theme.qss import settings_qss, transcript_qss, window_qss
 from livetranslator.theme.tokens import FONTS, SETTINGS, SPACE, Palette
 from livetranslator.ui.session import session_ending
@@ -94,7 +94,7 @@ class TranscriptWindow(QWidget):
         self.setObjectName("TranscriptRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setWindowTitle("Transcript")  # Qt adds " - Live Translator"
-        self.setWindowIcon(icon("translate", palette, "accent"))
+        self.setWindowIcon(app_icon())
         self.setStyleSheet(window_qss(palette) + settings_qss(palette) + transcript_qss(palette))
         self.resize(SETTINGS.width, SETTINGS.height)
 

@@ -6,13 +6,14 @@ WindowController). Hotkey checks are pure so they can be tested without Qt.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Mapping
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 
 from livetranslator.core import actions as a
 from livetranslator.core.state import (
     DEFAULT_HOTKEYS,
     HOTKEY_ACTION_NAMES,
+    MAX_MIC_LANGUAGES,
     DeviceRef,
     EchoFilterConfig,
     PerformanceConfig,
@@ -151,9 +152,9 @@ class SettingsController:
 
     # ------------------------------------------------------------ performance / advanced
 
-    def set_mic_languages(self, first: str, also: str = "") -> None:
+    def set_mic_languages(self, first: str, also: Sequence[str] = ()) -> None:
         """Settings "I speak" + "I also speak". `first`: "same" (the language you translate
-        into), "auto" (detect any) or a language code; `also`: "" or a second code."""
+        into), "auto" (detect any) or a language code; `also`: more codes ("" = none)."""
         chosen = mic_languages_for(first, also, self._store.state.config.my_language)
         self._store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": chosen}))
 
@@ -203,20 +204,26 @@ class SettingsController:
         )
 
 
-def mic_choice(mic_languages: tuple[str, ...]) -> tuple[str, str]:
-    """The ("I speak", "I also speak") choices that show a saved `mic_languages`."""
+def mic_choice(mic_languages: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
+    """The ("I speak", "I also speak" list) choices that show a saved `mic_languages`."""
     if not mic_languages:
-        return "same", ""
+        return "same", ()
     if mic_languages == ("auto",):
-        return "auto", ""
-    return mic_languages[0], mic_languages[1] if len(mic_languages) > 1 else ""
+        return "auto", ()
+    return mic_languages[0], mic_languages[1:]
 
 
-def mic_languages_for(first: str, also: str, my_language: str) -> tuple[str, ...]:
-    """The saved `mic_languages` for the ("I speak", "I also speak") choices."""
+def mic_languages_for(first: str, also: Sequence[str], my_language: str) -> tuple[str, ...]:
+    """The saved `mic_languages` for the ("I speak", "I also speak" list) choices. Blanks,
+    repeats and the first language are dropped; at most MAX_MIC_LANGUAGES in all."""
     if first == "auto":
         return ("auto",)
     base = my_language if first == "same" else first
-    if also and also != base:
-        return (base, also)
+    chosen = [base]
+    for code in also:
+        if code and code not in chosen:
+            chosen.append(code)
+    chosen = chosen[:MAX_MIC_LANGUAGES]
+    if len(chosen) > 1:
+        return tuple(chosen)
     return () if first == "same" else (base,)

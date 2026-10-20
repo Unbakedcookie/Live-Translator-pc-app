@@ -63,7 +63,7 @@ from livetranslator.services.speakers.discord_rpc import SpeakingTimeline
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
-from livetranslator.theme.icons import icon
+from livetranslator.theme.icons import app_icon, icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
 from livetranslator.ui.geometry import Rect, beside, monitor_for
@@ -631,7 +631,7 @@ def run(demo: bool = False, speech: bool = True) -> int:
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_DISPLAY_NAME)
     app.setQuitOnLastWindowClosed(False)
-    app.setWindowIcon(icon("translate", PALETTES[DEFAULT_PALETTE_ID], "accent"))  # dialogs too
+    app.setWindowIcon(app_icon())  # dialogs too
     paths = app_paths()
     paths.ensure()
     setup_logging(paths.log_dir)

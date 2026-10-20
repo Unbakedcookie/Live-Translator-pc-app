@@ -30,7 +30,15 @@ def test_whole_lines_are_detected_among_the_users_languages():
     engine = FasterWhisperEngine(REAL_MODELS)
     engine.load()
     try:
-        for language, pair in (("es", ("es", "en")), ("ja", ("ja", "en")), ("en", ("zh", "en"))):
+        four = ("en", "es", "zh", "ja")  # up to 4 since 2026-10-19: 72/72 whole lines right
+        cases = (
+            ("es", ("es", "en")),
+            ("ja", ("ja", "en")),
+            ("en", ("zh", "en")),
+            ("zh", four),
+            ("es", four),
+        )
+        for language, pair in cases:
             clip = sorted((FLEURS / language).rglob("*.wav"))[0]
             code, share = engine.detect_language(wav(clip), pair)
             assert code == language and share > 0.9, (language, code, share)

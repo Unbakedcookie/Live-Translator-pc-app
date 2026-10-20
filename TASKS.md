@@ -10,9 +10,9 @@
 - **Session start:** read this file + the milestone file in play (M01 next).
 
 
-- **Status 2026-10-19 (evening):** done today: Settings ImportError fix (screens load at startup), 43 Opus-MT pairs converted/checked/packed (`D:/LiveTranslator/hf-staging`), "I speak" split, Swedish + 12 languages in screen detection, OCR 10x faster, T073 setup wizard (verified on empty profiles), T113 notices/About/README, PyInstaller build (`python -m tools.build_app`, release check clean), NVIDIA cuBLAS downloaded by the wizard (D-026; cuDNN not needed), Settings → Advanced → Run setup.
-- **Waiting on the user:** (1) HF login + username → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) OK to download Inno Setup (installer compiler) for the setup .exe — or ship a zip; (3) review D-026 (NVIDIA download approach) before any public release; (4) G3 look review (Settings General/Languages/About, wizard).
-- **Next for me:** installer script once (2) is answered; Language Manager live test after (1); T112 long live session; clean `D:/LiveTranslator/fresh-profile` + `fresh2` test profiles (~4 GB) when done testing.
+- **Status 2026-10-19 (night):** pushed; installer done (`python -m tools.build_installer`, Inno Setup 6.7.3 in `local/tools`, 130 MB setup, shortcut boxes unticked, install/uninstall verified); D-026 accepted by user + NVIDIA licence row in wizard; up to 4 spoken languages; Custom colours editor (slots + picker) replaces the one-colour picker; red app icon. Tests 688.
+- **Waiting on the user:** (1) HF login + username (tomorrow) → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) G3 look review (Settings General/Languages/About, wizard, Custom colours editor, icon); (3) pick a licence for the app itself before a public release.
+- **Next for me:** rebuild app + setup with the new icon; readout.py:75 RuntimeError + slow pt->en (log); Language Manager live test after (1); T112 long live session; clean `D:/LiveTranslator/fresh-profile`, `fresh2`, `install-test-profile` when done.
 
 ## Task map
 | Milestone | Task IDs | Spec file | History file | Gate | Status |

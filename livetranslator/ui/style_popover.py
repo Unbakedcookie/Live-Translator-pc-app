@@ -6,7 +6,7 @@ always shows the true state (including changes made by hotkeys while it is open)
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -24,7 +25,6 @@ from livetranslator.core.state import DisplayMode, Source, WindowConfig
 from livetranslator.theme.palette_gen import palette_for
 from livetranslator.theme.qss import window_qss
 from livetranslator.theme.tokens import (
-    DEFAULT_CUSTOM_SEED,
     FONTS,
     OVERLAY,
     RADIUS,
@@ -33,7 +33,6 @@ from livetranslator.theme.tokens import (
     Palette,
     default_outline_width,
 )
-from livetranslator.ui.widgets.colour_seed_picker import ColourSeedPicker
 from livetranslator.ui.widgets.font_picker import FontPicker
 from livetranslator.ui.widgets.slider import LabeledSlider
 from livetranslator.ui.widgets.swatch import SwatchRow
@@ -43,6 +42,8 @@ SOURCE_LABELS = ((Source.ME, "Me"), (Source.OTHERS, "Others"), (Source.SCREEN, "
 
 class StylePopover(QFrame):
     """Child of its FloatingWindow (deleted with it) but shown as a separate popup window."""
+
+    custom_requested = Signal()  # "Custom colours…": the window opens its colour editor
 
     def __init__(self, controller: WindowController, window_id: str, parent: QWidget) -> None:
         super().__init__(
@@ -67,13 +68,10 @@ class StylePopover(QFrame):
             lambda pid: controller.set_builtin_palette(window_id, pid)
         )
         theme_row.addWidget(self.swatches)
-        self.seed = ColourSeedPicker(DEFAULT_CUSTOM_SEED, True, self)
-        self.seed.seed_chosen.connect(self._on_seed)
-        theme_row.addWidget(self.seed)
-        self.light = QCheckBox("Light", self)
-        self.light.setToolTip("Light version of the one-colour theme")
-        self.light.toggled.connect(self._on_light)
-        theme_row.addWidget(self.light)
+        self.custom = QPushButton("Custom…", self)
+        self.custom.setToolTip("Choose each colour of this window yourself")
+        self.custom.clicked.connect(self._on_custom)
+        theme_row.addWidget(self.custom)
         root.addLayout(theme_row)
 
         self.bg_opacity = LabeledSlider("Background", 0.0, 1.0, WINDOW.bg_opacity_default, self)
@@ -171,7 +169,9 @@ class StylePopover(QFrame):
             self.close()
             return
         style = cfg.style
-        palette = palette_for(style.palette_id, style.custom_seed, style.custom_dark)
+        palette = palette_for(
+            style.palette_id, style.custom_seed, style.custom_dark, style.custom_colors
+        )
         if palette != self._palette:
             self._palette = palette
             self.setStyleSheet(window_qss(palette))
@@ -179,7 +179,6 @@ class StylePopover(QFrame):
             self.font_box.apply_palette(palette)
             self.update()
         widgets = (
-            self.light,
             self.font_box,
             self.font_size,
             self.outline,
@@ -193,11 +192,8 @@ class StylePopover(QFrame):
         )
         for w in widgets:
             w.blockSignals(True)
-        self.swatches.set_current(palette.id if style.custom_seed is None else "")
-        if style.custom_seed:
-            self.seed.set_seed(style.custom_seed, style.custom_dark)
-        self.light.setChecked(not style.custom_dark)
-        self.light.setEnabled(style.custom_seed is not None)
+        customised = style.custom_seed is not None or bool(style.custom_colors)
+        self.swatches.set_current("" if customised else palette.id)
         self.bg_opacity.set_value(style.bg_opacity)
         self.window_opacity.set_value(style.window_opacity)
         self.font_box.set_family(style.font_family or FONTS.overlay_family)
@@ -221,13 +217,9 @@ class StylePopover(QFrame):
 
     # ------------------------------------------------------------ controls -> controller
 
-    def _on_seed(self, seed: str) -> None:
-        self._controller.set_custom_palette(self._window_id, seed, not self.light.isChecked())
-
-    def _on_light(self, light: bool) -> None:
-        cfg = self._config()
-        if cfg is not None and cfg.style.custom_seed:
-            self._controller.set_custom_palette(self._window_id, cfg.style.custom_seed, not light)
+    def _on_custom(self) -> None:
+        self.close()  # a popup; the editor is its own window
+        self.custom_requested.emit()
 
     def _on_font(self, family: str) -> None:
         self._controller.set_style(

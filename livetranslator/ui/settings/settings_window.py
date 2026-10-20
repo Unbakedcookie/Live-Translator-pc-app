@@ -14,7 +14,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QCloseEvent, QShowEvent
 from PySide6.QtWidgets import QHBoxLayout, QListWidget, QListWidgetItem, QStackedWidget, QWidget
 
-from livetranslator.theme.icons import icon
+from livetranslator.theme.icons import app_icon, icon
 from livetranslator.theme.qss import settings_qss, window_qss
 from livetranslator.theme.tokens import SETTINGS, SPACE, WINDOW
 from livetranslator.ui.about import AboutPage
@@ -54,7 +54,7 @@ class SettingsWindow(QWidget):
         self.setObjectName("SettingsRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setWindowTitle("Settings")  # Qt adds " - Live Translator"
-        self.setWindowIcon(icon("translate", ctx.palette, "accent"))
+        self.setWindowIcon(app_icon())
         self.setStyleSheet(window_qss(ctx.palette) + settings_qss(ctx.palette))
         self.resize(SETTINGS.width, SETTINGS.height)
 

@@ -30,7 +30,12 @@ FULL = AppConfig(
             id="w1",
             target_lang="ja",
             sources=(Source.OTHERS, Source.SCREEN),
-            style=WindowStyle(palette_id="neon", bg_opacity=0.5, custom_seed="#3B82F6"),
+            style=WindowStyle(
+                palette_id="neon",
+                bg_opacity=0.5,
+                custom_seed="#3B82F6",
+                custom_colors=(("bg", "#FFFFFF"), ("speaker_others_3", "#123456")),
+            ),
             geometry=Geometry(x=-200, y=1200, width=600, height=240, screen=r"\\.\DISPLAY2"),
             pinned=False,
         ),

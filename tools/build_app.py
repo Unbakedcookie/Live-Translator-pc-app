@@ -65,11 +65,10 @@ def make_icon(path: Path) -> Path:
     from PySide6.QtWidgets import QApplication
 
     from livetranslator.platform.app_identity import write_icon
-    from livetranslator.theme.icons import icon
-    from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
+    from livetranslator.theme.icons import app_icon
 
     app = QApplication.instance() or QApplication([])
-    written = write_icon(icon("translate", PALETTES[DEFAULT_PALETTE_ID], "accent"), path.parent)
+    written = write_icon(app_icon(), path.parent)
     del app
     if written is None:
         raise SystemExit("couldn't write the app icon")

@@ -10,11 +10,17 @@ palette that passes `check_palette`.
 from __future__ import annotations
 
 import importlib
+from dataclasses import replace
 from functools import lru_cache
 from typing import Any
 
-from livetranslator.theme.contrast import TEXT_MIN_RATIO, UI_MIN_RATIO, ensure_contrast
-from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES, Palette
+from livetranslator.theme.contrast import (
+    TEXT_MIN_RATIO,
+    UI_MIN_RATIO,
+    ensure_contrast,
+    relative_luminance,
+)
+from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES, SPEAKER_RAMP_SIZE, Palette
 
 # materialyoucolor ships without type information.
 _hct: Any = importlib.import_module("materialyoucolor.hct")
@@ -50,13 +56,49 @@ def ramp_hues(seed_hue: float) -> list[float]:
     return [(seed_hue + 22.5 + 45.0 * step) % 360.0 for step in _RAMP_STEPS]
 
 
+DARK_BG_LUMINANCE = 0.4  # a custom background darker than this counts as a dark theme
+
+
 @lru_cache(maxsize=32)
-def palette_for(palette_id: str, custom_seed: str | None, custom_dark: bool) -> Palette:
+def palette_for(
+    palette_id: str,
+    custom_seed: str | None,
+    custom_dark: bool,
+    custom_colors: tuple[tuple[str, str], ...] = (),
+) -> Palette:
     """The palette a window uses: generated from its seed if it has one, else a built-in
-    (unknown ids fall back to the default so a stale setting never breaks a window)."""
+    (unknown ids fall back to the default so a stale setting never breaks a window), then
+    any colours the user set one by one."""
     if custom_seed:
-        return generate_palette(custom_seed, dark=custom_dark)
-    return PALETTES.get(palette_id, PALETTES[DEFAULT_PALETTE_ID])
+        base = generate_palette(custom_seed, dark=custom_dark)
+    else:
+        base = PALETTES.get(palette_id, PALETTES[DEFAULT_PALETTE_ID])
+    return with_colors(base, custom_colors)
+
+
+def with_colors(base: Palette, colors: tuple[tuple[str, str], ...]) -> Palette:
+    """`base` with some colours replaced (names as in tokens.color_names). Unknown names are
+    ignored. A new background decides whether the result counts as dark."""
+    if not colors:
+        return base
+    others = list(base.speaker_others)
+    changes: dict[str, object] = {}
+    for name, color in colors:
+        if name.startswith("speaker_others_"):
+            index = int(name.removeprefix("speaker_others_")) - 1
+            if 0 <= index < SPEAKER_RAMP_SIZE:
+                others[index] = color
+        elif name in base.__dataclass_fields__ and name not in ("id", "name", "is_dark"):
+            changes[name] = color
+    bg = str(changes.get("bg", base.bg))
+    return replace(
+        base,
+        id=f"{base.id}_edited",
+        name=f"{base.name} (custom)",
+        is_dark=relative_luminance(bg) < DARK_BG_LUMINANCE,
+        speaker_others=tuple(others),
+        **changes,  # type: ignore[arg-type]
+    )
 
 
 def generate_palette(seed: str, *, dark: bool = True, name: str | None = None) -> Palette:

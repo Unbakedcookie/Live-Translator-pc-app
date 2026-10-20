@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QPushButton, QWidget
+from collections.abc import Sequence
+
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from livetranslator.app.settings_controller import mic_choice
 from livetranslator.core.languages import DEFAULT_LANGUAGES
-from livetranslator.theme.tokens import SETTINGS
+from livetranslator.core.state import MAX_MIC_LANGUAGES
+from livetranslator.theme.tokens import SETTINGS, SPACE, Palette
 from livetranslator.ui.settings.context import SettingsContext
 from livetranslator.ui.settings.rows import SettingsPage, silently
 from livetranslator.ui.widgets.choice_combo import ChoiceCombo
@@ -23,6 +27,54 @@ def speak_items() -> list[tuple[str, object]]:
 
 def also_items() -> list[tuple[str, object]]:
     return [("Nothing else", ""), *((lang.label, lang.code) for lang in DEFAULT_LANGUAGES)]
+
+
+ALSO_SPEAK_HELP = (
+    "Switch between several languages? Pick each one; every line is checked against just "
+    "these. Another box appears when you fill one."
+)
+
+
+class AlsoSpeak(QWidget):
+    """ "I also speak": up to MAX_MIC_LANGUAGES - 1 pickers (user request 2026-10-19). Only
+    the filled ones plus one empty picker show; emptying one closes the gap."""
+
+    changed = Signal()
+
+    def __init__(
+        self, palette: Palette, codes: Sequence[str] = (), parent: QWidget | None = None
+    ) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SPACE.xs)
+        self.boxes: list[ChoiceCombo] = []
+        for _ in range(MAX_MIC_LANGUAGES - 1):
+            box = ChoiceCombo(also_items(), "")
+            box.setFixedWidth(SETTINGS.control_width)
+            box.apply_palette(palette)
+            box.choice_changed.connect(lambda _c: self._on_choice())
+            layout.addWidget(box)
+            self.boxes.append(box)
+        self.set_codes(codes)
+
+    def codes(self) -> tuple[str, ...]:
+        chosen: list[str] = []
+        for box in self.boxes:
+            code = str(box.current_choice() or "")
+            if code and code not in chosen:
+                chosen.append(code)
+        return tuple(chosen)
+
+    def set_codes(self, codes: Sequence[str]) -> None:
+        codes = list(codes)[: len(self.boxes)]
+        for i, box in enumerate(self.boxes):
+            box.set_choice(codes[i] if i < len(codes) else "")
+            box.setVisible(i <= len(codes))
+
+    def _on_choice(self) -> None:
+        self.set_codes(self.codes())  # close gaps, show the next empty picker
+        self.changed.emit()
 
 
 CHINESE_SCRIPTS: list[tuple[str, object]] = [
@@ -62,15 +114,9 @@ class GeneralPage(SettingsPage):
             "translated too, so you can check what you said.",
             self.speak,
         )
-        self.also = ChoiceCombo(also_items(), also)
-        self.also.setFixedWidth(SETTINGS.control_width)
-        self.also.apply_palette(ctx.palette)
-        self.also.choice_changed.connect(lambda _c: self._on_speak())
-        self.also_row = lang.row(
-            "I also speak",
-            "If you switch between two languages, each line is checked against both.",
-            self.also,
-        )
+        self.also = AlsoSpeak(ctx.palette, also)
+        self.also.changed.connect(self._on_speak)
+        self.also_row = lang.row("I also speak", ALSO_SPEAK_HELP, self.also)
         self.chinese = ChoiceCombo(CHINESE_SCRIPTS, store.state.config.engines.chinese_script)
         self.chinese.setFixedWidth(SETTINGS.control_width)
         self.chinese.apply_palette(ctx.palette)
@@ -96,15 +142,13 @@ class GeneralPage(SettingsPage):
         self.finish()
 
     def _on_speak(self) -> None:
-        self._ctx.settings.set_mic_languages(
-            str(self.speak.current_choice()), str(self.also.current_choice() or "")
-        )
+        self._ctx.settings.set_mic_languages(str(self.speak.current_choice()), self.also.codes())
 
     def refresh(self) -> None:
         config = self._ctx.settings.store.state.config
         silently(self.language, lambda: self.language.set_language(config.my_language))
         first, also = mic_choice(config.audio.mic_languages)
         self.speak.set_choice(first)
-        self.also.set_choice(also)
+        self.also.set_codes(also)
         self.also_row.setEnabled(first != "auto")  # "any language" already covers it
         self.chinese.set_choice(config.engines.chinese_script)

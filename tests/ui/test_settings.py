@@ -391,14 +391,27 @@ def test_general_page_chinese_script(env: Env):
 def test_general_page_i_speak_is_separate_from_translate_into(env: Env):
     """User request 2026-10-18: speak Spanish to practise, read English translations."""
     page = env.page(GeneralPage)
-    assert page.speak.current_choice() == "same" and page.also.current_choice() == ""
+    assert page.speak.current_choice() == "same" and page.also.codes() == ()
     page.speak.set_choice("es")
     page.speak.choice_changed.emit("es")
     assert env.store.state.config.audio.mic_languages == ("es",)
     assert env.store.state.config.my_language == "en"  # still read in English
-    page.also.set_choice("en")
-    page.also.choice_changed.emit("en")
+    boxes = page.also.boxes
+    assert [b.isVisibleTo(page) for b in boxes] == [True, False, False]  # one empty picker
+    boxes[0].set_choice("en")
+    boxes[0].choice_changed.emit("en")
     assert env.store.state.config.audio.mic_languages == ("es", "en")
+    assert [b.isVisibleTo(page) for b in boxes] == [True, True, False]
+    boxes[1].set_choice("vi")
+    boxes[1].choice_changed.emit("vi")
+    boxes[2].set_choice("zh")
+    boxes[2].choice_changed.emit("zh")
+    assert env.store.state.config.audio.mic_languages == ("es", "en", "vi", "zh")
+    boxes[0].set_choice("")  # emptying one closes the gap
+    boxes[0].choice_changed.emit("")
+    assert env.store.state.config.audio.mic_languages == ("es", "vi", "zh")
+    assert page.also.codes() == ("vi", "zh")
+    assert [b.isVisibleTo(page) for b in boxes] == [True, True, True]
     page.speak.set_choice("auto")
     page.speak.choice_changed.emit("auto")
     assert env.store.state.config.audio.mic_languages == ("auto",)

@@ -30,3 +30,22 @@ def test_icon_is_drawn_in_the_palette_colour(qapp, palette, role):
     image = icon("square-fill", palette, role).pixmap(QSize(32, 32)).toImage()
     center = image.pixelColor(16, 16)
     assert center.name().upper() == getattr(palette, role)
+
+
+def test_app_icon_is_a_red_tile_with_a_white_glyph(qapp):
+    """User request 2026-10-19: the blue glyph blended into the desktop."""
+    from PySide6.QtGui import QColor
+
+    from livetranslator.theme.icons import app_icon
+    from livetranslator.theme.tokens import APP_ICON
+
+    image = app_icon().pixmap(APP_ICON.size, APP_ICON.size).toImage()
+    edge = APP_ICON.size // 2
+    assert image.pixelColor(edge, 2) == QColor(APP_ICON.tile)  # top middle: the tile
+    assert image.pixelColor(0, 0).alpha() == 0  # rounded corner
+    colours = {
+        image.pixelColor(x, y).name().upper()
+        for x in range(0, APP_ICON.size, 4)
+        for y in range(0, APP_ICON.size, 4)
+    }
+    assert APP_ICON.glyph in colours

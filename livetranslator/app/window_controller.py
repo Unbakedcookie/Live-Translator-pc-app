@@ -88,10 +88,24 @@ class WindowController:
         self._store.dispatch(a.UpdateWindowStyle(window_id, fields))
 
     def set_builtin_palette(self, window_id: str, palette_id: str) -> None:
-        self.set_style(window_id, palette_id=palette_id, custom_seed=None)
+        self.set_style(window_id, palette_id=palette_id, custom_seed=None, custom_colors=())
 
     def set_custom_palette(self, window_id: str, seed: str, dark: bool) -> None:
-        self.set_style(window_id, custom_seed=seed, custom_dark=dark)
+        self.set_style(window_id, custom_seed=seed, custom_dark=dark, custom_colors=())
+
+    def set_custom_color(self, window_id: str, name: str, color: str) -> None:
+        """One colour of the window's theme ("Custom colours", user request 2026-10-19);
+        `name` from tokens.color_names, `color` '#RRGGBB'."""
+        cfg = self._store.state.config.window(window_id)
+        if cfg is None:
+            return
+        colors = dict(cfg.style.custom_colors)
+        colors[name] = color.upper()
+        self.set_style(window_id, custom_colors=tuple(colors.items()))
+
+    def reset_custom_colors(self, window_id: str) -> None:
+        """Back to the theme the colours were set on."""
+        self.set_style(window_id, custom_colors=())
 
     # ------------------------------------------------------------ all windows / hotkeys
 
