@@ -6,6 +6,7 @@ import pytest
 
 from livetranslator.services.speakers.calibration import calibrate_lag, pair_onsets
 from livetranslator.services.speakers.fusion import (
+    NOT_IN_CALL,
     FusionResult,
     SpeakingInterval,
     add_vote,
@@ -90,3 +91,30 @@ def test_calibration_median_over_ten_pairs_ignores_outliers():
 def test_calibration_needs_three_pairs():
     assert calibrate_lag([0.0, 5.0], [0.2, 5.2]) is None
     assert calibrate_lag([0.0, 5.0, 10.0], [0.2, 5.2, 10.4]) == pytest.approx(0.2)
+
+
+# ---- voices that aren't in the call (user report 2026-10-20: a stream got call members' names)
+
+
+def test_a_voice_heard_while_the_call_is_silent_counts_as_not_in_call():
+    result = fuse(10.0, 14.0, "5", 0.9, [], {}, discord_live=True)
+    assert result == FusionResult("voice:5", ("5", NOT_IN_CALL))
+    assert fuse(10.0, 14.0, "5", 0.9, [], {}) == FusionResult("voice:5")  # Discord not live
+
+
+def test_a_known_outside_voice_keeps_its_label_when_someone_talks_over_it():
+    stream = {"5": Counter({NOT_IN_CALL: 3})}
+    # mika covers the whole line, but the voice is the stream's: no name, no vote
+    assert fuse(10.0, 14.0, "5", 0.9, [iv("mika", 10.0, 14.0)], stream) == FusionResult("voice:5")
+
+
+def test_outside_votes_need_three_and_twice_the_members_votes():
+    line = [iv("mika", 10.0, 14.0)]
+    two = {"5": Counter({NOT_IN_CALL: 2})}  # 2 < 3: not enough yet
+    assert fuse(10.0, 14.0, "5", 0.9, line, two) == FusionResult("discord:mika", ("5", "mika"))
+    mixed = {"5": Counter({NOT_IN_CALL: 3, "mika": 2})}  # 3 < 2 * 2: still mika's voice
+    assert fuse(10.0, 14.0, "5", 0.9, line, mixed).speaker_id == "discord:mika"
+    member = {"1": Counter({"mika": 5, NOT_IN_CALL: 3})}  # Discord missed a few of her lines
+    assert fuse(10.0, 14.0, "1", 0.9, line, member).speaker_id == "discord:mika"
+    unsure = {"5": Counter({NOT_IN_CALL: 9})}  # low-confidence voice: the rule doesn't apply
+    assert fuse(10.0, 14.0, "5", 0.3, line, unsure).speaker_id == "discord:mika"

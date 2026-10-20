@@ -186,3 +186,29 @@ def test_font_picker_search_picks_and_keeps_unknown_fonts(qtbot):
     picker.set_family("Font From Another PC")  # saved setting, not installed here
     assert picker.current_family() == "Font From Another PC"
     assert chosen == ["Inter SemiBold"]  # set_family never emits
+
+
+def _row_visible(popup, row: int) -> bool:
+    rect = popup.list.visualRect(popup.proxy.index(row, 0))
+    return popup.list.viewport().rect().contains(rect.center())
+
+
+def test_dropdown_opens_with_the_top_choices_in_view(qtbot):
+    """User 2026-10-20: "I speak" opened scrolled to English, hiding "Detect any language"
+    above it (the list scrolled before it had its full height)."""
+    from livetranslator.ui.widgets.choice_combo import ChoiceCombo
+
+    items = [("Same as above", "same"), ("Detect any language", "auto")]
+    items += [(f"Language {i}", f"l{i}") for i in range(40)]
+    combo = ChoiceCombo(items, "l0")
+    qtbot.addWidget(combo)
+    combo.show()
+    combo.showPopup()
+    popup = combo.popup
+    assert popup is not None
+    assert _row_visible(popup, 0) and _row_visible(popup, 1) and _row_visible(popup, 2)
+    popup.hide()
+    combo.set_choice("l35")  # far down: still scrolled into view
+    combo.showPopup()
+    assert _row_visible(popup, 37) and popup.list.currentIndex().row() == 37
+    popup.hide()

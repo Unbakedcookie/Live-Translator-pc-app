@@ -96,9 +96,6 @@ class SearchPopup(QFrame):
     def open_below(self) -> None:
         combo = self._combo
         self.search.clear()
-        self._select_row(
-            self.proxy.mapFromSource(combo.model().index(combo.currentIndex(), 0)).row()
-        )
         rows = min(MAX_VISIBLE, self.proxy.rowCount())
         row_h = max(self.list.sizeHintForRow(0), WINDOW.chrome_height)
         width = max(self.list.sizeHintForColumn(0) + 2 * SPACE.md + SPACE.lg, combo.width())
@@ -106,6 +103,12 @@ class SearchPopup(QFrame):
         self.adjustSize()
         self.move(combo.mapToGlobal(QPoint(0, combo.height())))
         self.show()
+        # Scroll to the current item only now that the list has its full height: before, it
+        # scrolled the top rows out of view ("Detect any language" hidden; user 2026-10-20).
+        self.list.scrollToTop()
+        self._select_row(
+            self.proxy.mapFromSource(combo.model().index(combo.currentIndex(), 0)).row()
+        )
         self.activateWindow()
         (self.search if self._combo.searchable else self.list).setFocus()
 

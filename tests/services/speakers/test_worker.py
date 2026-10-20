@@ -102,8 +102,8 @@ def test_short_lines_and_off_mode_are_skipped():
 
 
 def test_discord_name_wins_and_teaches_the_voice():
-    def intervals(start: float, end: float):
-        return [SpeakingInterval("mika", start, end)] if start < 5 else []
+    def intervals(start: float, end: float):  # mika spoke from 0 to 4 s
+        return [SpeakingInterval("mika", 0.0, 4.0)] if start < 4.0 and end > 0.0 else []
 
     worker, emitted = make(intervals=intervals)
     worker.handle(job("u1", 0, start=0.0))  # Discord says mika -> vote voice 0 = mika
@@ -112,6 +112,30 @@ def test_discord_name_wins_and_teaches_the_voice():
     voice_only, voice_emitted = make(SpeakerMode.VOICE, intervals=intervals)
     voice_only.handle(job("u1", 0, start=0.0))
     assert labels(voice_emitted) == [("u1", "voice:0")]  # Discord ignored in voice mode
+
+
+def test_a_stream_keeps_its_own_label_when_call_members_talk_over_it():
+    """User report 2026-10-20: a Discord stream's voice was sometimes named after people in
+    the call. Mika (voice at 0 degrees) talks at 0-3 s and over the stream at 40-43 s."""
+
+    def intervals(start: float, end: float):
+        spoken = [SpeakingInterval("mika", 0.0, 3.0), SpeakingInterval("mika", 40.0, 43.0)]
+        return [i for i in spoken if i.start < end and i.end > start]
+
+    worker, emitted = make(intervals=intervals)
+    worker.handle(job("u1", 0, start=0.5))  # mika -> voice 0 is hers
+    for n, start in enumerate((10.0, 20.0, 30.0)):  # the stream while nobody in the call talks
+        worker.handle(job(f"s{n}", 180, start=start))
+    worker.handle(job("s3", 180, start=40.5))  # mika talks over the stream
+    worker.handle(job("u2", 0, start=41.0))  # mika's own line at the same time
+    assert labels(emitted) == [
+        ("u1", "discord:mika"),
+        ("s0", "voice:1"),
+        ("s1", "voice:1"),
+        ("s2", "voice:1"),
+        ("s3", "voice:1"),  # not "mika"
+        ("u2", "discord:mika"),
+    ]
 
 
 def test_load_failure_turns_labels_off_with_a_status():

@@ -9,6 +9,12 @@ For a final "Others" line [t0, t1]:
    if that user is among them; otherwise the user with the largest overlap.
 4. No Discord data -> the voice cluster ("voice:<n>"; its session rename is applied by the UI).
 5. Nothing reliable (line < 1 s, or a low-confidence cluster) -> "others".
+
+Voices that aren't in the call (user report 2026-10-20: a Discord stream got the names of
+people in the call). While Discord is live, a line nobody in the call was speaking during
+gives its voice cluster a NOT_IN_CALL vote. A cluster with at least NOT_IN_CALL_MIN of those,
+and at least twice as many as for any call member speaking now, keeps its voice label even
+when a call member talks over it (step 2/3 would otherwise name them), and casts no vote.
 """
 
 from __future__ import annotations
@@ -21,6 +27,8 @@ SINGLE_COVER = 0.6  # share of the line one Discord speaker must cover alone
 MIN_LINE_S = 1.0
 MIN_CONFIDENCE = 0.5
 OTHERS = "others"
+NOT_IN_CALL = "-"  # vote for "heard while nobody in the call spoke" (user ids are digits)
+NOT_IN_CALL_MIN = 3
 
 Votes = Mapping[str, Counter[str]]  # voice cluster id -> Discord user id -> votes
 
@@ -59,7 +67,10 @@ def fuse(
     confidence: float | None,
     intervals: Sequence[SpeakingInterval],
     votes: Votes,
+    discord_live: bool = False,
 ) -> FusionResult:
+    """`discord_live`: Discord reported someone speaking recently, so silence in the call
+    during this line means something else is talking (a stream, a video, game audio)."""
     duration = end - start
     reliable_voice = voice_cluster is not None and (
         confidence is None or confidence >= MIN_CONFIDENCE
@@ -67,6 +78,11 @@ def fuse(
     if duration < MIN_LINE_S:
         return FusionResult(OTHERS)
     covered = coverage(start, end, intervals)
+    if covered and reliable_voice and voice_cluster is not None:
+        heard = votes.get(voice_cluster, Counter[str]())
+        outside = heard[NOT_IN_CALL]
+        if outside >= NOT_IN_CALL_MIN and outside >= 2 * max(heard[u] for u in covered):
+            return FusionResult(f"voice:{voice_cluster}")
     if covered:
         if len(covered) == 1:
             user, seconds = next(iter(covered.items()))
@@ -81,7 +97,8 @@ def fuse(
         user = max(covered, key=lambda u: (covered[u], u))
         return FusionResult(f"discord:{user}")
     if reliable_voice and voice_cluster is not None:
-        return FusionResult(f"voice:{voice_cluster}")
+        vote = (voice_cluster, NOT_IN_CALL) if discord_live else None
+        return FusionResult(f"voice:{voice_cluster}", vote)
     return FusionResult(OTHERS)
 
 

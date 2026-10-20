@@ -45,6 +45,7 @@ IntervalsFn = Callable[[float, float], Sequence[SpeakingInterval]]
 MIN_EMBED_S = 0.5  # shorter audio gives meaningless fingerprints
 MIN_PART_S = 1.0  # each side of a split must be a real turn
 STATUS_KEY = "speakers"
+LIVE_S = 60.0  # Discord counts as live for this long after anyone in the call spoke
 
 
 def _join(words: Sequence[tuple[str, float, float]]) -> str:
@@ -151,19 +152,30 @@ class SpeakerWorker:
                 if assignment.cluster is None:
                     return  # nobody known yet: keep the neutral label until the line ends
             cluster, confidence = assignment.cluster, assignment.similarity
-        intervals = self._intervals(job.start, job.end) if use_discord else ()
-        result = fuse(job.start, job.end, cluster, confidence, intervals, self._votes)
+        intervals, live = self._discord(job.start, job.end, use_discord)
+        result = fuse(job.start, job.end, cluster, confidence, intervals, self._votes, live)
         if job.final:
             self._votes = add_vote(self._votes, result.vote)
         if result.speaker_id == OTHERS and not job.final:
             return
         self._emit(a.UpdateUtterance(job.utterance_id, {"speaker_id": result.speaker_id}))
 
+    def _discord(self, start: float, end: float, use: bool) -> tuple[list[SpeakingInterval], bool]:
+        """Discord speaking during [start, end], and whether anyone spoke in the call in the
+        last LIVE_S (then a silent call during the line means another sound source)."""
+        if not use:
+            return [], False
+        recent = list(self._intervals(start - LIVE_S, end))
+        during = [i for i in recent if i.end > start and i.start < end]
+        return during, bool(recent)
+
     def _label(self, audio: NDArray[np.float32], start: float, end: float, discord: bool) -> str:
         """Final label for one stretch of speech (learns its voice)."""
         assignment = self.clusters.assign(self._embedder.embed(audio), len(audio) / SAMPLE_RATE)
-        intervals = self._intervals(start, end) if discord else ()
-        result = fuse(start, end, assignment.cluster, assignment.similarity, intervals, self._votes)
+        intervals, live = self._discord(start, end, discord)
+        result = fuse(
+            start, end, assignment.cluster, assignment.similarity, intervals, self._votes, live
+        )
         self._votes = add_vote(self._votes, result.vote)
         return result.speaker_id
 
