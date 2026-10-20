@@ -73,6 +73,15 @@ class AdvancedPage(SettingsPage):
         self.section().row(
             "Start over", "Puts these settings and the live text refresh back.", reset
         )
+        if ctx.run_setup is not None:
+            setup = QPushButton("Run setup")
+            setup.clicked.connect(lambda: ctx.run_setup() if ctx.run_setup else None)
+            self.section("Setup").row(
+                "First-run setup",
+                "Download missing models (for example NVIDIA's graphics libraries), add the "
+                "smarter translator, or pick devices again. Starts from your current settings.",
+                setup,
+            )
         self.finish()
         self.refresh()
 

@@ -469,9 +469,12 @@ class ASRWorker:
         except Exception as exc:
             self.load_error = f"{type(exc).__name__}: {exc}"
             logger.error("speech model failed to load ({})", type(exc).__name__)
+            missing = "not downloaded" in str(exc)
             self._status(
                 StatusLevel.ERROR,
-                "The speech model couldn't be loaded, so speech isn't recognised. "
+                "The speech model isn't downloaded. Settings, Advanced, Run setup gets it."
+                if missing
+                else "The speech model couldn't be loaded, so speech isn't recognised. "
                 "Details are in the log.",
             )
             return False

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from loguru import logger
-from PySide6.QtCore import QObject, QUrl
+from PySide6.QtCore import QObject, Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
@@ -174,18 +174,28 @@ class LiveTranslatorApp(QObject):
     # ------------------------------------------------------------ first run (T073)
 
     def _needs_setup(self) -> bool:
-        """The wizard runs until the speech model is on this PC. A PC that already has it
-        (set up before the wizard existed, or by hand) is marked as set up."""
+        """The wizard runs until the speech model (and, with an NVIDIA card, NVIDIA's
+        libraries) are on this PC. A PC that already has them (set up before the wizard
+        existed, or by hand) is marked as set up."""
         if self.store.state.config.wizard_completed:
             return False
+        set_runtime_root(self.models_dir() / "cuda")
         cuda = cuda_device_count() > 0
         spec = WHISPER_MODELS[GPU_MODEL if cuda else CPU_MODEL]
-        if is_downloaded(spec, self.models_dir()):
+        if is_downloaded(spec, self.models_dir()) and (not cuda or runtime_present()):
             self.store.dispatch(a.SetWizardCompleted(True))
             return False
         return True
 
-    def _show_setup(self) -> None:
+    def run_setup(self) -> None:
+        """Settings > Advanced > Run setup: the wizard again, from today's settings."""
+        if self.setup_wizard is not None:
+            self.setup_wizard.raise_()
+            self.setup_wizard.activateWindow()
+            return
+        self._show_setup(first_run=False)
+
+    def _show_setup(self, first_run: bool = True) -> None:
         set_runtime_root(self.models_dir() / "cuda")
         sample = NvmlSampler().sample()
         machine = Machine(
@@ -197,18 +207,43 @@ class LiveTranslatorApp(QObject):
             self.store, self.catalog, self.paths.default_models_dir, machine, parent=self
         )
         self.setup_wizard = SetupWizard(
-            controller, PALETTES[DEFAULT_PALETTE_ID], probe_factory=LevelProbe
+            controller,
+            PALETTES[DEFAULT_PALETTE_ID],
+            probe_factory=LevelProbe,
+            choices=None if first_run else controller.current_choices(),
+            first_run=first_run,
         )
         self.setup_wizard.completed.connect(self._after_setup)
         self.setup_wizard.abandoned.connect(self._quit_app)
-        self.store.dispatch(a.SetAllHidden(True))  # no empty overlays during setup
+        self.setup_wizard.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setup_wizard.destroyed.connect(self._forget_setup)
+        if first_run:
+            self.store.dispatch(a.SetAllHidden(True))  # no empty overlays during setup
         self.setup_wizard.show()
 
-    def _after_setup(self) -> None:
+    def _forget_setup(self) -> None:
         self.setup_wizard = None
+
+    def _after_setup(self) -> None:
         self._pairs = None
         self.store.dispatch(a.SetAllHidden(False))
+        if self.speech is not None:
+            self._stop_speech()  # setup run again: pick up the new downloads
         self._start_speech(self.models_dir())
+
+    def _stop_speech(self) -> None:
+        if self.metrics is not None:
+            self.metrics.stop()
+            self.metrics = None
+        if self.speech is not None:
+            self.speech.stop()
+            self.speech = None
+        if self.translation is not None:
+            self.translation.stop()
+            self.translation = None
+        if self.smart_engine is not None:
+            self.smart_engine.unload()
+            self.smart_engine = None
 
     def _start_speech(self, models_dir: Path) -> None:
         set_runtime_root(models_dir / "cuda")  # NVIDIA libraries the wizard downloaded (D-026)
@@ -222,7 +257,9 @@ class LiveTranslatorApp(QObject):
             self.store, self.mt_engine, timings, self.smart_engine, rough_pairs(self.catalog)
         )
         self.translation.start()
-        self.asr_engine = FasterWhisperEngine(models_dir)
+        # Never a silent download (a missing model is reported in the windows): downloads
+        # belong to setup, with progress (2026-10-19: the build fetched 484 MB unannounced).
+        self.asr_engine = FasterWhisperEngine(models_dir, download=False)
         self.speech = build_speech(
             self.store, models_dir, self.asr_engine, timings, self.discord.timeline
         )
@@ -340,6 +377,7 @@ class LiveTranslatorApp(QObject):
             smart_translation=qwen_installed(self.models_dir()),
             discord=self.discord,
             languages=self.languages,
+            run_setup=self.run_setup,
         )
 
     def engine_summary(self) -> EngineSummary:

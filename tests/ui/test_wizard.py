@@ -84,3 +84,55 @@ def test_closing_early_means_quit(qtbot, tmp_path: Path):
     wizard.abandoned.connect(lambda: left.append(1))
     wizard.close()
     assert left == [1]
+
+
+def test_run_again_starts_from_the_current_settings(qtbot, tmp_path: Path):
+    from livetranslator.app.setup_controller import SetupChoices
+    from livetranslator.core.state import DeviceRef
+
+    store = Store(AppState())
+    controller = SetupController(
+        store,
+        CATALOG,
+        tmp_path / "models",
+        Machine(cuda=True, vram_mb=12288),
+        lambda _d: FakeManager(tmp_path / "models"),  # type: ignore[arg-type,return-value]
+    )
+    saved = SetupChoices(
+        my_language="ja", mic_languages=("es", "en"), mic_device=DeviceRef(name="Mic"), smart=False
+    )
+    wizard = SetupWizard(controller, PALETTES[DEFAULT_PALETTE_ID], choices=saved, first_run=False)
+    qtbot.addWidget(wizard)
+    assert wizard.languages.read.current_code() == "ja"
+    assert wizard.languages.speak.current_choice() == "es"
+    assert wizard.languages.also.current_choice() == "en"
+    assert not wizard.downloads.smart.isChecked()  # the saved choice, not the recommendation
+    left: list[int] = []
+    wizard.abandoned.connect(lambda: left.append(1))
+    wizard.close()
+    assert left == []  # closing a later run doesn't quit the app
+
+
+def test_settings_offer_to_run_setup_again(qtbot, tmp_path: Path):
+    from PySide6.QtWidgets import QPushButton
+
+    from livetranslator.app.settings_controller import SettingsController
+    from livetranslator.app.window_controller import WindowController
+    from livetranslator.ui.settings.advanced_page import AdvancedPage
+    from livetranslator.ui.settings.context import SettingsContext
+
+    store = Store(AppState())
+    runs: list[int] = []
+    ctx = SettingsContext(
+        SettingsController(store),
+        WindowController(store),
+        tmp_path,
+        tmp_path,
+        lambda _p: None,
+        run_setup=lambda: runs.append(1),
+    )
+    page = AdvancedPage(ctx)
+    qtbot.addWidget(page)
+    [button] = [b for b in page.findChildren(QPushButton) if b.text() == "Run setup"]
+    button.click()
+    assert runs == [1]

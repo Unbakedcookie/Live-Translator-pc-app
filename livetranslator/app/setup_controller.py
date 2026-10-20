@@ -118,6 +118,20 @@ class SetupController(QObject):
         self._thread: threading.Thread | None = None
         self.busy = False
 
+    def current_choices(self) -> SetupChoices:
+        """Start from the saved settings (setup run again from Settings must not reset
+        them)."""
+        config = self._store.state.config
+        engines = config.engines
+        return SetupChoices(
+            my_language=config.my_language,
+            mic_languages=config.audio.mic_languages,
+            mic_device=config.audio.mic_device,
+            output_device=config.audio.output_device,
+            smart=bool(engines.smart_languages) or engines.smart_fallback,
+            models_dir=Path(config.models_dir) if config.models_dir else None,
+        )
+
     # ------------------------------------------------------------ plan
 
     def models_dir(self, choices: SetupChoices) -> Path:

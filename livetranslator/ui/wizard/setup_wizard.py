@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 
 from livetranslator import APP_DISPLAY_NAME
 from livetranslator.app.level_probe import LevelProbe
-from livetranslator.app.settings_controller import mic_languages_for
+from livetranslator.app.settings_controller import mic_choice, mic_languages_for
 from livetranslator.app.setup_controller import (
     SetupChoices,
     SetupController,
@@ -84,13 +84,14 @@ class LanguagesStep(SettingsPage):
 
     def __init__(self, palette: Palette, choices: SetupChoices) -> None:
         super().__init__()
+        first, also = mic_choice(choices.mic_languages)
         self.read = LanguagePicker(choices.my_language)
         self.read.setFixedWidth(SETTINGS.control_width)
         self.read.apply_palette(palette)
-        self.speak = ChoiceCombo(speak_items(), "same")
+        self.speak = ChoiceCombo(speak_items(), first)
         self.speak.setFixedWidth(SETTINGS.control_width)
         self.speak.apply_palette(palette)
-        self.also = ChoiceCombo(also_items(), "")
+        self.also = ChoiceCombo(also_items(), also)
         self.also.setFixedWidth(SETTINGS.control_width)
         self.also.apply_palette(palette)
         section = self.section()
@@ -108,6 +109,7 @@ class LanguagesStep(SettingsPage):
             "If you switch between two languages, each line is checked against both.",
             self.also,
         )
+        self.also_row.setEnabled(first != "auto")
         self.speak.choice_changed.connect(lambda c: self.also_row.setEnabled(str(c) != "auto"))
         self.intro("You can change all of this later in Settings.")
         self.finish()
@@ -124,9 +126,12 @@ class LanguagesStep(SettingsPage):
 class AudioStep(SettingsPage):
     title_text = "Microphone and speakers"
 
-    def __init__(self, palette: Palette, probe: LevelProbe | None) -> None:
+    def __init__(
+        self, palette: Palette, probe: LevelProbe | None, choices: SetupChoices | None = None
+    ) -> None:
         super().__init__()
         self._probe = probe
+        self._saved = choices or SetupChoices()
         self.intro(
             "Talk into your microphone and play something on your speakers: the bars should "
             'move. "Windows default" follows whatever Windows uses.'
@@ -172,10 +177,11 @@ class AudioStep(SettingsPage):
             )
             self.problem.show()
             return
-        self.mic.set_items(device_choices(devices.inputs, None), None)
-        self.out.set_items(device_choices(devices.loopbacks, None), None)
-        for source in (Source.ME, Source.OTHERS):
-            self._use(source, None)
+        mic, out = self._saved.mic_device, self._saved.output_device
+        self.mic.set_items(device_choices(devices.inputs, mic), mic)
+        self.out.set_items(device_choices(devices.loopbacks, out), out)
+        self._use(Source.ME, mic)
+        self._use(Source.OTHERS, out)
         self._timer.start()
 
     def stop(self) -> None:
@@ -206,7 +212,9 @@ class DownloadsStep(SettingsPage):
     title_text = "What to download"
     changed = Signal()
 
-    def __init__(self, palette: Palette, controller: SetupController) -> None:
+    def __init__(
+        self, palette: Palette, controller: SetupController, choices: SetupChoices | None = None
+    ) -> None:
         super().__init__()
         self._palette = palette
         self._controller = controller
@@ -228,7 +236,7 @@ class DownloadsStep(SettingsPage):
         )
         smart = self.section("Smarter translation")
         self.smart = QCheckBox()
-        self.smart.setChecked(machine.smart_recommended)
+        self.smart.setChecked(choices.smart if choices is not None else machine.smart_recommended)
         self.smart.toggled.connect(lambda _on: self.changed.emit())
         smart.row(
             "Qwen translator",
@@ -355,10 +363,14 @@ class SetupWizard(QWidget):
         palette: Palette,
         probe_factory: Callable[[], LevelProbe | None] | None = None,
         parent: QWidget | None = None,
+        choices: SetupChoices | None = None,
+        first_run: bool = True,
     ) -> None:
         super().__init__(parent, Qt.WindowType.Window)
         self._controller = controller
-        self.choices = SetupChoices()
+        self.first_run = first_run  # closing a first run quits the app; later runs just close
+        again = choices is not None
+        self.choices = choices or SetupChoices()
         self.setObjectName("SettingsRoot")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setWindowTitle("Setup")
@@ -368,8 +380,8 @@ class SetupWizard(QWidget):
         probe = probe_factory() if probe_factory is not None else None
         self.welcome = WelcomePage()
         self.languages = LanguagesStep(palette, self.choices)
-        self.audio = AudioStep(palette, probe)
-        self.downloads = DownloadsStep(palette, controller)
+        self.audio = AudioStep(palette, probe, self.choices)
+        self.downloads = DownloadsStep(palette, controller, self.choices if again else None)
         self.downloading = DownloadingStep()
         self.done = DonePage()
         self.steps: list[SettingsPage] = [
@@ -511,6 +523,7 @@ class SetupWizard(QWidget):
     def closeEvent(self, event: QCloseEvent) -> None:
         if not self._finished and not session_ending():
             self._controller.cancel()
-            self.abandoned.emit()
+            if self.first_run:
+                self.abandoned.emit()
         self.audio.stop()
         event.accept()

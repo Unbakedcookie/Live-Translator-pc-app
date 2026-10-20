@@ -44,3 +44,4 @@ class SettingsContext:
     smart_translation: bool = False  # the Qwen files are installed (Translation page switch)
     discord: DiscordController | None = None  # Speakers page: Discord names setup (T104)
     languages: LanguageController | None = None  # Languages page (T074)
+    run_setup: Callable[[], None] | None = None  # Advanced: the setup wizard again (T073)
