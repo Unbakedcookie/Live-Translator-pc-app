@@ -49,3 +49,24 @@ def test_app_icon_is_a_red_tile_with_a_white_glyph(qapp):
         for y in range(0, APP_ICON.size, 4)
     }
     assert APP_ICON.glyph in colours
+
+
+def test_tray_states_are_readable_at_a_glance(qapp):
+    """2026-10-20: the tray icon by the clock was the old blue glyph. Listening = the red
+    app tile, paused = grey tile, a problem = red tile with a yellow dot."""
+    from PySide6.QtGui import QColor
+
+    from livetranslator.theme.icons import app_icon
+    from livetranslator.theme.tokens import APP_ICON
+
+    size = APP_ICON.size
+    top = (size // 2, 2)
+    corner = (round(size * 0.85), round(size * 0.85))
+    listening = app_icon("listening").pixmap(size, size).toImage()
+    paused = app_icon("paused").pixmap(size, size).toImage()
+    attention = app_icon("attention").pixmap(size, size).toImage()
+    assert listening.pixelColor(*top) == QColor(APP_ICON.tile)
+    assert paused.pixelColor(*top) == QColor(APP_ICON.tile_paused)
+    assert attention.pixelColor(*top) == QColor(APP_ICON.tile)
+    assert attention.pixelColor(*corner) == QColor(APP_ICON.badge)  # the dot
+    assert listening.pixelColor(*corner) != QColor(APP_ICON.badge)

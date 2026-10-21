@@ -20,24 +20,24 @@ from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from livetranslator import APP_DISPLAY_NAME
 from livetranslator.app.window_controller import WindowController
 from livetranslator.core.state import AppState, StatusLevel
-from livetranslator.theme.icons import IconRole, icon
+from livetranslator.theme.icons import AppIconState, app_icon
 from livetranslator.theme.qss import window_qss
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 
 ICON_NAME = "translate"
 
 
-def tray_status(state: AppState) -> tuple[IconRole, str]:
-    """(icon colour role, tooltip) for the current state."""
+def tray_status(state: AppState) -> tuple[AppIconState, str]:
+    """(icon state, tooltip) for the current state."""
     errors = [s.message for s in state.runtime.statuses.values() if s.level is StatusLevel.ERROR]
     if errors:
-        return "danger", f"{APP_DISPLAY_NAME}: {errors[0]}"
+        return "attention", f"{APP_DISPLAY_NAME}: {errors[0]}"
     audio = state.config.audio
     if not audio.mic_enabled and not audio.others_enabled:
-        return "text_secondary", f"{APP_DISPLAY_NAME}: paused (both muted)"
+        return "paused", f"{APP_DISPLAY_NAME}: paused (both muted)"
     if state.runtime.anything_away:
-        return "accent", f"{APP_DISPLAY_NAME}: listening, windows hidden"
-    return "accent", f"{APP_DISPLAY_NAME}: listening"
+        return "listening", f"{APP_DISPLAY_NAME}: listening, windows hidden"
+    return "listening", f"{APP_DISPLAY_NAME}: listening"
 
 
 class Tray(QObject):
@@ -54,6 +54,7 @@ class Tray(QObject):
         self._controller = controller
         self._palette = PALETTES[DEFAULT_PALETTE_ID]
         self.icon = QSystemTrayIcon(self)
+        self.icon_state: AppIconState | None = None
         self.menu = QMenu()
         self.menu.setStyleSheet(window_qss(self._palette))
         self.actions: dict[str, QAction] = {}
@@ -113,10 +114,11 @@ class Tray(QObject):
             action.blockSignals(True)
             action.setChecked(checked)
             action.blockSignals(False)
-        role, tooltip = tray_status(state)
-        self.icon.setIcon(icon(ICON_NAME, self._palette, role))
+        status, tooltip = tray_status(state)
+        if status != self.icon_state:  # redraw only on a change (it's painted, not a font)
+            self.icon.setIcon(app_icon(status))
         self.icon.setToolTip(tooltip)
-        self.icon_role = role
+        self.icon_state = status
 
     def notify(self, message: str) -> None:
         """A Windows notification from the tray icon (e.g. "still running" after the last

@@ -66,7 +66,7 @@ from livetranslator.services.speakers.separation import Float, SeparationWorker
 from livetranslator.services.speakers.worker import SpeakerWorker
 from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
-from livetranslator.theme.icons import app_icon, icon
+from livetranslator.theme.icons import app_icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
 from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
 from livetranslator.ui.geometry import Rect, beside, monitor_for
@@ -150,9 +150,7 @@ class LiveTranslatorApp(QObject):
             self.request_quit,
             self,
             on_last_closed=self._on_last_closed,
-            taskbar=TaskbarButton(
-                APP_DISPLAY_NAME, icon("translate", PALETTES[DEFAULT_PALETTE_ID], "accent")
-            ),
+            taskbar=TaskbarButton(APP_DISPLAY_NAME, app_icon()),
         )
         self._told_how_to_unhide = False
         self.windows.window_hidden.connect(self._on_window_hidden)

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from PySide6.QtCore import QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 
 from livetranslator.theme.tokens import APP_ICON, Palette
 
@@ -62,21 +62,32 @@ def icon(
     return result
 
 
-def app_icon() -> QIcon:
-    """The app's own icon: a red tile with a bold white translate glyph (APP_ICON)."""
+AppIconState = Literal["listening", "paused", "attention"]
+
+
+def app_icon(state: AppIconState = "listening") -> QIcon:
+    """The app's own icon: a red tile with a bold white translate glyph (APP_ICON). The tray
+    shows its state: grey tile = paused, yellow dot = something needs attention."""
     size = APP_ICON.size
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(QColor(APP_ICON.tile))
+    painter.setBrush(QColor(APP_ICON.tile_paused if state == "paused" else APP_ICON.tile))
     radius = size * APP_ICON.corner
     painter.drawRoundedRect(QRectF(0, 0, size, size), radius, radius)
     glyph = round(size * APP_ICON.glyph_scale)
     image = _qta.icon(_qualified(APP_ICON.glyph_name), color=APP_ICON.glyph).pixmap(glyph, glyph)
     offset = (size - glyph) // 2
     painter.drawPixmap(offset, offset, glyph, glyph, image)
+    if state == "attention":
+        dot = size * APP_ICON.badge_scale
+        ring = size * 0.04
+        painter.setPen(QPen(QColor(APP_ICON.badge_ring), ring))
+        painter.setBrush(QColor(APP_ICON.badge))
+        corner = size - dot - ring / 2
+        painter.drawEllipse(QRectF(corner, corner, dot, dot))
     painter.end()
     return QIcon(pixmap)
 

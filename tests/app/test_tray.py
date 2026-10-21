@@ -21,22 +21,25 @@ def make_state(**audio: bool) -> AppState:
 
 
 def test_tray_status_roles_and_tooltips():
-    assert tray_status(make_state()) == ("accent", "Live Translator: listening")
+    assert tray_status(make_state()) == ("listening", "Live Translator: listening")
     paused = make_state(mic_enabled=False, others_enabled=False)
-    assert tray_status(paused) == ("text_secondary", "Live Translator: paused (both muted)")
+    assert tray_status(paused) == ("paused", "Live Translator: paused (both muted)")
     one_muted = make_state(mic_enabled=False)
-    assert tray_status(one_muted)[0] == "accent"
+    assert tray_status(one_muted)[0] == "listening"
 
 
 def test_tray_status_error_wins_and_hidden_is_mentioned():
     store = Store(make_state(mic_enabled=False, others_enabled=False))
     store.dispatch(a.SetStatus("asr", StatusLevel.WARNING, "slow"))
-    assert tray_status(store.state)[0] == "text_secondary"  # a warning isn't an error
+    assert tray_status(store.state)[0] == "paused"  # a warning isn't an error
     store.dispatch(a.SetStatus("asr", StatusLevel.ERROR, "Speech model failed to load."))
-    assert tray_status(store.state) == ("danger", "Live Translator: Speech model failed to load.")
+    assert tray_status(store.state) == (
+        "attention",
+        "Live Translator: Speech model failed to load.",
+    )
     hidden = Store(make_state())
     hidden.dispatch(a.SetAllHidden(True))
-    assert tray_status(hidden.state) == ("accent", "Live Translator: listening, windows hidden")
+    assert tray_status(hidden.state) == ("listening", "Live Translator: listening, windows hidden")
 
 
 @pytest.fixture
@@ -95,14 +98,14 @@ def test_checkmarks_follow_the_store(env):
     assert tray.actions["click_through_all"].isChecked()
 
 
-def test_icon_role_and_tooltip_follow_status(env):
+def test_icon_state_and_tooltip_follow_status(env):
     store, tray, _, _ = env
-    assert tray.icon_role == "accent"
+    assert tray.icon_state == "listening" and not tray.icon.icon().isNull()
     store.dispatch(a.SetStatus("asr", StatusLevel.ERROR, "No speech model."))
-    assert tray.icon_role == "danger"
+    assert tray.icon_state == "attention"
     assert tray.icon.toolTip() == "Live Translator: No speech model."
     store.dispatch(a.ClearStatus("asr"))
-    assert tray.icon_role == "accent"
+    assert tray.icon_state == "listening"
 
 
 def test_one_click_toggles_show_hide(env):

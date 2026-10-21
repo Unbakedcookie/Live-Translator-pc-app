@@ -304,10 +304,16 @@ class SelectorMetrics:
 
 @dataclass(frozen=True)
 class AppIconStyle:
-    """The app's own icon (desktop, taskbar, notifications). User request 2026-10-19: the
-    blue glyph blended into the desktop; now a vibrant red tile with a bold white glyph."""
+    """The app's own icon (desktop, taskbar, notifications, tray). User request 2026-10-19:
+    the blue glyph blended into the desktop; now a vibrant red tile with a bold white glyph.
+    The tray and the minimised-window taskbar button use it too (2026-10-20); the tray turns
+    grey when paused and gets a yellow dot on a problem."""
 
     tile: str = "#E8202A"
+    tile_paused: str = "#6B6B70"  # tray icon while both streams are muted
+    badge: str = "#FFC400"  # tray icon: something needs attention (yellow dot)
+    badge_ring: str = "#1A1A1A"
+    badge_scale: float = 0.46  # dot size / tile size
     glyph: str = "#FFFFFF"
     glyph_name: str = "translate-bold"
     glyph_scale: float = 0.74  # glyph size / tile size
