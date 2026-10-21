@@ -35,45 +35,70 @@ ALSO_SPEAK_HELP = (
 )
 
 
+ANYTHING = "*"  # "Anything else (detect)" in the "They also speak" pickers
+ANYTHING_LABEL = "Anything else (detect)"
+
+
 class AlsoSpeak(QWidget):
     """ "I also speak": up to MAX_MIC_LANGUAGES - 1 pickers (user request 2026-10-19). Only
-    the filled ones plus one empty picker show; emptying one closes the gap."""
+    the filled ones plus one empty picker show; emptying one closes the gap.
+
+    With `anything=True` ("They also speak", 2026-10-20) each picker also offers "Anything
+    else (detect)"; choosing it ends the list (it covers every other language)."""
 
     changed = Signal()
 
     def __init__(
-        self, palette: Palette, codes: Sequence[str] = (), parent: QWidget | None = None
+        self,
+        palette: Palette,
+        codes: Sequence[str] = (),
+        parent: QWidget | None = None,
+        anything: bool = False,
+        anything_else: bool = False,
     ) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACE.xs)
+        items = also_items()
+        if anything:
+            items.insert(1, (ANYTHING_LABEL, ANYTHING))
         self.boxes: list[ChoiceCombo] = []
         for _ in range(MAX_MIC_LANGUAGES - 1):
-            box = ChoiceCombo(also_items(), "")
+            box = ChoiceCombo(items, "")
             box.setFixedWidth(SETTINGS.control_width)
             box.apply_palette(palette)
             box.choice_changed.connect(lambda _c: self._on_choice())
             layout.addWidget(box)
             self.boxes.append(box)
-        self.set_codes(codes)
+        self.set_codes(codes, anything_else)
+
+    def _choices(self) -> list[str]:
+        return [str(box.current_choice() or "") for box in self.boxes if box.isVisibleTo(self)]
 
     def codes(self) -> tuple[str, ...]:
         chosen: list[str] = []
-        for box in self.boxes:
-            code = str(box.current_choice() or "")
+        for code in self._choices():
+            if code == ANYTHING:
+                break
             if code and code not in chosen:
                 chosen.append(code)
         return tuple(chosen)
 
-    def set_codes(self, codes: Sequence[str]) -> None:
-        codes = list(codes)[: len(self.boxes)]
+    def anything_else(self) -> bool:
+        return ANYTHING in self._choices()
+
+    def set_codes(self, codes: Sequence[str], anything_else: bool = False) -> None:
+        values = list(codes)[: len(self.boxes)]
+        if anything_else and len(values) < len(self.boxes):
+            values.append(ANYTHING)
         for i, box in enumerate(self.boxes):
-            box.set_choice(codes[i] if i < len(codes) else "")
-            box.setVisible(i <= len(codes))
+            box.set_choice(values[i] if i < len(values) else "")
+            # filled pickers plus one empty one; nothing after "Anything else"
+            box.setVisible(i <= len(values) and ANYTHING not in values[:i])
 
     def _on_choice(self) -> None:
-        self.set_codes(self.codes())  # close gaps, show the next empty picker
+        self.set_codes(self.codes(), self.anything_else())  # close gaps, next empty picker
         self.changed.emit()
 
 
@@ -86,10 +111,13 @@ def others_items() -> list[tuple[str, object]]:
 
 OTHERS_HELP = (
     "Detect any language works anywhere. If you know what people around you speak, pick "
-    "it: their lines are never taken for an unrelated language, and live text is right from "
-    "the first word."
+    "it: their live text is right sooner, and noisy lines aren't mistaken for another "
+    "language."
 )
-OTHERS_ALSO_HELP = "Pick more if people switch between languages. Another box appears as you go."
+OTHERS_ALSO_HELP = (
+    "Anything else keeps the language above first but still catches any other one. Pick "
+    "languages instead if you know them all."
+)
 
 
 CHINESE_SCRIPTS: list[tuple[str, object]] = [
@@ -134,13 +162,18 @@ class GeneralPage(SettingsPage):
         self.also_row = lang.row("I also speak", ALSO_SPEAK_HELP, self.also)
         # "Others speak" (user request 2026-10-20): detect any (default) or the room's
         # languages, which keeps noisy, short lines from being taken for another language.
-        others, others_also = others_choice(store.state.config.audio.others_languages)
+        audio = store.state.config.audio
+        others, others_also, anything = others_choice(
+            audio.others_languages, audio.others_anything_else
+        )
         self.others = ChoiceCombo(others_items(), others)
         self.others.setFixedWidth(SETTINGS.control_width)
         self.others.apply_palette(ctx.palette)
         self.others.choice_changed.connect(lambda _c: self._on_others())
         lang.row("Others speak", OTHERS_HELP, self.others)
-        self.others_also = AlsoSpeak(ctx.palette, others_also)
+        self.others_also = AlsoSpeak(
+            ctx.palette, others_also, anything=True, anything_else=anything
+        )
         self.others_also.changed.connect(self._on_others)
         self.others_also_row = lang.row("They also speak", OTHERS_ALSO_HELP, self.others_also)
         self.chinese = ChoiceCombo(CHINESE_SCRIPTS, store.state.config.engines.chinese_script)
@@ -171,9 +204,9 @@ class GeneralPage(SettingsPage):
         self._ctx.settings.set_mic_languages(str(self.speak.current_choice()), self.also.codes())
 
     def _on_others(self) -> None:
-        self._ctx.settings.set_others_languages(
-            str(self.others.current_choice()), self.others_also.codes()
-        )
+        first = str(self.others.current_choice())
+        also, anything = self.others_also.codes(), self.others_also.anything_else()
+        self._ctx.settings.set_others_languages(first, also, anything)
 
     def refresh(self) -> None:
         config = self._ctx.settings.store.state.config
@@ -182,8 +215,10 @@ class GeneralPage(SettingsPage):
         self.speak.set_choice(first)
         self.also.set_codes(also)
         self.also_row.setEnabled(first != "auto")  # "any language" already covers it
-        others, others_also = others_choice(config.audio.others_languages)
+        others, others_also, anything = others_choice(
+            config.audio.others_languages, config.audio.others_anything_else
+        )
         self.others.set_choice(others)
-        self.others_also.set_codes(others_also)
+        self.others_also.set_codes(others_also, anything)
         self.others_also_row.setEnabled(others != "auto")  # any language covers them all
         self.chinese.set_choice(config.engines.chinese_script)

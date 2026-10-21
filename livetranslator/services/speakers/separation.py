@@ -38,12 +38,13 @@ from rapidfuzz import fuzz
 from livetranslator.core import actions as a
 from livetranslator.core.state import Source, Utterance
 from livetranslator.services.asr.chinese import ChineseScript, is_chinese, to_script
+from livetranslator.services.asr.language_choice import others_candidates
 from livetranslator.services.asr.worker import LineAudio
 
 Float = NDArray[np.float32]
 Emit = Callable[[a.Action], None]
-# (audio, the languages people speak: () = any) -> (text, language)
-Transcribe = Callable[[Float, tuple[str, ...]], tuple[str, str | None]]
+# (audio, languages to choose among, preferred ones) -> (text, language)
+Transcribe = Callable[[Float, tuple[str, ...], tuple[str, ...]], tuple[str, str | None]]
 
 OVERLAP_ID = "overlap-pyannote-seg3"
 SEPARATION_ID = "separation-convtasnet"
@@ -133,6 +134,7 @@ class SeparationSettings:
     enabled: bool = False
     chinese_script: ChineseScript = "simplified"
     others_languages: tuple[str, ...] = ()  # Settings "Others speak"; () = detect any
+    others_anything_else: bool = True
 
 
 @dataclass(frozen=True)
@@ -249,7 +251,10 @@ class SeparationWorker:
         """The two voices, earlier one first; None when the split doesn't look real."""
         voices: list[Voice] = []
         for track in self._separator.separate(audio):
-            text, language = self._transcribe(track, self._settings.others_languages)
+            languages, preferred = others_candidates(
+                self._settings.others_languages, self._settings.others_anything_else
+            )
+            text, language = self._transcribe(track, languages, preferred)
             text = text.strip()
             if is_chinese(language):
                 text = to_script(text, self._settings.chinese_script)

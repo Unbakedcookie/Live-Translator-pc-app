@@ -55,10 +55,15 @@ TEXTS = {
 }
 
 
-def transcribe_by_marker(texts=TEXTS, heard: list[tuple[str, ...]] | None = None):
-    def transcribe(audio: np.ndarray, languages: tuple[str, ...]) -> tuple[str, str | None]:
+Heard = list[tuple[tuple[str, ...], tuple[str, ...]]]
+
+
+def transcribe_by_marker(texts=TEXTS, heard: Heard | None = None):
+    def transcribe(
+        audio: np.ndarray, languages: tuple[str, ...], preferred: tuple[str, ...]
+    ) -> tuple[str, str | None]:
         if heard is not None:
-            heard.append(languages)
+            heard.append((languages, preferred))
         return texts[round(float(audio.max()), 1)]
 
     return transcribe
@@ -77,7 +82,8 @@ def make(
     exists: bool = True,
     script: str = "simplified",
     others: tuple[str, ...] = (),
-    heard: list[tuple[str, ...]] | None = None,
+    heard: Heard | None = None,
+    anything_else: bool = True,
 ):
     emitted: list[a.Action] = []
     forwarded: list[LineAudio] = []
@@ -91,18 +97,29 @@ def make(
         separator=separator or FakeSeparator(),  # type: ignore[arg-type]
     )
     worker.configure(
-        SeparationSettings(enabled=enabled, chinese_script=script, others_languages=others)  # type: ignore[arg-type]
+        SeparationSettings(
+            enabled=enabled,
+            chinese_script=script,  # type: ignore[arg-type]
+            others_languages=others,
+            others_anything_else=anything_else,
+        )  # type: ignore[arg-type]
     )
     return worker, emitted, forwarded
 
 
 def test_separated_voices_follow_others_speak():
     """2026-10-20: "Others speak" limits the languages for split voices too."""
-    heard: list[tuple[str, ...]] = []
-    worker, _, _ = make(others=("zh", "en"), heard=heard)
+    heard: Heard = []
+    worker, _, _ = make(others=("zh", "en"), heard=heard, anything_else=False)
     worker.submit(line())
     worker.run_pending()
-    assert heard == [("zh", "en"), ("zh", "en")]
+    assert heard == [(("zh", "en"), ())] * 2  # only those two
+    heard.clear()
+    worker, _, _ = make(others=("zh",), heard=heard)  # Chinese + anything else
+    worker.submit(line())
+    worker.run_pending()
+    languages, preferred = heard[0]
+    assert preferred == ("zh",) and languages[0] == "zh" and len(languages) > 40
 
 
 def test_an_overlapped_line_becomes_two_lines_with_their_own_voices():

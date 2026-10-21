@@ -188,15 +188,20 @@ class FasterWhisperEngine:
     def detect_language(self, audio: Audio, candidates: Sequence[str]) -> tuple[str, float]:
         """The likeliest of `candidates` for this audio and its share of their combined
         probability (Whisper scores every language; 1.0 = certain among them)."""
+        shares = self.language_scores(audio, candidates)
+        pick = max(candidates, key=lambda code: shares.get(code, 0.0))
+        return pick, shares.get(pick, 0.0)
+
+    def language_scores(self, audio: Audio, candidates: Sequence[str]) -> dict[str, float]:
+        """Each candidate's share of the candidates' combined probability (sums to 1)."""
         with self._lock:
             model = self._model
             if model is None:
                 raise EngineNotLoaded("load() the speech model first")
             _language, _probability, scores = model.detect_language(audio)
         by_code = dict(scores)
-        pick = max(candidates, key=lambda code: by_code.get(code, 0.0))
         total = sum(by_code.get(code, 0.0) for code in candidates)
-        return pick, (by_code.get(pick, 0.0) / total if total else 0.0)
+        return {code: (by_code.get(code, 0.0) / total if total else 0.0) for code in candidates}
 
     def transcribe(
         self,

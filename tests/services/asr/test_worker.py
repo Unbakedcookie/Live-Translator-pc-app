@@ -447,7 +447,7 @@ def test_others_speak_one_language_is_always_that_one():
     """User request 2026-10-20 ("Others speak"): no detection, the language from the first
     word (the user's log had noisy lines taken for Icelandic)."""
     engine = FakeEngine(language="is", probability=0.9)
-    worker, emitted = make_worker(engine, others_languages=("zh",))
+    worker, emitted = make_worker(engine, others_languages=("zh",), others_anything_else=False)
     ring = RingBuffer(60, SAMPLE_RATE)
     worker.add_stream(Source.OTHERS, ring)
     feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
@@ -457,7 +457,7 @@ def test_others_speak_one_language_is_always_that_one():
 
 def test_others_in_several_languages_are_detected_among_them():
     engine = DetectingEngine()
-    worker, emitted = make_worker(engine, others_languages=("es", "en"))
+    worker, emitted = make_worker(engine, others_languages=("es", "en"), others_anything_else=False)
     ring = RingBuffer(60, SAMPLE_RATE)
     worker.add_stream(Source.OTHERS, ring)
     feed(worker, ring, [(0.25, SPEECH)] * 10 + [(0.25, 0.0)] * 4)
@@ -472,3 +472,37 @@ def test_others_detect_any_language_by_default():
     worker.add_stream(Source.OTHERS, ring)
     feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
     assert engine.calls[0][1] is None and last_fields(emitted)["language"] == "ko"
+
+
+class ScoringEngine(FakeEngine):
+    """Whisper-like language scores: English on top, Chinese a plausible second."""
+
+    def __init__(self, zh_share: float) -> None:
+        super().__init__(language="xx")
+        self.zh_share = zh_share
+        self.scored: list[tuple[str, ...]] = []
+
+    def detect_language(self, audio, candidates) -> tuple[str, float]:
+        return "en", 0.9
+
+    def language_scores(self, audio, candidates) -> dict[str, float]:
+        self.scored.append(tuple(candidates))
+        shares = dict.fromkeys(candidates, 0.0)
+        shares["zh"], shares["en"] = self.zh_share, 1.0 - self.zh_share
+        return shares
+
+
+def test_others_speak_chinese_and_anything_else():
+    """User 2026-10-20: "I know they speak Chinese, I don't know what else". Chinese wins when
+    it scores >= 10 % of the top language; anything else is still heard."""
+    from livetranslator.services.asr.language_choice import SUPPORTED
+
+    for zh_share, expected in ((0.2, "zh"), (0.05, "en")):  # 0.2 >= 0.1*0.8; 0.05 < 0.095
+        engine = ScoringEngine(zh_share)
+        worker, emitted = make_worker(engine, others_languages=("zh",), others_anything_else=True)
+        ring = RingBuffer(60, SAMPLE_RATE)
+        worker.add_stream(Source.OTHERS, ring)
+        feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
+        assert engine.scored and set(engine.scored[0]) == set(SUPPORTED)  # every language
+        assert engine.scored[0][0] == "zh"  # listed first
+        assert last_fields(emitted)["language"] == expected, zh_share

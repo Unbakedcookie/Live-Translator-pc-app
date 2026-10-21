@@ -47,6 +47,7 @@ from livetranslator.services.asr.faster_whisper_engine import (
     WHISPER_MODELS,
     is_downloaded,
 )
+from livetranslator.services.asr.language_choice import choose
 from livetranslator.services.asr.worker import STATUS_KEY as ASR_STATUS_KEY
 from livetranslator.services.asr.worker import ASRWorker
 from livetranslator.services.errors import EngineError
@@ -627,13 +628,15 @@ def build_speech(
         discord_intervals=discord.intervals if discord is not None else None,
     )
 
-    def transcribe(audio: Float, languages: tuple[str, ...]) -> tuple[str, str | None]:
+    def transcribe(
+        audio: Float, languages: tuple[str, ...], preferred: tuple[str, ...]
+    ) -> tuple[str, str | None]:
         # The quick pass: on separated voices the careful one (beam 5) was no better
         # (72 % vs 73 % both understood) and holds the shared model ~10-20 % longer.
-        # "Others speak" applies here too: one language is given, several are chosen from.
+        # "Others speak" applies here too (language_choice).
         language = languages[0] if len(languages) == 1 else None
         if len(languages) > 1:
-            language, _share = engine.detect_language(audio, languages)
+            language = choose(engine.language_scores(audio, languages), preferred)
         result = engine.transcribe(audio, language=language, final=False)
         return result.text, language or result.language
 

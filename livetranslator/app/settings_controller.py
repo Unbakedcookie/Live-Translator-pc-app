@@ -158,11 +158,18 @@ class SettingsController:
         chosen = mic_languages_for(first, also, self._store.state.config.my_language)
         self._store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": chosen}))
 
-    def set_others_languages(self, first: str, also: Sequence[str] = ()) -> None:
+    def set_others_languages(
+        self, first: str, also: Sequence[str] = (), anything_else: bool = True
+    ) -> None:
         """Settings "Others speak" + "They also speak". `first`: "auto" (detect any) or a
-        language code; `also`: more codes ("" = none)."""
+        language code; `also`: more codes ("" = none); `anything_else`: the listed ones are
+        preferred and any other language can still be heard."""
         chosen = others_languages_for(first, also)
-        self._store.dispatch(a.UpdateConfigSection("audio", {"others_languages": chosen}))
+        self._store.dispatch(
+            a.UpdateConfigSection(
+                "audio", {"others_languages": chosen, "others_anything_else": anything_else}
+            )
+        )
 
     def set_chinese_script(self, script: str) -> None:
         """'simplified' or 'traditional': how recognised Mandarin is written."""
@@ -219,11 +226,14 @@ def mic_choice(mic_languages: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
     return mic_languages[0], mic_languages[1:]
 
 
-def others_choice(others_languages: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
-    """The ("Others speak", "They also speak" list) choices for a saved `others_languages`."""
+def others_choice(
+    others_languages: tuple[str, ...], anything_else: bool = True
+) -> tuple[str, tuple[str, ...], bool]:
+    """The ("Others speak", "They also speak" list, "Anything else") choices for the saved
+    setting."""
     if not others_languages:
-        return "auto", ()
-    return others_languages[0], others_languages[1:]
+        return "auto", (), anything_else
+    return others_languages[0], others_languages[1:], anything_else
 
 
 def others_languages_for(first: str, also: Sequence[str]) -> tuple[str, ...]:

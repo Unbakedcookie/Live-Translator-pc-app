@@ -70,6 +70,7 @@ def asr_settings(config: AppConfig) -> AsrSettings:
         update_interval_s=effective(config).asr_interval_s,  # game mode: ≥ 1.0 s (T092)
         mic_languages=mic_languages(config),
         others_languages=config.audio.others_languages,
+        others_anything_else=config.audio.others_anything_else,
         vad=config.vad,
         enabled=frozenset(enabled),
         chinese_script=config.engines.chinese_script,
@@ -85,6 +86,7 @@ def separation_settings(config: AppConfig) -> SeparationSettings:
         enabled=effective(config).separate_overlaps,
         chinese_script=config.engines.chinese_script,
         others_languages=config.audio.others_languages,
+        others_anything_else=config.audio.others_anything_else,
     )
 
 

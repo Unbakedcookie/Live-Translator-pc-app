@@ -183,5 +183,5 @@ def test_others_language_choices_round_trip():
         "ja",
         "ko",
     )
-    assert others_choice(()) == ("auto", ())
-    assert others_choice(("zh", "en")) == ("zh", ("en",))
+    assert others_choice(()) == ("auto", (), True)
+    assert others_choice(("zh", "en"), False) == ("zh", ("en",), False)

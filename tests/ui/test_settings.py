@@ -436,18 +436,34 @@ def test_about_page_lists_the_licences(env: Env):
 
 
 def test_general_page_others_speak(env: Env):
-    """User request 2026-10-20: universal detection, or the languages of the room."""
+    """User request 2026-10-20: universal detection, or "I know they speak Chinese, I don't
+    know what else" (Chinese + Anything else), or exactly the room's languages."""
+    from livetranslator.ui.settings.general_page import ANYTHING
+
     page = env.page(GeneralPage)
+    audio = lambda: env.store.state.config.audio  # noqa: E731
     assert page.others.current_choice() == "auto" and not page.others_also_row.isEnabled()
     page.others.set_choice("zh")
     page.others.choice_changed.emit("zh")
-    assert env.store.state.config.audio.others_languages == ("zh",)
+    assert audio().others_languages == ("zh",) and audio().others_anything_else
     assert page.others_also_row.isEnabled()
     boxes = page.others_also.boxes
-    boxes[0].set_choice("en")
+    assert boxes[0].current_choice() == ANYTHING  # the safe default: anything else too
+    assert [b.isVisibleTo(page) for b in boxes] == [True, False, False]  # nothing after it
+    boxes[0].set_choice("en")  # exactly Chinese and English
     boxes[0].choice_changed.emit("en")
-    assert env.store.state.config.audio.others_languages == ("zh", "en")
+    assert audio().others_languages == ("zh", "en") and not audio().others_anything_else
+    assert [b.isVisibleTo(page) for b in boxes] == [True, True, False]
+    boxes[1].set_choice(ANYTHING)  # Chinese, English, and anything else
+    boxes[1].choice_changed.emit(ANYTHING)
+    assert audio().others_languages == ("zh", "en") and audio().others_anything_else
+    boxes[0].set_choice("")  # emptying a box closes the gap: Chinese + anything else
+    boxes[0].choice_changed.emit("")
+    assert audio().others_languages == ("zh",) and audio().others_anything_else
+    assert boxes[0].current_choice() == ANYTHING
+    boxes[0].set_choice("")  # and "Nothing else" there now means only Chinese
+    boxes[0].choice_changed.emit("")
+    assert audio().others_languages == ("zh",) and not audio().others_anything_else
     page.others.set_choice("auto")
     page.others.choice_changed.emit("auto")
-    assert env.store.state.config.audio.others_languages == ()
-    assert not page.others_also_row.isEnabled()
+    assert audio().others_languages == () and not page.others_also_row.isEnabled()

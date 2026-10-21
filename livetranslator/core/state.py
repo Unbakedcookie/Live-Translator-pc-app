@@ -176,6 +176,9 @@ class AudioConfig(Frozen):
     # any language (the default); 1-4 codes = only those, which keeps noisy or short lines
     # from being taken for an unrelated language (the user's log: "Icelandic").
     others_languages: tuple[str, ...] = ()
+    # "They also speak: Anything else (detect)": the listed languages are preferred, any other
+    # can still be heard (user 2026-10-20: "I know they speak Chinese, I don't know what else").
+    others_anything_else: bool = True
 
     @field_validator("mic_languages")
     @classmethod

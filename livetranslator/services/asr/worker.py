@@ -36,6 +36,7 @@ from livetranslator.core import actions as a
 from livetranslator.core.state import Source, StatusLevel, Utterance, VadConfig
 from livetranslator.services.asr.base import SAMPLE_RATE, ASREngine, Audio, Transcription, Word
 from livetranslator.services.asr.chinese import ChineseScript, is_chinese, to_script
+from livetranslator.services.asr.language_choice import choose, others_candidates
 from livetranslator.services.asr.local_agreement import LocalAgreement
 from livetranslator.services.asr.vad import FRAME, Segmenter, VadEvent, frame_energy
 from livetranslator.services.audio.ring import Float, RingBuffer
@@ -94,6 +95,7 @@ class AsrSettings:
     # The same for other people (Settings "Others speak", user request 2026-10-20): empty =
     # detect any language (the default), one = always that one, several = among those.
     others_languages: tuple[str, ...] = ()
+    others_anything_else: bool = True  # listed languages preferred, any other still allowed
     vad: VadConfig = field(default_factory=VadConfig)
     enabled: frozenset[Source] = frozenset({Source.ME, Source.OTHERS})
     chinese_script: ChineseScript = "simplified"
@@ -338,16 +340,20 @@ class ASRWorker:
     # ------------------------------------------------------------ decoding
 
     @staticmethod
-    def _candidates(source: Source, settings: AsrSettings) -> tuple[str, ...]:
-        """The languages a stream may be in; () = detect any."""
+    def _choices(source: Source, settings: AsrSettings) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """(languages a stream may be in, preferred among them); () = Whisper detects any."""
         if source is Source.ME:
-            return settings.mic_languages
+            return settings.mic_languages, ()
         if source is Source.OTHERS:
-            return settings.others_languages
-        return ()
+            return others_candidates(settings.others_languages, settings.others_anything_else)
+        return (), ()
+
+    @property
+    def _can_detect(self) -> bool:
+        return hasattr(self._engine, "detect_language")
 
     def _language(self, job: Job, settings: AsrSettings) -> str | None:
-        languages = self._candidates(job.stream.source, settings)
+        languages, _preferred = self._choices(job.stream.source, settings)
         if len(languages) == 1:
             return languages[0]
         return job.utterance.language
@@ -361,17 +367,24 @@ class ASRWorker:
         zh/en, ja/en: sure (share >= 0.97, >= 1 s) was right 63 of 64 times, whole lines 80
         of 80; with 4 languages 72 of 72 whole lines)."""
         u = job.utterance
-        languages = self._candidates(job.stream.source, settings)
+        languages, preferred = self._choices(job.stream.source, settings)
         if len(languages) < 2:
             return
         if u.language_locked and not final:
             return
         detect = getattr(self._engine, "detect_language", None)
-        if detect is None:  # an engine without language scores: the first one
-            u.language, u.language_locked = languages[0], True
-            return
+        if detect is None:
+            if not preferred and job.stream.source is Source.ME:  # no scores: the first one
+                u.language, u.language_locked = languages[0], True
+            return  # Others: the decode detects (as before "Others speak")
+        scores = getattr(self._engine, "language_scores", None)
         with timed(self._timings, "asr"):
-            code, share = detect(audio, languages)
+            if preferred and scores is not None:
+                shares = scores(audio, languages)
+                code = choose(shares, preferred)
+                share = shares[code]  # a preferred pick behind the top one is never "sure"
+            else:
+                code, share = detect(audio, languages)
         u.language = str(code)
         u.language_locked = share >= DETECT_SURE and len(audio) >= DETECT_MIN_S * SAMPLE_RATE
 
@@ -385,7 +398,7 @@ class ASRWorker:
         u.decoded_to = end
         if (
             u.language is None
-            and not self._candidates(stream.source, settings)  # any language: detect
+            and (not self._choices(stream.source, settings)[0] or not self._can_detect)
             and (result.language_probability or 0.0) >= LANGUAGE_LOCK_P
         ):
             u.language = result.language
