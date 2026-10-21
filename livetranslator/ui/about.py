@@ -19,6 +19,12 @@ from livetranslator.ui.settings.rows import SettingsPage
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "third_party.json"
 PROJECT_URL = "https://github.com/Unbakedcookie/Live-Translator-pc-app"
+# D-011: a plain notice, not legal advice
+OTHERS_NOTE = (
+    "It writes down what other people say. Some places require everyone's agreement before a "
+    "conversation is recorded or transcribed, so tell the people you talk to and follow the "
+    "rules where you live. Nothing is saved unless you export it."
+)
 
 
 def licenses_dir() -> Path:
@@ -57,6 +63,7 @@ class AboutPage(SettingsPage):
             f"{APP_DISPLAY_NAME} licence",
             "MIT License: free to use, change and share (LICENSE.txt next to the app).",
         )
+        app.row("Listening to others", OTHERS_NOTE)
         qt = self.section("Qt and Qt for Python")
         qt.row("GNU Lesser General Public License v3", str(notices.get("qt_notice", "")))
         models = self.section("Models it downloads")

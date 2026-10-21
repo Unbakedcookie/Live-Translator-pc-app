@@ -429,6 +429,7 @@ def test_about_page_lists_the_licences(env: Env):
     assert any("GNU Lesser General Public License" in t for t in texts)
     assert any(t.startswith("PySide6") for t in texts)
     assert any(t.startswith("MIT License") for t in texts)  # the app's own (2026-10-19)
+    assert "Listening to others" in texts  # D-011 notice
     assert (licenses_dir() / "LGPL-3.0.txt").is_file()
     buttons = [b for b in page.findChildren(QPushButton) if b.text() == "Open folder"]
     buttons[0].click()

@@ -181,7 +181,886 @@
       },
       "dest": "separation/overlap",
       "marker": "model.onnx",
-      "attribution": "pyannote segmentation-3.0 by Hervé Bredin / CNRS (MIT), ONNX export by k2-fsa/sherpa-onnx"
+      "attribution": "pyannote segmentation-3.0 by Séverin Baroudi, Alexis Plaquet and Hervé Bredin (MIT, Copyright (c) 2022 CNRS; Plaquet & Bredin, Interspeech 2023), ONNX export by k2-fsa/sherpa-onnx"
+    },
+    {
+      "id": "opus-mt-ar-en",
+      "title": "Translation: Arabic to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-ar-en.zip",
+        "sha256": "eeebccca70c00320b9062de12c1f7483d3ffb579d79785512543f263fc07f88b",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/ar-en",
+      "marker": "model.bin",
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-ar-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-cs-en",
+      "title": "Translation: Czech to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-cs-en.zip",
+        "sha256": "78c1e2143cd49863aabc9a6f3859cce8ac8b0b935c679c85406b5fd05aa07dc1",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/cs-en",
+      "marker": "model.bin",
+      "languages": [
+        "cs",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-cs-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-da-en",
+      "title": "Translation: Danish to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 145,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-da-en.zip",
+        "sha256": "2a31bd95900fb231b11c5ffec94f4488e427615509bdf6a22c838576e06a97e6",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/da-en",
+      "marker": "model.bin",
+      "languages": [
+        "da",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-da-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-de-en",
+      "title": "Translation: German to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 145,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-de-en.zip",
+        "sha256": "8232f5e11eb44eb1b4e3fbf8836fa3d8822e5b7c566e48bbf27b39a6faf25269",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/de-en",
+      "marker": "model.bin",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-de-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-el-en",
+      "title": "Translation: Greek to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 458,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-el-en.zip",
+        "sha256": "c5ec1fdea4397ca4b79f03727e3d7fea0c348f5efdda199a2b972ec31423e975",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/el-en",
+      "marker": "model.bin",
+      "languages": [
+        "el",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tc-big-el-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-ar",
+      "title": "Translation: English to Arabic",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-ar.zip",
+        "sha256": "b511a1b9a902cad5eeb7469b093f4bd320296e01104b36e1f3096013f37f5e5c",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-ar",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "ar"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-ar by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-de",
+      "title": "Translation: English to German",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 145,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-de.zip",
+        "sha256": "3a4c10cd368235b9720e48c61b57a26663258f42462cef9c6d909daea0205d37",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-de",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "de"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-de by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-es",
+      "title": "Translation: English to Spanish",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-es.zip",
+        "sha256": "b6466cb420a679119ec53492fb40812fd7b821b5a3123ef6b75005c478b1f8cc",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-es",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "es"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-es by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-fr",
+      "title": "Translation: English to French",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 146,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-fr.zip",
+        "sha256": "2f727d2b158533dde15cecf0f7da5a5a51153c976d26fb4c87f2a02613ab63e5",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-fr",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "fr"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-fr by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-hi",
+      "title": "Translation: English to Hindi",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-hi.zip",
+        "sha256": "5a3f56003563e81e88bfd762fc7844d2d4d87f1d524d2b368b4a239710165be3",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-hi",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "hi"
+      ],
+      "quality": "rough",
+      "attribution": "Helsinki-NLP/opus-mt-en-hi by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-it",
+      "title": "Translation: English to Italian",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 167,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-it.zip",
+        "sha256": "e487132d2c634c0ea03e5fd28a9675bcca5f42fd9c01bee0fcfaca9338472c21",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-it",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "it"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-it by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-ja",
+      "title": "Translation: English to Japanese",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-ja.zip",
+        "sha256": "1661fae83f7e986a3d3a202f959f3c700fdb2ac4b1a44c56812737e18f47859f",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-ja",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "ja"
+      ],
+      "attribution": "Helsinki-NLP/opus-tatoeba-en-ja by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-ko",
+      "title": "Translation: English to Korean",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 406,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-ko.zip",
+        "sha256": "78a582a49c77e165b1ee1b69a4c58cb83c24c88f156862fb60fb89c04d96e669",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-ko",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "ko"
+      ],
+      "attribution": "Helsinki-NLP/opusTCv20210807-sepvoc_transformer-big_2022-07-28.zip by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-pl",
+      "title": "Translation: English to Polish",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 145,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-pl.zip",
+        "sha256": "e7433e66d39157a140d0e7182b8c146901454c0a5f3bc13dfd5979b8b5ab7473",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-pl",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "pl"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-zlw by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-pt",
+      "title": "Translation: English to Portuguese",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 449,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-pt.zip",
+        "sha256": "0524a336c17ce6866d245e253d6f2320ed9de6ef73b7512e7aec8750055ad45c",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-pt",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "pt"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tc-big-en-pt by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-ru",
+      "title": "Translation: English to Russian",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-ru.zip",
+        "sha256": "4d76eb739d20ba55f84cff7f6d30837e5ed0fdb0e0b00a2c60d6ce9baa0438d5",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-ru",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "ru"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-ru by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-tr",
+      "title": "Translation: English to Turkish",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 453,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-tr.zip",
+        "sha256": "acabcdc3becfbf4d740c3012d6dc4e8a1ba6ed41a62a125c37f6c228667ff9b9",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-tr",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "tr"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tc-big-en-tr by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-uk",
+      "title": "Translation: English to Ukrainian",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-uk.zip",
+        "sha256": "1d28faaded030be40c33a17732036a58c7b97956374199a62efad316ee62f507",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-uk",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "uk"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-uk by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-vi",
+      "title": "Translation: English to Vietnamese",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 140,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-vi.zip",
+        "sha256": "6ca39bfc97410b3968434617f71af94d395df593002af52501bc4dbc2d511d80",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-vi",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "vi"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-vi by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-en-zh",
+      "title": "Translation: English to Chinese",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-en-zh.zip",
+        "sha256": "1748dfa40aadf2aea67eff4d6845d8aabbd3093604fc22125b7232f17f404947",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/en-zh",
+      "marker": "model.bin",
+      "languages": [
+        "en",
+        "zh"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-en-zh by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-es-en",
+      "title": "Translation: Spanish to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-es-en.zip",
+        "sha256": "a2fc961139431073d344a6cabd5448d58ad40fa7c78f0aef50bba80ff51d8509",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/es-en",
+      "marker": "model.bin",
+      "languages": [
+        "es",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-es-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-fi-en",
+      "title": "Translation: Finnish to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 146,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-fi-en.zip",
+        "sha256": "173ddf505566517d330c18ce3231cb7c94c86d0ee7b469a77e73a7d512081e03",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/fi-en",
+      "marker": "model.bin",
+      "languages": [
+        "fi",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-fi-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-fr-en",
+      "title": "Translation: French to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 146,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-fr-en.zip",
+        "sha256": "894ceeb2a78f396d6a9167c42c5edb48d8d4daee65a8d3bb27b23e852a57676a",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/fr-en",
+      "marker": "model.bin",
+      "languages": [
+        "fr",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-fr-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-he-en",
+      "title": "Translation: Hebrew to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 460,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-he-en.zip",
+        "sha256": "a0de6c0037693d6fffac61c3c95b19412f31b148c4eb008546541a651f5a82dc",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/he-en",
+      "marker": "model.bin",
+      "languages": [
+        "he",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tc-big-he-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-hi-en",
+      "title": "Translation: Hindi to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-hi-en.zip",
+        "sha256": "b6cede2bd0936e733f034466ece0432094606b57d0f4f40e424cce7cd745ac43",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/hi-en",
+      "marker": "model.bin",
+      "languages": [
+        "hi",
+        "en"
+      ],
+      "quality": "rough",
+      "attribution": "Helsinki-NLP/opus-mt-hi-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-hu-en",
+      "title": "Translation: Hungarian to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-hu-en.zip",
+        "sha256": "57d34e7c293cf39639baf96cd5b086e8d512707353b11874c34c20bee1813821",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/hu-en",
+      "marker": "model.bin",
+      "languages": [
+        "hu",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-hu-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-id-en",
+      "title": "Translation: Indonesian to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 141,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-id-en.zip",
+        "sha256": "f0f347c8cf661a4dfa70d3b1296ce7856d0d27d7b2e20efb43bc5ba29a94ce55",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/id-en",
+      "marker": "model.bin",
+      "languages": [
+        "id",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-id-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-it-en",
+      "title": "Translation: Italian to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 167,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-it-en.zip",
+        "sha256": "c6ca1260dadc4206aa20778141979ee8ea61d6ea35771dea6a6d54c570bb6421",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/it-en",
+      "marker": "model.bin",
+      "languages": [
+        "it",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-it-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-ja-en",
+      "title": "Translation: Japanese to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 147,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-ja-en.zip",
+        "sha256": "a2cf17836201627f5a1ecb7938f59be4fe2a9686dcbf3da9e906fe3db10f4eb2",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/ja-en",
+      "marker": "model.bin",
+      "languages": [
+        "ja",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-ja-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-ko-en",
+      "title": "Translation: Korean to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-ko-en.zip",
+        "sha256": "c1477576a50630d96019698e3bd74e055a8af1e04ed94b2998dbea568fd6d5b9",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/ko-en",
+      "marker": "model.bin",
+      "languages": [
+        "ko",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-ko-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-nl-en",
+      "title": "Translation: Dutch to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 154,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-nl-en.zip",
+        "sha256": "466e364c14187809538670cd2fb9a4a3d83124d03b8d10c8d8ecfdd804276f05",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/nl-en",
+      "marker": "model.bin",
+      "languages": [
+        "nl",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-nl-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-no-en",
+      "title": "Translation: Norwegian to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 144,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-no-en.zip",
+        "sha256": "f442fbf6e2b340dbbf0cbe47c8cb90d2c54817af43705b60bbb1a041b61c568e",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/no-en",
+      "marker": "model.bin",
+      "languages": [
+        "no",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-gmq-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-pl-en",
+      "title": "Translation: Polish to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-pl-en.zip",
+        "sha256": "9a19af2e31931daecc2c51b7dde0879671a28d9a2548b69e069d203c6ac591a4",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/pl-en",
+      "marker": "model.bin",
+      "languages": [
+        "pl",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-pl-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-pt-en",
+      "title": "Translation: Portuguese to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 151,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-pt-en.zip",
+        "sha256": "c211e2aea84ca4d6a4f7abeaf2ad7b784a5fb016fd92cf33e351de5a0243e413",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/pt-en",
+      "marker": "model.bin",
+      "languages": [
+        "pt",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-ROMANCE-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-ru-en",
+      "title": "Translation: Russian to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-ru-en.zip",
+        "sha256": "270ae508679f71889799471db42d31bf648f7f54a19cf11bac9efc3ec20bffa7",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/ru-en",
+      "marker": "model.bin",
+      "languages": [
+        "ru",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-ru-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-sv-en",
+      "title": "Translation: Swedish to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 143,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-sv-en.zip",
+        "sha256": "e4a6cae9993d2f69067835fd292e7adebca9fa22f9bc299879871de5d71cfd36",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/sv-en",
+      "marker": "model.bin",
+      "languages": [
+        "sv",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-sv-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-th-en",
+      "title": "Translation: Thai to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 150,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-th-en.zip",
+        "sha256": "863be74cd3a69a06ab6c8d688cbcccad3c9582a460b72c3e99aa932486379dae",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/th-en",
+      "marker": "model.bin",
+      "languages": [
+        "th",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-th-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-tl-en",
+      "title": "Translation: Tagalog to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 144,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-tl-en.zip",
+        "sha256": "d4f65125f49d44d62821f57dbea4627eae46b53a2b78e1dbab003329a9dc2090",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/tl-en",
+      "marker": "model.bin",
+      "languages": [
+        "tl",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tl-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-tr-en",
+      "title": "Translation: Turkish to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-tr-en.zip",
+        "sha256": "5dd43028ad8e144f25c3f706c0ed4aae0e2fd310f6fc108e201de738169e1058",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/tr-en",
+      "marker": "model.bin",
+      "languages": [
+        "tr",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-tr-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-uk-en",
+      "title": "Translation: Ukrainian to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-uk-en.zip",
+        "sha256": "9c34da89cecc66b7b249e69ce2a04def0115f6c383b988aacadfb71a42fc82f3",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/uk-en",
+      "marker": "model.bin",
+      "languages": [
+        "uk",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-uk-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-ur-en",
+      "title": "Translation: Urdu to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 149,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-ur-en.zip",
+        "sha256": "ea51e24ab7619776e621aee871153b3ad9aac37163ebb62dc270a9ebe355cbc5",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/ur-en",
+      "marker": "model.bin",
+      "languages": [
+        "ur",
+        "en"
+      ],
+      "quality": "rough",
+      "attribution": "Helsinki-NLP/opus-mt-ur-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-vi-en",
+      "title": "Translation: Vietnamese to English",
+      "kind": "translation",
+      "license": "Apache-2.0",
+      "size_mb": 140,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-vi-en.zip",
+        "sha256": "741110c4ddad0afe4467b7a0db786061fa32b7ab10a62f99cae88d4c1210c1cd",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/vi-en",
+      "marker": "model.bin",
+      "languages": [
+        "vi",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-vi-en by Helsinki-NLP / OPUS-MT (Apache-2.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "opus-mt-zh-en",
+      "title": "Translation: Chinese to English",
+      "kind": "translation",
+      "license": "CC-BY-4.0",
+      "size_mb": 152,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/opus-mt-zh-en.zip",
+        "sha256": "5aa44cb302ea85132b041b5c5dd7e76dbad92aa4cc4537674ee4389a0dbd3cef",
+        "archive": "zip"
+      },
+      "dest": "opus-mt/zh-en",
+      "marker": "model.bin",
+      "languages": [
+        "zh",
+        "en"
+      ],
+      "attribution": "Helsinki-NLP/opus-mt-zh-en by Helsinki-NLP / OPUS-MT (CC-BY-4.0), converted to CTranslate2 by Live Translator"
+    },
+    {
+      "id": "separation-convtasnet",
+      "title": "Voice separation (ConvTasNet, Libri2Mix)",
+      "kind": "speakers",
+      "license": "CC-BY-SA-4.0",
+      "size_mb": 20,
+      "source": {
+        "type": "url",
+        "url": "https://huggingface.co/Unbakedcookie/live-translator-models/resolve/50473df5681764ebdef107dd78f7d21da66c28a7/separation-convtasnet.zip",
+        "sha256": "cac8af049a9e040684854590ce730b8befd32f4caeae5d58903aca53a3e73831",
+        "archive": "zip"
+      },
+      "dest": "separation/convtasnet",
+      "marker": "model.onnx",
+      "attribution": "ConvTasNet (Asteroid) by Joris Cosentino, trained on Libri2Mix sep_clean from LibriSpeech (CC-BY-4.0); ONNX export by Live Translator, shared under CC-BY-SA-4.0"
     }
   ]
 }

@@ -60,9 +60,10 @@ QT_NOTICE = (
     f"{APP_DISPLAY_NAME} uses Qt for Python (PySide6, Shiboken6) and the Qt libraries under "
     "the GNU Lesser General Public License version 3 (licenses/LGPL-3.0.txt, which adds to "
     "licenses/GPL-3.0.txt). They are included unmodified as separate files in the app folder, "
-    "and you may replace them with your own compatible build. Their source code is available "
-    "at https://code.qt.io and https://download.qt.io/official_releases/QtForPython/; on "
-    f"request we will send the exact source of the versions shipped ({PROJECT_URL}/issues)."
+    "and you may replace them with your own compatible build. The exact source code of the "
+    "versions shipped (qtbase, qtsvg, qtimageformats and pyside-setup) is attached to each "
+    f"release at {PROJECT_URL}/releases, and we will also send it on request "
+    f"({PROJECT_URL}/issues). Qt's own copies: https://download.qt.io (D-021)."
 )
 
 

@@ -5,7 +5,7 @@ in the `licenses/` folder of the installed app.
 
 ## Qt and Qt for Python (LGPL-3.0)
 
-Live Translator uses Qt for Python (PySide6, Shiboken6) and the Qt libraries under the GNU Lesser General Public License version 3 (licenses/LGPL-3.0.txt, which adds to licenses/GPL-3.0.txt). They are included unmodified as separate files in the app folder, and you may replace them with your own compatible build. Their source code is available at https://code.qt.io and https://download.qt.io/official_releases/QtForPython/; on request we will send the exact source of the versions shipped (https://github.com/Unbakedcookie/Live-Translator-pc-app/issues).
+Live Translator uses Qt for Python (PySide6, Shiboken6) and the Qt libraries under the GNU Lesser General Public License version 3 (licenses/LGPL-3.0.txt, which adds to licenses/GPL-3.0.txt). They are included unmodified as separate files in the app folder, and you may replace them with your own compatible build. The exact source code of the versions shipped (qtbase, qtsvg, qtimageformats and pyside-setup) is attached to each release at https://github.com/Unbakedcookie/Live-Translator-pc-app/releases, and we will also send it on request (https://github.com/Unbakedcookie/Live-Translator-pc-app/issues). Qt's own copies: https://download.qt.io (D-021).
 
 ## Python packages shipped with the app
 
@@ -87,8 +87,9 @@ Python itself: Python Software Foundation License (`licenses/Python.txt`).
 | Speaker labels (NVIDIA TitaNet-large) | CC-BY-4.0 | TitaNet-large by NVIDIA (CC-BY-4.0), ONNX export by k2-fsa/sherpa-onnx |
 | Smarter translation (Qwen3-4B-Instruct) | Apache-2.0 | Qwen3-4B-Instruct-2507 by Alibaba Qwen (Apache-2.0), GGUF by Unsloth |
 | Runtime for smarter translation (llama.cpp, Vulkan) | MIT | llama.cpp by ggml-org (MIT); bundles LLVM OpenMP (Apache-2.0 WITH LLVM-exception) |
-| Overlap detection (pyannote segmentation-3.0) | MIT | pyannote segmentation-3.0 by Hervé Bredin / CNRS (MIT), ONNX export by k2-fsa/sherpa-onnx |
-| Translation models (OPUS-MT) | CC-BY-4.0 / Apache-2.0 | Helsinki-NLP / OPUS-MT (University of Helsinki), converted to CTranslate2 |
+| Overlap detection (pyannote segmentation-3.0) | MIT | pyannote segmentation-3.0 by Séverin Baroudi, Alexis Plaquet and Hervé Bredin (MIT, Copyright (c) 2022 CNRS; Plaquet & Bredin, Interspeech 2023), ONNX export by k2-fsa/sherpa-onnx |
+| Voice separation (ConvTasNet, Libri2Mix) | CC-BY-SA-4.0 | ConvTasNet (Asteroid) by Joris Cosentino, trained on Libri2Mix sep_clean from LibriSpeech (CC-BY-4.0); ONNX export by Live Translator, shared under CC-BY-SA-4.0 |
+| Translation models (OPUS-MT, 43 language directions) | Apache-2.0 / CC-BY-4.0 | Helsinki-NLP / OPUS-MT (University of Helsinki), converted to CTranslate2; each download keeps its LICENCE.txt |
 
 ## Fonts and icons
 

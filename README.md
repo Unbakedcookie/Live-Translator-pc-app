@@ -114,6 +114,9 @@ only ever sent to Discord.
   (you're asked when you quit, and the Transcript window can export at any time).
 - Log files never contain what anyone said or anyone's name.
 - Voices are told apart in memory only; nothing about anyone's voice is saved.
+- **Other people:** the app writes down what others say. Some places require everyone's
+  agreement before a conversation is recorded or transcribed, so tell the people you talk to
+  and follow the rules where you live. (This is a reminder, not legal advice.)
 
 ## Licences
 

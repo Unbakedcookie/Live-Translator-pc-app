@@ -35,6 +35,7 @@ MANIFEST = "manifest.json"
 REQUIRED = ("model.bin", "config.json", "source.spm", "target.spm", "opus_mt.json", "LICENCE.txt")
 LICENCES = {"cc-by-4.0": "CC-BY-4.0", "apache-2.0": "Apache-2.0"}
 MIB = 1 << 20
+UPLOAD_ATTEMPTS = 5
 # Spot check 2026-10-19 (D:/LiveTranslator/check_pairs.py, D-039): garbled or loose on
 # game-chat lines; Qwen translates these first while it's on.
 ROUGH_PAIRS = frozenset({("en", "hi"), ("hi", "en"), ("ur", "en")})
@@ -203,13 +204,24 @@ def publish(staging: Path, repo: str) -> str:
 
     api = HfApi()
     api.create_repo(repo, repo_type="model", exist_ok=True)
-    info = api.upload_folder(
-        repo_id=repo,
-        repo_type="model",
-        folder_path=str(staging),
-        allow_patterns=["*.zip", MANIFEST, EXTRAS_FILE, "README.md"],
-        commit_message="Live Translator translation models (OPUS-MT, CTranslate2)",
-    )
+    attempt = 1
+    while True:
+        try:
+            info = api.upload_folder(
+                repo_id=repo,
+                repo_type="model",
+                folder_path=str(staging),
+                allow_patterns=["*.zip", MANIFEST, EXTRAS_FILE, "README.md"],
+                commit_message="Live Translator translation models (OPUS-MT, CTranslate2)",
+            )
+            break
+        except OSError as exc:  # includes ConnectionError
+            # 2026-10-21: a 7.7 GB upload dropped once on a network error. Chunks already
+            # stored are skipped on the next try, so retrying continues where it stopped.
+            if attempt == UPLOAD_ATTEMPTS:
+                raise
+            print(f"upload interrupted ({exc}); retrying ({attempt}/{UPLOAD_ATTEMPTS})", flush=True)
+            attempt += 1
     commit = str(info.oid)
     print(f"published to https://huggingface.co/{repo} at commit {commit}", flush=True)
     return commit
