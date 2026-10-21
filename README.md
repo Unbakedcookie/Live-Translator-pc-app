@@ -30,7 +30,12 @@ A setup window walks you through:
 4. **Download.** One progress bar; you can pause and continue later without losing anything.
 
 Then your first window opens. Everything can be changed later in **Settings** (right-click a
-window, or click the Live Translator icon by the clock).
+window, click the Live Translator icon by the clock, or start the app again from its icon).
+
+**Keep the icon by the clock visible:** Windows 11 hides new icons behind the **^** arrow next
+to the clock. Drag the red Live Translator icon from there onto the taskbar, or turn it on in
+**Windows Settings → Personalization → Taskbar → Other system tray icons**. It shows the app's
+state: red = listening, grey = paused, a yellow dot = something needs attention.
 
 ## Everyday use
 
