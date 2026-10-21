@@ -6,7 +6,7 @@
 The user supplied the base prompt (role, project idea, system rules 1–8, phases 0–4). Project idea: a Windows live-translation overlay for social apps and games. Requested features: remembered settings, audio input/output selection, small movable scalable windows, output language choice, opacity, multiple windows for multiple languages, color options, screen-capture → translate, PureRef-style pin-on-top, and suggestions for more features.
 
 ### Environment check (before asking questions)
-- `git 2.42.0.windows.2`, global identity `UNBAKEDCOOKIE` / captainplanet625@gmail.com.
+- `git 2.42.0.windows.2`, global identity `UNBAKEDCOOKIE` (email redacted 2026-10-21 before the repo went public; commits now use the GitHub noreply address).
 - `gh 2.100.0`, already authenticated as **Unbakedcookie** (keyring, scopes gist/read:org/repo/workflow). No auth step needed.
 - Python 3.10.11 present. Node, Rust and the .NET SDK are absent. Project folder empty, not a repo.
 - Lesson: running all the version checks in one PowerShell call meant the first missing tool (`node`) produced an error block. Output was still usable, but separate calls or `Get-Command` checks would be cleaner.
