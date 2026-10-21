@@ -298,10 +298,13 @@ class LiveTranslatorApp(QObject):
 
     def show_everything(self) -> None:
         """The app was started again while running: bring every window back (or open one if
-        all were closed)."""
+        all were closed) and open Settings in front, so clicking the app's icon always shows
+        something (user 2026-10-20: "the app won't open from my home screen" while its
+        overlay was already showing)."""
         if not self.store.state.config.windows:
             self.controller.add_window()
         self.store.dispatch(a.SetAllHidden(False))
+        self.open_settings()
 
     def _on_window_hidden(self) -> None:
         """Once per run: say where a hidden window comes back from (it has no taskbar button)."""

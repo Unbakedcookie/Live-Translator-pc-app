@@ -161,3 +161,18 @@ def test_quit_hides_settings_and_transcript_first(qtbot, tmp_path: Path):
         assert seen == [(False, False)]
     finally:
         live.shutdown()
+
+
+def test_clicking_the_app_icon_again_opens_settings(qtbot, tmp_path: Path):
+    """User 2026-10-20: "the app won't open from my home screen": its overlay was already
+    showing, so starting it again changed nothing they could see."""
+    live, _ = start(tmp_path)
+    try:
+        window_id = live.store.state.config.windows[0].id
+        live.windows.minimize_window(window_id)
+        assert live.settings_window is None
+        live.show_everything()  # what a second launch asks the running copy to do
+        assert live.windows.windows[window_id].isVisible()
+        assert live.settings_window is not None and live.settings_window.isVisible()
+    finally:
+        live.shutdown()
