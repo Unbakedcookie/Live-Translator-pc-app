@@ -101,3 +101,12 @@ User round: "yes push it"; can speech detection cover 3+ languages; "i dont unde
 - **D-011:** a plain "Listening to others" notice in Settings -> About and the README Privacy section (tell people, follow local rules; not legal advice). Test asserts the About row.
 - **D-021:** the build ships only Qt6 Core/Gui/Network/OpenGL/OpenGLWidgets/Svg/Widgets + qtbase/qtsvg/qtimageformats plugins. Downloaded (user OK) qtbase, qtsvg, qtimageformats `-everywhere-src-6.12.0` and `pyside-setup-everywhere-src-6.12.0` (70 MB) to `D:/LiveTranslator/qt-src`, all matching Qt's published SHA-256. The Qt notice now points to the GitHub release (plus the on-request offer).
 - Suite: all passed (exit 0), ruff + pyright clean.
+
+## 2026-10-21 (evening): v0.1.0 beta released, repo public
+
+- **Language Manager live:** the user's app had been started before the catalogue was written (it reads the catalogue at start), so Settings -> Languages still said "downloads aren't available". After a restart the user added languages; ar-en, en-ar, en-pl, tl-en landed in the models folder at 19:03-19:04 from the HF repo.
+- **Rebuilt** app + `LiveTranslator-Setup-0.1.0.exe` (128.9 MB); the built app carries the HF catalogue (44 URLs) and the new Qt notice.
+- **Pre-public checks:** gitleaks over all 111 commits: no leaks. But every commit's author/committer email was the user's Gmail (global git identity) and `history/M00-setup.md` quoted it. User chose to swap it. Backup `D:/LiveTranslator/repo-backup-2026-10-21-before-email-swap.bundle` (verified); global `user.email` set to `327212864+Unbakedcookie@users.noreply.github.com`; history note redacted; `git filter-branch --env-filter` over 112 commits; tree hash identical before/after; force-pushed (user approved; auto mode blocked the first tries until the user said so directly). GitHub API: all 224 author/committer emails are the noreply address.
+- **Release:** `gh release create v0.1.0 --prerelease` with the setup + qtbase/qtsvg/qtimageformats/pyside-setup 6.12.0 sources (all assets "uploaded"). Notes: install steps incl. the unsigned-installer SmartScreen click-through, features, privacy + the note about others, licences, Qt source.
+- **Public:** making the repo public was blocked for me (public-surface rule), so the user flipped it in GitHub. Checked logged out: repo, release page, setup download, a Qt source download and the HF repo all 200.
+- README Install now points to the releases page.

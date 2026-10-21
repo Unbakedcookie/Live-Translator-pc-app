@@ -13,8 +13,10 @@ screen, such as game chat. Everything runs on your own PC.
 
 ## Install
 
-Run `LiveTranslator-Setup.exe` and follow the steps. The installer is part of the first
-release and isn't published yet; until then, see **Running from source** below.
+Download `LiveTranslator-Setup-<version>.exe` from the
+[latest release](https://github.com/Unbakedcookie/Live-Translator-pc-app/releases) and run it (no
+admin rights needed). The installer isn't code-signed yet, so Windows may say "Windows protected
+your PC": click **More info → Run anyway**.
 
 ## First run
 

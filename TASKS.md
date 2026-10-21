@@ -13,7 +13,7 @@
 - **Waiting on the user:** G3 look review (Settings General/Languages/About, wizard, Custom colours editor, icon). App licence: MIT (user 2026-10-19, `LICENSE`).
 - **Status 2026-10-20 (evening):** dropdown fix (hidden top choices), stream speaker-label fix (D-041), overlap spike (licence-checked) → **Separate people talking over each other** setting built (experimental; D-042/D-043). The separation model uploads with the language packs (`model_hosting publish` includes `extras`). "Others speak" (detect any of our 47 languages, or e.g. Chinese + Anything else, D-044). Tests 722.
 - **2026-10-21:** models hosted at `huggingface.co/Unbakedcookie/live-translator-models` @ `50473df5` (public, 44 zips, 7.7 GB; catalogue pinned; app downloader verified). D-011 notice, D-043 check (Medium, conditions met), D-021 Qt sources in `D:/LiveTranslator/qt-src`.
-- **RESUME HERE:** live Language Manager click-through with the user; rebuild app + setup (0.1.0); GitHub pre-release v0.1.0 (beta, unsigned) with setup + the 4 Qt source archives; make the repo public (confirm right before).
+- **RELEASED 2026-10-21:** v0.1.0 beta pre-release (setup + Qt sources) on GitHub; repo PUBLIC; Language Manager verified live. Commit emails swapped to the GitHub noreply address (backup bundle in `D:/LiveTranslator`). Every future release: attach the matching Qt sources (D-021).
 - **Next for me (after that):** T112 with a real call/game; G3/G5/G6 look reviews with the user.
 
 ## Task map
