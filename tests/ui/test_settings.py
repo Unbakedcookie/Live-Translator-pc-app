@@ -433,3 +433,21 @@ def test_about_page_lists_the_licences(env: Env):
     buttons = [b for b in page.findChildren(QPushButton) if b.text() == "Open folder"]
     buttons[0].click()
     assert env.opened[-1] == licenses_dir()
+
+
+def test_general_page_others_speak(env: Env):
+    """User request 2026-10-20: universal detection, or the languages of the room."""
+    page = env.page(GeneralPage)
+    assert page.others.current_choice() == "auto" and not page.others_also_row.isEnabled()
+    page.others.set_choice("zh")
+    page.others.choice_changed.emit("zh")
+    assert env.store.state.config.audio.others_languages == ("zh",)
+    assert page.others_also_row.isEnabled()
+    boxes = page.others_also.boxes
+    boxes[0].set_choice("en")
+    boxes[0].choice_changed.emit("en")
+    assert env.store.state.config.audio.others_languages == ("zh", "en")
+    page.others.set_choice("auto")
+    page.others.choice_changed.emit("auto")
+    assert env.store.state.config.audio.others_languages == ()
+    assert not page.others_also_row.isEnabled()

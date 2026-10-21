@@ -627,11 +627,15 @@ def build_speech(
         discord_intervals=discord.intervals if discord is not None else None,
     )
 
-    def transcribe(audio: Float) -> tuple[str, str | None]:
+    def transcribe(audio: Float, languages: tuple[str, ...]) -> tuple[str, str | None]:
         # The quick pass: on separated voices the careful one (beam 5) was no better
         # (72 % vs 73 % both understood) and holds the shared model ~10-20 % longer.
-        result = engine.transcribe(audio, final=False)
-        return result.text, result.language
+        # "Others speak" applies here too: one language is given, several are chosen from.
+        language = languages[0] if len(languages) == 1 else None
+        if len(languages) > 1:
+            language, _share = engine.detect_language(audio, languages)
+        result = engine.transcribe(audio, language=language, final=False)
+        return result.text, language or result.language
 
     # Optional overlap splitting sits between speech and speaker labels (2026-10-20).
     separation = SeparationWorker(

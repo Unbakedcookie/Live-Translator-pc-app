@@ -42,7 +42,8 @@ from livetranslator.services.asr.worker import LineAudio
 
 Float = NDArray[np.float32]
 Emit = Callable[[a.Action], None]
-Transcribe = Callable[[Float], tuple[str, str | None]]  # audio -> (text, language)
+# (audio, the languages people speak: () = any) -> (text, language)
+Transcribe = Callable[[Float, tuple[str, ...]], tuple[str, str | None]]
 
 OVERLAP_ID = "overlap-pyannote-seg3"
 SEPARATION_ID = "separation-convtasnet"
@@ -131,6 +132,7 @@ def onset(track: Float) -> int:
 class SeparationSettings:
     enabled: bool = False
     chinese_script: ChineseScript = "simplified"
+    others_languages: tuple[str, ...] = ()  # Settings "Others speak"; () = detect any
 
 
 @dataclass(frozen=True)
@@ -247,7 +249,7 @@ class SeparationWorker:
         """The two voices, earlier one first; None when the split doesn't look real."""
         voices: list[Voice] = []
         for track in self._separator.separate(audio):
-            text, language = self._transcribe(track)
+            text, language = self._transcribe(track, self._settings.others_languages)
             text = text.strip()
             if is_chinese(language):
                 text = to_script(text, self._settings.chinese_script)

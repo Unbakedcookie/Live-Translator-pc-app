@@ -55,8 +55,10 @@ TEXTS = {
 }
 
 
-def transcribe_by_marker(texts=TEXTS):
-    def transcribe(audio: np.ndarray) -> tuple[str, str | None]:
+def transcribe_by_marker(texts=TEXTS, heard: list[tuple[str, ...]] | None = None):
+    def transcribe(audio: np.ndarray, languages: tuple[str, ...]) -> tuple[str, str | None]:
+        if heard is not None:
+            heard.append(languages)
         return texts[round(float(audio.max()), 1)]
 
     return transcribe
@@ -74,20 +76,33 @@ def make(
     enabled: bool = True,
     exists: bool = True,
     script: str = "simplified",
+    others: tuple[str, ...] = (),
+    heard: list[tuple[str, ...]] | None = None,
 ):
     emitted: list[a.Action] = []
     forwarded: list[LineAudio] = []
     worker = SeparationWorker(
         Path("unused"),
-        transcribe_by_marker(texts),
+        transcribe_by_marker(texts, heard),
         emitted.append,
         forwarded.append,
         lambda _uid: exists,
         detector=FakeDetector(overlap),  # type: ignore[arg-type]
         separator=separator or FakeSeparator(),  # type: ignore[arg-type]
     )
-    worker.configure(SeparationSettings(enabled=enabled, chinese_script=script))  # type: ignore[arg-type]
+    worker.configure(
+        SeparationSettings(enabled=enabled, chinese_script=script, others_languages=others)  # type: ignore[arg-type]
+    )
     return worker, emitted, forwarded
+
+
+def test_separated_voices_follow_others_speak():
+    """2026-10-20: "Others speak" limits the languages for split voices too."""
+    heard: list[tuple[str, ...]] = []
+    worker, _, _ = make(others=("zh", "en"), heard=heard)
+    worker.submit(line())
+    worker.run_pending()
+    assert heard == [("zh", "en"), ("zh", "en")]
 
 
 def test_an_overlapped_line_becomes_two_lines_with_their_own_voices():

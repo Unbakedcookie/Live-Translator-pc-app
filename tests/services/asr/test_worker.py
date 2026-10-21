@@ -441,3 +441,34 @@ def test_me_detect_any_language_locks_like_others():
     assert engine.calls[0][1] is None  # the first decode detects
     assert engine.calls[-1][1] == "ko"  # then the language is kept
     assert last_fields(emitted)["language"] == "ko"
+
+
+def test_others_speak_one_language_is_always_that_one():
+    """User request 2026-10-20 ("Others speak"): no detection, the language from the first
+    word (the user's log had noisy lines taken for Icelandic)."""
+    engine = FakeEngine(language="is", probability=0.9)
+    worker, emitted = make_worker(engine, others_languages=("zh",))
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
+    assert [lang for _, lang, _ in engine.calls] == ["zh"] * len(engine.calls)
+    assert last_fields(emitted)["language"] == "zh"
+
+
+def test_others_in_several_languages_are_detected_among_them():
+    engine = DetectingEngine()
+    worker, emitted = make_worker(engine, others_languages=("es", "en"))
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    feed(worker, ring, [(0.25, SPEECH)] * 10 + [(0.25, 0.0)] * 4)
+    assert engine.detections and all(c == ("es", "en") for _, c in engine.detections)
+    assert engine.calls[-1][1] == "en" and last_fields(emitted)["language"] == "en"
+
+
+def test_others_detect_any_language_by_default():
+    engine = FakeEngine(language="ko", probability=0.9)
+    worker, emitted = make_worker(engine, others_languages=())
+    ring = RingBuffer(60, SAMPLE_RATE)
+    worker.add_stream(Source.OTHERS, ring)
+    feed(worker, ring, [(0.25, SPEECH)] * 6 + [(0.25, 0.0)] * 4)
+    assert engine.calls[0][1] is None and last_fields(emitted)["language"] == "ko"

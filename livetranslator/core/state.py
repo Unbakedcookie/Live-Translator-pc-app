@@ -151,8 +151,16 @@ class DeviceRef(Frozen):
     host_api: str = "Windows WASAPI"
 
 
-MAX_MIC_LANGUAGES = 4  # "I speak" + 3 more (user request 2026-10-19)
+MAX_MIC_LANGUAGES = 4  # "I speak" + 3 more (user request 2026-10-19); "Others speak" too
 _LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}$")
+
+
+def _language_list(value: tuple[str, ...]) -> tuple[str, ...]:
+    if len(value) > MAX_MIC_LANGUAGES or len(set(value)) != len(value):
+        raise ValueError(f"up to {MAX_MIC_LANGUAGES} different languages")
+    if any(not _LANGUAGE_CODE.match(code) for code in value):
+        raise ValueError("language codes like 'en' or 'zh'")
+    return value
 
 
 class AudioConfig(Frozen):
@@ -164,17 +172,22 @@ class AudioConfig(Frozen):
     # see your own lines translated). () = the language you translate into; ("auto",) =
     # detect any; 1-4 codes = those (with 2+, each line is checked against just them).
     mic_languages: tuple[str, ...] = ()
+    # What other people speak (Settings "Others speak", user request 2026-10-20): () = detect
+    # any language (the default); 1-4 codes = only those, which keeps noisy or short lines
+    # from being taken for an unrelated language (the user's log: "Icelandic").
+    others_languages: tuple[str, ...] = ()
 
     @field_validator("mic_languages")
     @classmethod
     def _mic_languages(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         if value == ("auto",):
             return value
-        if len(value) > MAX_MIC_LANGUAGES or len(set(value)) != len(value):
-            raise ValueError(f"up to {MAX_MIC_LANGUAGES} different languages")
-        if any(not _LANGUAGE_CODE.match(code) for code in value):
-            raise ValueError("language codes like 'en' or 'zh'")
-        return value
+        return _language_list(value)
+
+    @field_validator("others_languages")
+    @classmethod
+    def _others_languages(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return _language_list(value)
 
 
 MAX_SPEAKERS_LIMIT = 12

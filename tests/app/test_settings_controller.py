@@ -169,3 +169,19 @@ def test_mic_languages_are_validated():
     for bad in (("en", "en"), ("en", "es", "ja", "ko", "vi"), ("auto", "en"), ("English",)):
         with pytest.raises(ValidationError):
             AudioConfig(mic_languages=bad)
+
+
+def test_others_language_choices_round_trip():
+    """2026-10-20 "Others speak": detect any (default) or up to 4 languages."""
+    from livetranslator.app.settings_controller import others_choice, others_languages_for
+
+    assert others_languages_for("auto", ("es",)) == ()
+    assert others_languages_for("zh", ()) == ("zh",)
+    assert others_languages_for("zh", ("en", "", "zh", "ja", "ko", "vi")) == (
+        "zh",
+        "en",
+        "ja",
+        "ko",
+    )
+    assert others_choice(()) == ("auto", ())
+    assert others_choice(("zh", "en")) == ("zh", ("en",))

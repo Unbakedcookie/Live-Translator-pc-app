@@ -91,6 +91,9 @@ class AsrSettings:
     # The languages the mic may be in: one = always that one; several = detect among them per
     # line; empty = detect any (speech_controller.mic_languages resolves the setting).
     mic_languages: tuple[str, ...] = ("en",)
+    # The same for other people (Settings "Others speak", user request 2026-10-20): empty =
+    # detect any language (the default), one = always that one, several = among those.
+    others_languages: tuple[str, ...] = ()
     vad: VadConfig = field(default_factory=VadConfig)
     enabled: frozenset[Source] = frozenset({Source.ME, Source.OTHERS})
     chinese_script: ChineseScript = "simplified"
@@ -334,20 +337,32 @@ class ASRWorker:
 
     # ------------------------------------------------------------ decoding
 
+    @staticmethod
+    def _candidates(source: Source, settings: AsrSettings) -> tuple[str, ...]:
+        """The languages a stream may be in; () = detect any."""
+        if source is Source.ME:
+            return settings.mic_languages
+        if source is Source.OTHERS:
+            return settings.others_languages
+        return ()
+
     def _language(self, job: Job, settings: AsrSettings) -> str | None:
-        if job.stream.source is Source.ME and len(settings.mic_languages) == 1:
-            return settings.mic_languages[0]
+        languages = self._candidates(job.stream.source, settings)
+        if len(languages) == 1:
+            return languages[0]
         return job.utterance.language
 
-    def _detect_me(
+    def _detect_among(
         self, job: Job, settings: AsrSettings, audio: Audio, final: bool = False
     ) -> None:
-        """Me in several languages: the likeliest of *those* (Whisper scores every language).
-        Checked on each partial until it's clearly sure, and always once more on the whole
-        line before the final decode (measured 2026-10-19 on FLEURS es/en, zh/en, ja/en:
-        sure (share >= 0.97, >= 1 s) was right 63 of 64 times, whole lines 80 of 80)."""
-        u, languages = job.utterance, settings.mic_languages
-        if job.stream.source is not Source.ME or len(languages) < 2:
+        """A stream in several known languages: the likeliest of *those* (Whisper scores
+        every language). Checked on each partial until it's clearly sure, and always once
+        more on the whole line before the final decode (measured 2026-10-19 on FLEURS es/en,
+        zh/en, ja/en: sure (share >= 0.97, >= 1 s) was right 63 of 64 times, whole lines 80
+        of 80; with 4 languages 72 of 72 whole lines)."""
+        u = job.utterance
+        languages = self._candidates(job.stream.source, settings)
+        if len(languages) < 2:
             return
         if u.language_locked and not final:
             return
@@ -364,13 +379,13 @@ class ASRWorker:
         u, stream = job.utterance, job.stream
         end = stream.cursor
         audio = stream.ring.read(u.start_sample, end)
-        self._detect_me(job, settings, audio)
+        self._detect_among(job, settings, audio)
         with timed(self._timings, "asr"):
             result = self._engine.transcribe(audio, language=self._language(job, settings))
         u.decoded_to = end
         if (
             u.language is None
-            and (stream.source is not Source.ME or not settings.mic_languages)  # any: detect
+            and not self._candidates(stream.source, settings)  # any language: detect
             and (result.language_probability or 0.0) >= LANGUAGE_LOCK_P
         ):
             u.language = result.language
@@ -394,7 +409,7 @@ class ASRWorker:
         u, stream = job.utterance, job.stream
         end = u.end_sample if u.end_sample is not None else stream.cursor
         audio = stream.ring.read(u.start_sample, end)
-        self._detect_me(job, settings, audio, final=True)
+        self._detect_among(job, settings, audio, final=True)
         if len(audio) < MIN_FINAL_S * SAMPLE_RATE:
             text = u.agreement.committed_text
             language = self._language(job, settings)

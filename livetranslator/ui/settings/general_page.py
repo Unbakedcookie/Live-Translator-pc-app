@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
-from livetranslator.app.settings_controller import mic_choice
+from livetranslator.app.settings_controller import mic_choice, others_choice
 from livetranslator.core.languages import DEFAULT_LANGUAGES
 from livetranslator.core.state import MAX_MIC_LANGUAGES
 from livetranslator.theme.tokens import SETTINGS, SPACE, Palette
@@ -77,6 +77,21 @@ class AlsoSpeak(QWidget):
         self.changed.emit()
 
 
+def others_items() -> list[tuple[str, object]]:
+    return [
+        ("Detect any language", "auto"),
+        *((lang.label, lang.code) for lang in DEFAULT_LANGUAGES),
+    ]
+
+
+OTHERS_HELP = (
+    "Detect any language works anywhere. If you know what people around you speak, pick "
+    "it: their lines are never taken for an unrelated language, and live text is right from "
+    "the first word."
+)
+OTHERS_ALSO_HELP = "Pick more if people switch between languages. Another box appears as you go."
+
+
 CHINESE_SCRIPTS: list[tuple[str, object]] = [
     ("Simplified (简体)", "simplified"),
     ("Traditional (繁體)", "traditional"),
@@ -117,6 +132,17 @@ class GeneralPage(SettingsPage):
         self.also = AlsoSpeak(ctx.palette, also)
         self.also.changed.connect(self._on_speak)
         self.also_row = lang.row("I also speak", ALSO_SPEAK_HELP, self.also)
+        # "Others speak" (user request 2026-10-20): detect any (default) or the room's
+        # languages, which keeps noisy, short lines from being taken for another language.
+        others, others_also = others_choice(store.state.config.audio.others_languages)
+        self.others = ChoiceCombo(others_items(), others)
+        self.others.setFixedWidth(SETTINGS.control_width)
+        self.others.apply_palette(ctx.palette)
+        self.others.choice_changed.connect(lambda _c: self._on_others())
+        lang.row("Others speak", OTHERS_HELP, self.others)
+        self.others_also = AlsoSpeak(ctx.palette, others_also)
+        self.others_also.changed.connect(self._on_others)
+        self.others_also_row = lang.row("They also speak", OTHERS_ALSO_HELP, self.others_also)
         self.chinese = ChoiceCombo(CHINESE_SCRIPTS, store.state.config.engines.chinese_script)
         self.chinese.setFixedWidth(SETTINGS.control_width)
         self.chinese.apply_palette(ctx.palette)
@@ -144,6 +170,11 @@ class GeneralPage(SettingsPage):
     def _on_speak(self) -> None:
         self._ctx.settings.set_mic_languages(str(self.speak.current_choice()), self.also.codes())
 
+    def _on_others(self) -> None:
+        self._ctx.settings.set_others_languages(
+            str(self.others.current_choice()), self.others_also.codes()
+        )
+
     def refresh(self) -> None:
         config = self._ctx.settings.store.state.config
         silently(self.language, lambda: self.language.set_language(config.my_language))
@@ -151,4 +182,8 @@ class GeneralPage(SettingsPage):
         self.speak.set_choice(first)
         self.also.set_codes(also)
         self.also_row.setEnabled(first != "auto")  # "any language" already covers it
+        others, others_also = others_choice(config.audio.others_languages)
+        self.others.set_choice(others)
+        self.others_also.set_codes(others_also)
+        self.others_also_row.setEnabled(others != "auto")  # any language covers them all
         self.chinese.set_choice(config.engines.chinese_script)

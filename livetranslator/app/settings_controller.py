@@ -158,6 +158,12 @@ class SettingsController:
         chosen = mic_languages_for(first, also, self._store.state.config.my_language)
         self._store.dispatch(a.UpdateConfigSection("audio", {"mic_languages": chosen}))
 
+    def set_others_languages(self, first: str, also: Sequence[str] = ()) -> None:
+        """Settings "Others speak" + "They also speak". `first`: "auto" (detect any) or a
+        language code; `also`: more codes ("" = none)."""
+        chosen = others_languages_for(first, also)
+        self._store.dispatch(a.UpdateConfigSection("audio", {"others_languages": chosen}))
+
     def set_chinese_script(self, script: str) -> None:
         """'simplified' or 'traditional': how recognised Mandarin is written."""
         self._store.dispatch(a.UpdateConfigSection("engines", {"chinese_script": script}))
@@ -211,6 +217,24 @@ def mic_choice(mic_languages: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
     if mic_languages == ("auto",):
         return "auto", ()
     return mic_languages[0], mic_languages[1:]
+
+
+def others_choice(others_languages: tuple[str, ...]) -> tuple[str, tuple[str, ...]]:
+    """The ("Others speak", "They also speak" list) choices for a saved `others_languages`."""
+    if not others_languages:
+        return "auto", ()
+    return others_languages[0], others_languages[1:]
+
+
+def others_languages_for(first: str, also: Sequence[str]) -> tuple[str, ...]:
+    """The saved `others_languages` for those choices: () = detect any language."""
+    if first == "auto":
+        return ()
+    chosen = [first]
+    for code in also:
+        if code and code not in chosen:
+            chosen.append(code)
+    return tuple(chosen[:MAX_MIC_LANGUAGES])
 
 
 def mic_languages_for(first: str, also: Sequence[str], my_language: str) -> tuple[str, ...]:

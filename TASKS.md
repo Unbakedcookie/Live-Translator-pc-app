@@ -12,7 +12,7 @@
 
 - **Waiting on the user:** (1) HF login + username (tomorrow) → ask, then `python -m tools.model_hosting publish D:/LiveTranslator/hf-staging <user>/live-translator-models`; (2) G3 look review (Settings General/Languages/About, wizard, Custom colours editor, icon). App licence: MIT (user 2026-10-19, `LICENSE`).
 - **Status 2026-10-20:** built app verified on CPU and GPU (`--engine-check`; the "exit hang" was a hidden crash box from a cp1252 console, fixed); T112 soak 15 min clean (140 lines, 0 errors, memory flat ~1.4 GB, lag p50 1.2 s); project-spec.md Phase 3 master doc (§0 Start here + As built notes). Tests 696.
-- **Status 2026-10-20 (evening):** dropdown fix (hidden top choices), stream speaker-label fix (D-041), overlap spike (licence-checked) → **Separate people talking over each other** setting built (experimental; D-042/D-043). The separation model uploads with the language packs (`model_hosting publish` includes `extras`). Tests 712.
+- **Status 2026-10-20 (evening):** dropdown fix (hidden top choices), stream speaker-label fix (D-041), overlap spike (licence-checked) → **Separate people talking over each other** setting built (experimental; D-042/D-043). The separation model uploads with the language packs (`model_hosting publish` includes `extras`). "Others speak" setting (detect any, or the room's languages). Tests 719.
 - **Next for me:** Language Manager live test after HF; T112 with a real call/game. (Rebuilt app + setup 2026-10-20; test profiles deleted, ~6 GB.)
 
 ## Task map

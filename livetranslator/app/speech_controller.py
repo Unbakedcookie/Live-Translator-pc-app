@@ -69,6 +69,7 @@ def asr_settings(config: AppConfig) -> AsrSettings:
     return AsrSettings(
         update_interval_s=effective(config).asr_interval_s,  # game mode: ≥ 1.0 s (T092)
         mic_languages=mic_languages(config),
+        others_languages=config.audio.others_languages,
         vad=config.vad,
         enabled=frozenset(enabled),
         chinese_script=config.engines.chinese_script,
@@ -83,6 +84,7 @@ def separation_settings(config: AppConfig) -> SeparationSettings:
     return SeparationSettings(
         enabled=effective(config).separate_overlaps,
         chinese_script=config.engines.chinese_script,
+        others_languages=config.audio.others_languages,
     )
 
 
@@ -187,7 +189,7 @@ class SpeechController(QObject):
             self._apply_audio()
         if section in ("speakers", "all") and self.speakers is not None:
             self.speakers.configure(speaker_settings(self._store.state.config))
-        if section in ("speakers", "performance", "engines", "all") and self.separation:
+        if section in ("speakers", "performance", "engines", "audio", "all") and self.separation:
             self.separation.configure(separation_settings(self._store.state.config))
 
     def _status(self, source: Source, level: StatusLevel, message: str) -> None:
