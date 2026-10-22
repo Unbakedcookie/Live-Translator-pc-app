@@ -3,9 +3,13 @@ before closing?". Styled with the window QSS so they match the rest of the app."
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 
+from PySide6.QtCore import QRect, QSize, Qt
+from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from livetranslator import APP_DISPLAY_NAME
@@ -20,6 +24,29 @@ class QuitChoice(Enum):
     EXPORT = "export"
     DISCARD = "discard"
     CANCEL = "cancel"
+
+
+@contextmanager
+def topmost_owner() -> Iterator[QWidget]:
+    """A tiny invisible always-on-top window to own dialogs that have no window of their own
+    (Quit from the tray or an overlay's menu). User 2026-10-21: the ownerless "Export before
+    closing?" box opened behind a pinned overlay; being modal, it blocked the overlays, so the
+    app could only be ended from Task Manager. Windows keeps an owned window above its owner,
+    so the question and the save dialog after it stay in front."""
+    owner = QWidget(
+        None,
+        Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint,
+    )
+    owner.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    screen = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
+    centre = screen.availableGeometry().center()  # the dialogs centre on the owner
+    owner.setGeometry(QRect(centre, QSize(1, 1)))
+    owner.show()
+    try:
+        yield owner
+    finally:
+        owner.close()
+        owner.deleteLater()
 
 
 def ask_save_path(parent: QWidget | None, suggested: Path) -> Path | None:
@@ -41,6 +68,7 @@ def ask_save_path(parent: QWidget | None, suggested: Path) -> Path | None:
 
 def ask_export_before_quit(parent: QWidget | None, palette: Palette) -> QuitChoice:
     box = QMessageBox(parent)
+    box.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)  # never behind a pinned overlay
     box.setWindowTitle(APP_DISPLAY_NAME)
     box.setIcon(QMessageBox.Icon.Question)
     box.setText("Export this conversation before closing?")

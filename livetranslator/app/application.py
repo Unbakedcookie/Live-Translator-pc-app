@@ -68,7 +68,7 @@ from livetranslator.services.timings import Timings
 from livetranslator.theme.fonts import bundled_font_files, register_fonts
 from livetranslator.theme.icons import app_icon
 from livetranslator.theme.tokens import DEFAULT_PALETTE_ID, PALETTES
-from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path
+from livetranslator.ui.dialogs import ask_export_before_quit, ask_save_path, topmost_owner
 from livetranslator.ui.geometry import Rect, beside, monitor_for
 from livetranslator.ui.region_selector import RegionSelector
 from livetranslator.ui.screens import monitors, place_beside
@@ -325,8 +325,11 @@ class LiveTranslatorApp(QObject):
     # ------------------------------------------------------------ quit + transcript (T063/T064)
 
     def request_quit(self) -> bool:
-        """Every Quit goes through here: asks to export a non-empty conversation first."""
-        return self.quit_flow.request_quit(None)
+        """Every Quit goes through here: asks to export a non-empty conversation first. The
+        question and the save dialog are owned by an always-on-top window so they never open
+        behind a pinned overlay (user 2026-10-21)."""
+        with topmost_owner() as owner:
+            return self.quit_flow.request_quit(owner)
 
     def open_transcript(self) -> None:
         if self.transcript_window is None:

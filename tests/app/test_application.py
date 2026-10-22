@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
 
 from livetranslator.app.application import ALL_HOTKEY_ACTIONS, LiveTranslatorApp
 from livetranslator.app.paths import app_paths
@@ -123,7 +125,10 @@ def test_every_quit_path_asks_about_a_non_empty_conversation(qtbot, tmp_path: Pa
         answers = [QuitChoice.CANCEL, QuitChoice.DISCARD]
         asked: list[int] = []
 
-        def ask(_parent: object) -> QuitChoice:
+        def ask(parent: QWidget | None) -> QuitChoice:
+            # 2026-10-21: owned by a shown always-on-top window, never behind an overlay
+            assert parent is not None and parent.isVisible()
+            assert parent.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
             asked.append(1)
             return answers.pop(0)
 
