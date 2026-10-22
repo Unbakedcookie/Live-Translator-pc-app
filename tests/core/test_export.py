@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from livetranslator import __version__
 from livetranslator.core.export import (
     format_offset,
     transcript_json,
@@ -68,6 +69,7 @@ def test_txt_matches_the_hand_written_file():
 
 def test_json_matches_the_hand_written_file():
     expected = json.loads((DATA / "transcript_expected.json").read_text(encoding="utf-8"))
+    expected["version"] = __version__  # the app's own version, written at export time
     produced = transcript_json(session(), EXPORTED_AT)
     assert json.loads(produced) == expected
     assert "こんにちは" in produced  # written as UTF-8 text, not \u escapes

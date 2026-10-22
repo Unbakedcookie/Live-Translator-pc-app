@@ -2,4 +2,4 @@
 
 APP_NAME = "LiveTranslator"
 APP_DISPLAY_NAME = "Live Translator"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
